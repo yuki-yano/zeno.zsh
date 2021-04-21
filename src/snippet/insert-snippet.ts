@@ -1,8 +1,7 @@
-import { readAllSync } from "../deps.ts";
+import { readFromStdin } from "../util/io.ts";
 
 export const insertSnippet = () => {
-  const decoder = new TextDecoder();
-  const content = decoder.decode(readAllSync(Deno.stdin)).split("\n");
+  const content = readFromStdin().split("\n");
 
   if (content.length > 4) {
     console.error("Unsupported multi line");
@@ -25,7 +24,7 @@ export const insertSnippet = () => {
 
   return {
     status: "success",
-    buffer: `${lbuffer}${snippet}${rbuffer}`,
+    buffer: `${lbuffer}${snippet}${rbuffer} `,
     cursor: (lbuffer.length + cursor).toString(),
   } as const;
 };

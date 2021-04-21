@@ -1,4 +1,4 @@
-import { readAllSync } from "../deps.ts";
+import { readFromStdin } from "../util/io.ts";
 import { loadSnippets } from "./settings.ts";
 
 type AutoSnippetData = {
@@ -12,8 +12,7 @@ type AutoSnippetData = {
 };
 
 export const autoSnippet = (): AutoSnippetData => {
-  const decoder = new TextDecoder();
-  const input = decoder.decode(readAllSync(Deno.stdin));
+  const input = readFromStdin();
 
   const [lbuffer, ..._rbuffer] = input.split("\n");
   const rbuffer = _rbuffer.join("\n");
