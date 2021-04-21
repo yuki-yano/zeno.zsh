@@ -1,0 +1,21 @@
+#autoload
+
+local completion=$(echo "$BUFFER" | fzf-preview-deno --mode=completion)
+
+if [[ $(echo "$completion" | head -1) != "success" ]]; then
+  return
+fi
+
+local id=$(echo "$completion" | head -2 | tail -1)
+local source_command=$(echo "$completion" | head -3 | tail -1)
+local preview=$(echo "$completion" | head -4 | tail -1)
+local options=$(echo "$completion" | head -5 | tail -1)
+
+local command="${source_command} | fzf ${options} --preview='${preview}'"
+
+local result=$(eval $command)
+local callback=$(echo "$id\n$result" | fzf-preview-deno --mode=completion-callback)
+
+LBUFFER+=$callback
+
+zle reset-prompt
