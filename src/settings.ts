@@ -1,0 +1,2 @@
+export const FZF_PREVIEW_DEFAULT_FZF_OPTIONS =
+  Deno.env.get("FZF_PREVIEW_DEFAULT_FZF_OPTIONS") ?? "";

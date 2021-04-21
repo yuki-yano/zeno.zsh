@@ -1,0 +1,7 @@
+#!/usr/bin/env -S deno run --unstable --allow-env --allow-read --no-check
+
+import { exec } from "../src/app.ts";
+
+exec();
+
+// vim:set filetype=javascript:
