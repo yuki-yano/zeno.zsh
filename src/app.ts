@@ -1,4 +1,5 @@
-import { argParse } from "./deps.ts";
+import { argParse, printf } from "./deps.ts";
+import { autoSnippet } from "./snippet/auto-snippet.ts";
 import { insertSnippet } from "./snippet/insert-snippet.ts";
 import { snippetList, snippetListCommand } from "./snippet/snippet-list.ts";
 
@@ -22,11 +23,27 @@ export const exec = () => {
       break;
     }
 
+    case "auto-snippet": {
+      const result = autoSnippet();
+
+      if (result.status === "failure") {
+        console.log(result.status);
+      }
+
+      if (result.status === "success") {
+        printf(`${result.status}\n`);
+        printf(`${result.buffer} \n`);
+        printf(`${(result.cursor).toString()}\n`);
+      }
+
+      break;
+    }
+
     case "insert-snippet": {
       const { status, buffer, cursor } = insertSnippet();
-      console.log(status);
-      console.log(buffer);
-      console.log(cursor);
+      printf(`${status}\n`);
+      printf(`${buffer}\n`);
+      printf(`${cursor}\n`);
 
       break;
     }
