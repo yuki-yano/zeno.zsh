@@ -15,9 +15,9 @@ export const exec = () => {
     case "snippet-list": {
       const snippets = snippetList();
 
-      console.log(snippetListCommand());
+      printf(`${snippetListCommand()}\n`);
       for (const snippet of snippets) {
-        console.log(snippet);
+        printf(`${snippet}\n`);
       }
 
       break;
@@ -27,7 +27,7 @@ export const exec = () => {
       const result = autoSnippet();
 
       if (result.status === "failure") {
-        console.log(result.status);
+        printf(`${result.status}\n`);
       }
 
       if (result.status === "success") {
