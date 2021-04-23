@@ -7,6 +7,7 @@ import { fzfOptionsToString } from "./fzf/option/convert.ts";
 import { completion } from "./completion/completion.ts";
 import type { CompletionResult } from "./type/fzf.ts";
 import { resultToCompletionItems } from "./completion/callback.ts";
+import { nextPlaceholder } from "./snippet/next-placeholder.ts";
 
 type Args = {
   _: Array<string | number>;
@@ -49,6 +50,24 @@ export const exec = () => {
       printf(`${status}\n`);
       printf(`${buffer}\n`);
       printf(`${cursor}\n`);
+
+      break;
+    }
+
+    case "next-placeholder": {
+      const buffer = readFromStdin().replace(/\n$/, "");
+      const result = nextPlaceholder(buffer);
+
+      if (result == null) {
+        printf("failure\n");
+        return;
+      }
+
+      const { nextBuffer, index } = result;
+
+      printf("success\n");
+      printf(`${nextBuffer}\n`);
+      printf(`${index}\n`);
 
       break;
     }
