@@ -2,7 +2,6 @@ import { existsSync, yamlParse } from "../deps.ts";
 
 type Settings = {
   snippets: Array<Snippet>;
-  completions: Array<Completion>;
 };
 
 type Snippet = {
@@ -10,8 +9,6 @@ type Snippet = {
   keyword: string;
   snippet: string;
 };
-
-type Completion = {};
 
 const HOME = Deno.env.get("HOME");
 const SETTING_FILE = `${HOME}/.config/fzf-preview.zsh/config.yml`;
