@@ -1,19 +1,22 @@
-import { DEFAULT_OPTIONS } from "../../const/option.ts";
+import {
+  DEFAULT_OPTIONS,
+  GIT_BRANCH_LOG_TAG_REFLOG_OPTIONS,
+} from "../../const/option.ts";
 import {
   GIT_ADD_PREVIEW,
-  GIT_BRANCH_PREVIEW,
-  GIT_COMMIT_FIXUP_PREVIEW,
+  GIT_BRANCH_LOG_TAG_REFLOG_PREVIEW,
+  GIT_LOG_PREVIEW,
 } from "../../const/preview.ts";
 import {
   GIT_ADD_SOURCE,
   GIT_BRANCH_SOURCE,
-  GIT_COMMIT_FIXUP_SOURCE,
+  GIT_LOG_SOURCE,
 } from "../../const/source.ts";
 import type { CompletionSource } from "../../type/fzf.ts";
 
 export const gitSources: Array<CompletionSource> = [
   {
-    id: "git add",
+    name: "git add",
     patterns: [/^git add( -p| --patch)? $/],
     sourceCommand: GIT_ADD_SOURCE,
     preview: GIT_ADD_PREVIEW,
@@ -22,50 +25,42 @@ export const gitSources: Array<CompletionSource> = [
       "--multi": true,
       "--prompt": "'Git Add Files> '",
     },
-    callback: (lines) => (
-      lines.map((line) => (line.split(" ").slice(-1)[0]))
-    ),
+    callback: "perl -nle '@arr=split(/ /,\$_); print @arr[\$#arr]'",
   },
   {
-    id: "git commit fixup",
+    name: "git commit fixup",
     patterns: [/^git commit (--fixup|--squash)\s$/],
-    sourceCommand: GIT_COMMIT_FIXUP_SOURCE,
-    preview: GIT_COMMIT_FIXUP_PREVIEW,
+    sourceCommand: GIT_LOG_SOURCE,
+    preview: GIT_LOG_PREVIEW,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Fixup> '",
       "--no-sort": true,
     },
-    callback: (lines) => (
-      lines.map((line) => (line.split(/\s+/)[1]))
-    ),
+    callback: "awk '{ print \$2 }'",
   },
   {
-    id: "git checkout",
+    name: "git checkout",
     patterns: [/^git checkout(( -t)|( --track))? $/],
     sourceCommand: GIT_BRANCH_SOURCE,
-    preview: GIT_BRANCH_PREVIEW,
+    preview: GIT_BRANCH_LOG_TAG_REFLOG_PREVIEW,
     options: {
-      ...DEFAULT_OPTIONS,
+      ...GIT_BRANCH_LOG_TAG_REFLOG_OPTIONS,
       "--prompt": "'Git Checkout> '",
       "--no-sort": true,
     },
-    callback: (lines) => (
-      lines.map((line) => (line.split(/\s+/)[1]))
-    ),
+    callback: "awk '{ print \$2 }'",
   },
   {
-    id: "git reset",
+    name: "git reset",
     patterns: [/^git reset(--mixed| --soft| --hard)?(?!( --)) $/],
-    sourceCommand: GIT_BRANCH_SOURCE,
-    preview: GIT_BRANCH_PREVIEW,
+    sourceCommand: GIT_LOG_SOURCE,
+    preview: GIT_BRANCH_LOG_TAG_REFLOG_PREVIEW,
     options: {
-      ...DEFAULT_OPTIONS,
+      ...GIT_BRANCH_LOG_TAG_REFLOG_OPTIONS,
       "--prompt": "'Git Reset> '",
       "--no-sort": true,
     },
-    callback: (lines) => (
-      lines.map((line) => (line.split(/\s+/)[1]))
-    ),
+    callback: "awk '{ print \$2 }'",
   },
 ];
