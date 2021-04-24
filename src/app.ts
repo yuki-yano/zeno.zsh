@@ -5,8 +5,6 @@ import { snippetList, snippetListCommand } from "./snippet/snippet-list.ts";
 import { readFromStdin } from "./util/io.ts";
 import { fzfOptionsToString } from "./fzf/option/convert.ts";
 import { completion } from "./completion/completion.ts";
-import type { CompletionResult } from "./type/fzf.ts";
-import { resultToCompletionItems } from "./completion/callback.ts";
 import { nextPlaceholder } from "./snippet/next-placeholder.ts";
 
 type Args = {
@@ -82,23 +80,10 @@ export const exec = () => {
       }
 
       printf("success\n");
-      printf(`${source.id}\n`);
       printf("%s\n", source.sourceCommand);
       printf("%s\n", source.preview);
       printf("%s\n", fzfOptionsToString(source.options));
-
-      break;
-    }
-
-    case "completion-callback": {
-      const result = readFromStdin().split("\n");
-      const items = resultToCompletionItems(result as CompletionResult);
-
-      if (items == null) {
-        return;
-      }
-
-      printf("%s\n", items.join(" "));
+      printf("%s\n", source.callback);
 
       break;
     }

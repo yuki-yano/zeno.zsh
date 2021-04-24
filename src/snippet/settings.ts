@@ -1,7 +1,10 @@
+import { DEFAULT_OPTIONS } from "../const/option.ts";
 import { existsSync, yamlParse } from "../deps.ts";
+import type { CompletionSource, UserCompletionSource } from "../type/fzf.ts";
 
 type Settings = {
   snippets: Array<Snippet>;
+  completions: Array<UserCompletionSource>;
 };
 
 type Snippet = {
@@ -13,7 +16,7 @@ type Snippet = {
 const HOME = Deno.env.get("HOME");
 const SETTING_FILE = `${HOME}/.config/fzf-preview.zsh/config.yml`;
 
-export const loadSnippets = (): ReadonlyArray<Snippet> => {
+const parseSettings = () => {
   if (HOME == null) {
     console.error("$HOME is not exist");
     Deno.exit(1);
@@ -24,14 +27,42 @@ export const loadSnippets = (): ReadonlyArray<Snippet> => {
   }
 
   const file = Deno.readTextFileSync(SETTING_FILE);
-  let parsed: Settings;
+  let settings: Settings;
 
   try {
-    parsed = yamlParse(file) as Settings;
+    settings = yamlParse(file) as Settings;
   } catch (e: unknown) {
     console.error("Setting parsed error");
     throw (e);
   }
 
-  return parsed.snippets;
+  return settings;
+};
+
+export const loadSnippets = (): ReadonlyArray<Snippet> => {
+  return parseSettings().snippets;
+};
+
+export const loadCompletions = (): ReadonlyArray<CompletionSource> => {
+  const userCompletions = parseSettings().completions;
+
+  let completions: Array<CompletionSource> = [];
+  for (const userCompletion of userCompletions) {
+    const completion: CompletionSource = {
+      ...userCompletion,
+      patterns: userCompletion.patterns.map((pattern) => new RegExp(pattern)),
+      preview: userCompletion.preview ?? "",
+      options: {
+        ...DEFAULT_OPTIONS,
+        ...userCompletion.options ?? {},
+      },
+    };
+
+    completions = [
+      ...completions,
+      completion,
+    ];
+  }
+
+  return completions;
 };

@@ -3,7 +3,6 @@
 local out=$(echo "$BUFFER" | fzf-preview-deno --mode=next-placeholder)
 
 if [[ $(echo "$out" | head -1) != "success" ]]; then
-  zle forward-char
   return
 fi
 
