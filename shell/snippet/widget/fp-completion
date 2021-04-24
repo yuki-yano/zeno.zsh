@@ -1,22 +1,25 @@
 #autoload
 
-local completion=$(echo "$BUFFER" | fzf-preview-deno --mode=completion)
+local completion=$(echo "$LBUFFER" | fzf-preview-deno --mode=completion)
 
 if [[ $(echo "$completion" | head -1) != "success" ]]; then
   zle expand-or-complete
   return
 fi
 
-local id=$(echo "$completion" | head -2 | tail -1)
-local source_command=$(echo "$completion" | head -3 | tail -1)
-local preview=$(echo "$completion" | head -4 | tail -1)
-local options=$(echo "$completion" | head -5 | tail -1)
+local source_command=$(echo "$completion" | head -2 | tail -1)
+local preview=$(echo "$completion" | head -3 | tail -1)
+local options=$(echo "$completion" | head -4 | tail -1)
+local callback=$(echo "$completion" | head -5 | tail -1 | tr '\n' ' ')
 
+local trim_result="tr '\n' ' ' | sed 's/\s*$//'"
 local command="${source_command} | fzf ${options} --preview=\"${preview}\""
 
-local result=$(eval $command)
-local callback=$(echo "$id\n$result" | fzf-preview-deno --mode=completion-callback)
+local out=$(eval $command)
+local key=$(echo $out | head -1)
+local lines=$(echo $out | sed -e '1d')
+local result=$(echo $lines | eval ${callback} | eval ${trim_result})
 
-LBUFFER+=$callback
+LBUFFER+=$result
 
 zle reset-prompt

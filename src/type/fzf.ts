@@ -10,16 +10,19 @@ export type FzfOptions = {
 };
 
 export type CompletionSource = {
-  id: string;
+  name: string;
   patterns: Array<RegExp>;
   sourceCommand: string;
   preview: string;
   options: FzfOptions;
-  callback: (lines: Array<string>) => Array<string>;
+  callback: string;
 };
 
-export type CompletionResult = [
-  id: string,
-  key: string,
-  ...lines: Array<string>,
-];
+export type UserCompletionSource = {
+  id: string;
+  patterns: Array<string>;
+  sourceCommand: string;
+  preview: string;
+  options: FzfOptions;
+  callback: string;
+};

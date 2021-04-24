@@ -14,7 +14,7 @@ const definedOptionsToArray = (options: FzfOptions) => {
   const arrayOptions: Array<string> = [];
 
   if (options["--bind"] != null && Array.isArray(options["--bind"])) {
-    arrayOptions.push(`--bind=${joinBind(options["--bind"])}`);
+    arrayOptions.push(`--bind="${joinBind(options["--bind"])}"`);
   }
   if (options["--expect"] != null) {
     arrayOptions.push(`--expect="${options["--expect"].join(",")}"`);
