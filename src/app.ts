@@ -38,7 +38,7 @@ export const exec = () => {
 
       if (result.status === "success") {
         printf(`${result.status}\n`);
-        printf(`${result.buffer} \n`);
+        printf("%s \n", result.buffer);
         printf(`${(result.cursor).toString()}\n`);
       }
 
@@ -48,7 +48,7 @@ export const exec = () => {
     case "insert-snippet": {
       const { status, buffer, cursor } = insertSnippet();
       printf(`${status}\n`);
-      printf(`${buffer}\n`);
+      printf("%s\n", buffer);
       printf(`${cursor}\n`);
 
       break;
@@ -66,7 +66,7 @@ export const exec = () => {
       const { nextBuffer, index } = result;
 
       printf("success\n");
-      printf(`${nextBuffer}\n`);
+      printf("%s\n", nextBuffer);
       printf(`${index}\n`);
 
       break;
@@ -83,8 +83,8 @@ export const exec = () => {
 
       printf("success\n");
       printf(`${source.id}\n`);
-      printf(`${source.sourceCommand}\n`);
-      printf(`${source.preview}\n`);
+      printf("%s\n", source.sourceCommand);
+      printf("%s\n", source.preview);
       printf("%s\n", fzfOptionsToString(source.options));
 
       break;
@@ -98,7 +98,7 @@ export const exec = () => {
         return;
       }
 
-      printf(`${items.join(" ")}\n`);
+      printf("%s\n", items.join(" "));
 
       break;
     }
