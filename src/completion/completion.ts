@@ -12,5 +12,5 @@ export const completion = (buffer: string) => {
 
   return completionSources.find((
     source,
-  ) => (source.pattern.exec(buffer) != null));
+  ) => (source.patterns.some((pattern) => pattern.exec(buffer) != null)));
 };

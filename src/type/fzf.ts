@@ -11,7 +11,7 @@ export type FzfOptions = {
 
 export type CompletionSource = {
   id: string;
-  pattern: RegExp;
+  patterns: Array<RegExp>;
   sourceCommand: string;
   preview: string;
   options: FzfOptions;
