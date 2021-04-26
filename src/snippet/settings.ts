@@ -39,15 +39,20 @@ const parseSettings = () => {
   return settings;
 };
 
-export const loadSnippets = (): ReadonlyArray<Snippet> => {
+export const loadSnippets = (): Array<Snippet> => {
   return parseSettings().snippets;
 };
 
-export const loadCompletions = (): ReadonlyArray<CompletionSource> => {
+export const loadCompletions = (): Array<CompletionSource> => {
   const userCompletions = parseSettings().completions;
 
   let completions: Array<CompletionSource> = [];
   for (const userCompletion of userCompletions) {
+    const bind = [
+      ...DEFAULT_OPTIONS["--bind"] ?? [],
+      ...userCompletion.options["--bind"] ?? [],
+    ];
+
     const completion: CompletionSource = {
       ...userCompletion,
       patterns: userCompletion.patterns.map((pattern) => new RegExp(pattern)),
@@ -55,6 +60,7 @@ export const loadCompletions = (): ReadonlyArray<CompletionSource> => {
       options: {
         ...DEFAULT_OPTIONS,
         ...userCompletion.options ?? {},
+        "--bind": bind,
       },
     };
 

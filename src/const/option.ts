@@ -1,3 +1,4 @@
+import { FzfOptionBinds, FzfOptions } from "../type/fzf.ts";
 import {
   GIT_BRANCH_SOURCE,
   GIT_LOG_SOURCE,
@@ -7,7 +8,7 @@ import {
 
 export const CONVERT_IMPLEMENTED_OPTION = ["--bind", "--expect", "--preview"];
 
-export const DEFAULT_BIND = [
+export const DEFAULT_BIND: FzfOptionBinds = [
   {
     key: "ctrl-d",
     action: "preview-half-page-down",
@@ -20,9 +21,9 @@ export const DEFAULT_BIND = [
     key: "?",
     action: "toggle-preview",
   },
-] as const;
+];
 
-const GIT_BRANCH_LOG_TAG_REFLOG_BIND = [
+const GIT_BRANCH_LOG_TAG_REFLOG_BIND: FzfOptionBinds = [
   {
     key: "ctrl-b",
     action: `reload(${GIT_BRANCH_SOURCE})`,
@@ -41,18 +42,18 @@ const GIT_BRANCH_LOG_TAG_REFLOG_BIND = [
   },
 ];
 
-export const DEFAULT_OPTIONS = {
+export const DEFAULT_OPTIONS: FzfOptions = {
   "--ansi": true,
   "--bind": DEFAULT_BIND,
   "--expect": ["alt-enter"],
   "--height": "'80%'",
-} as const;
+};
 
-export const GIT_BRANCH_LOG_TAG_REFLOG_OPTIONS = {
+export const GIT_BRANCH_LOG_TAG_REFLOG_OPTIONS: FzfOptions = {
   "--ansi": true,
   "--bind": GIT_BRANCH_LOG_TAG_REFLOG_BIND,
   "--expect": ["alt-enter"],
   "--height": "'80%'",
   "--header": "'C-b: branch, C-c: commit, C-t: tag, C-r: reflog'",
-  "--preview-window": "'down'"
-} as const;
+  "--preview-window": "'down'",
+};
