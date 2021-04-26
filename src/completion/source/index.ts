@@ -5,6 +5,6 @@ import { gitSources } from "./git.ts";
 const userCompletions = loadCompletions();
 
 export const completionSources: Array<CompletionSource> = [
-  ...gitSources,
   ...userCompletions,
+  ...gitSources,
 ];

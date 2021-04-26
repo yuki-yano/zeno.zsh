@@ -1,13 +1,15 @@
 export type FzfOptions = {
   "--ansi"?: true;
   "--multi"?: true;
-  "--bind"?: ReadonlyArray<{
-    key: string;
-    action: string;
-  }>;
-  "--expect"?: ReadonlyArray<string>;
+  "--bind"?: FzfOptionBinds;
+  "--expect"?: Array<string>;
   [otherProperty: string]: unknown;
 };
+
+export type FzfOptionBinds = Array<{
+  key: string;
+  action: string;
+}>;
 
 export type CompletionSource = {
   name: string;
@@ -19,7 +21,7 @@ export type CompletionSource = {
 };
 
 export type UserCompletionSource = {
-  id: string;
+  name: string;
   patterns: Array<string>;
   sourceCommand: string;
   preview: string;

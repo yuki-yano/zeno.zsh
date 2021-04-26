@@ -2,7 +2,7 @@ import { CONVERT_IMPLEMENTED_OPTION } from "../../const/option.ts";
 import type { FzfOptions } from "../../type/fzf.ts";
 
 const joinBind = (
-  bind: ReadonlyArray<{
+  bind: Array<{
     key: string;
     action: string;
   }>,
