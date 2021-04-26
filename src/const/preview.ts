@@ -1,8 +1,10 @@
-const DEFAULT_GIT_STATUS_CAT = Deno.env.get("FP_GIT_STATUS_CAT") ?? "cat";
-const DEFAULT_GIT_STATUS_TREE = Deno.env.get("FP_GIT_STATUS_CAT") ?? "tree";
+const GIT_CAT_COMMAND = Deno.env.get("FP_GIT_CAT") ?? "cat";
+const GIT_TREE_COMMAND = Deno.env.get("FP_GIT_TREE") ?? "tree";
 
 export const GIT_STATUS_PREVIEW =
-  `[[ \\$(git diff -- {-1}) ]] && git diff --color=always -- {-1} || [[ \\$(git diff --cached -- {-1} ) ]] && git diff --cached --color=always -- {-1} || ${DEFAULT_GIT_STATUS_CAT} {-1} 2>/dev/null || ${DEFAULT_GIT_STATUS_TREE} {-1} 2>/dev/null`;
+  `[[ \\$(git diff -- {-1}) ]] && git diff --color=always -- {-1} || [[ \\$(git diff --cached -- {-1} ) ]] && git diff --cached --color=always -- {-1} || ${GIT_CAT_COMMAND} {-1} 2>/dev/null || ${GIT_TREE_COMMAND} {-1} 2>/dev/null`;
+
+export const GIT_LS_FILES_PREVIEW = `${GIT_CAT_COMMAND} {}`
 
 export const GIT_LOG_PREVIEW = "git show --color=always {2}";
 
