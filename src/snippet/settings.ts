@@ -1,17 +1,7 @@
 import { DEFAULT_OPTIONS } from "../const/option.ts";
 import { existsSync, yamlParse } from "../deps.ts";
-import type { CompletionSource, UserCompletionSource } from "../type/fzf.ts";
-
-type Settings = {
-  snippets: Array<Snippet>;
-  completions: Array<UserCompletionSource>;
-};
-
-type Snippet = {
-  name: string;
-  keyword: string;
-  snippet: string;
-};
+import type { CompletionSource } from "../type/fzf.ts";
+import type { Settings, Snippet } from "../type/settings.ts";
 
 const HOME = Deno.env.get("HOME");
 const SETTING_FILE = `${HOME}/.config/fzf-preview.zsh/config.yml`;
