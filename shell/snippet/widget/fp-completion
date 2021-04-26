@@ -22,4 +22,6 @@ local result=$(echo $lines | eval ${callback} | eval ${trim_result})
 
 LBUFFER+=$result
 
+zle fp-snippet-next-placeholder
+
 zle reset-prompt
