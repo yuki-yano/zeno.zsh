@@ -38,7 +38,7 @@ export const gitSources: Array<CompletionSource> = [
   {
     name: "git diff",
     patterns: [
-      /^git diff( ((-|--)\S*)*)? $/,
+      /^git diff( ((-|--)\S+)*)? $/,
     ],
     sourceCommand: GIT_BRANCH_SOURCE,
     preview: GIT_BRANCH_LOG_TAG_REFLOG_PREVIEW,
@@ -51,7 +51,7 @@ export const gitSources: Array<CompletionSource> = [
   {
     name: "git diff file",
     patterns: [
-      /^git diff( ((-|--)\S*)*)? -- $/,
+      /^git diff( ((-|--)\S+)*)? -- $/,
     ],
     sourceCommand: GIT_STATUS_SOURCE,
     preview: GIT_STATUS_PREVIEW,
@@ -64,8 +64,8 @@ export const gitSources: Array<CompletionSource> = [
   {
     name: "git diff branch file",
     patterns: [
-      /^git diff( ((-|--)\S*)*)?( \S+) -- $/,
-      /^git diff( ((-|--)\S*)*)?( \S+)( \S+) -- $/,
+      /^git diff( ((-|--)\S+)*)?( \S+) -- $/,
+      /^git diff( ((-|--)\S+)*)?( \S+)( \S+) -- $/,
     ],
     sourceCommand: GIT_LS_FILES_SOURCE,
     preview: GIT_LS_FILES_PREVIEW,
