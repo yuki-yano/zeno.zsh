@@ -13,6 +13,7 @@ const parseSettings = () => {
   }
   if (!existsSync(SETTING_FILE)) {
     console.error(`SETTING_FILE(${SETTING_FILE}) is not exist`);
+    console.error(`Please execute command: "touch ${SETTING_FILE}"`);
     Deno.exit(1);
   }
 
