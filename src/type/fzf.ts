@@ -19,12 +19,3 @@ export type CompletionSource = {
   options: FzfOptions;
   callback: string;
 };
-
-export type UserCompletionSource = {
-  name: string;
-  patterns: Array<string>;
-  sourceCommand: string;
-  preview: string;
-  options: FzfOptions;
-  callback: string;
-};
