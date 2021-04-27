@@ -21,10 +21,10 @@ const parseSettings = (): Settings => {
   let settings: Settings;
 
   try {
-    const parsedSettings = yamlParse(file) as Partial<Settings>;
+    const parsedSettings = yamlParse(file) as Partial<Settings> | undefined;
     settings = {
-      snippets: parsedSettings.snippets ?? [],
-      completions: parsedSettings.completions ?? [],
+      snippets: parsedSettings?.snippets ?? [],
+      completions: parsedSettings?.completions ?? [],
     };
   } catch (e: unknown) {
     console.error("Setting parsed error");
