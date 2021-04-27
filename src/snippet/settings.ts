@@ -6,7 +6,7 @@ import type { Settings, Snippet } from "../type/settings.ts";
 const HOME = Deno.env.get("HOME");
 const SETTING_FILE = `${HOME}/.config/fzf-preview.zsh/config.yml`;
 
-const parseSettings = () => {
+const parseSettings = (): Settings => {
   if (HOME == null) {
     console.error("$HOME is not exist");
     Deno.exit(1);
@@ -21,7 +21,11 @@ const parseSettings = () => {
   let settings: Settings;
 
   try {
-    settings = yamlParse(file) as Settings;
+    const parsedSettings = yamlParse(file) as Partial<Settings>;
+    settings = {
+      snippets: parsedSettings.snippets ?? [],
+      completions: parsedSettings.completions ?? [],
+    };
   } catch (e: unknown) {
     console.error("Setting parsed error");
     throw (e);
