@@ -178,6 +178,7 @@ export const gitSources: Array<CompletionSource> = [
     name: "git switch",
     patterns: [
       /^git switch $/,
+      /^git switch(( -t)|( --track)) $/,
     ],
     sourceCommand: GIT_BRANCH_SOURCE,
     preview: GIT_BRANCH_LOG_TAG_REFLOG_PREVIEW,
