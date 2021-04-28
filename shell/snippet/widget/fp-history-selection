@@ -1,9 +1,9 @@
 #autoload
 
 if [[ $TMUX && $FZF_PREVIEW_ENABLE_TMUX = 1 ]]; then
-  local history=$(\history -n -r 1 | fzf-tmux --no-sort --query="$LBUFFER" --prompt="History> ")
+  local history=$(\history -n -r 1 | fzf-tmux --no-sort --exact --query="$LBUFFER" --prompt="History> ")
 else
-  local history=$(\history -n -r 1 | fzf --no-sort --query="$LBUFFER" --prompt="History> ")
+  local history=$(\history -n -r 1 | fzf --no-sort --exact --query="$LBUFFER" --prompt="History> ")
 fi
 if [[ $history != "" ]]; then
   BUFFER=$history
