@@ -15,6 +15,16 @@ export const autoSnippet = (): AutoSnippetData => {
   const input = readFromStdin();
 
   const [lbuffer, ..._rbuffer] = input.split("\n");
+  const tokens = lbuffer.split(" ");
+
+  let lbufferWithoutLastWord: string | undefined;
+  if (tokens.length === 1) {
+    lbufferWithoutLastWord = undefined;
+  } else {
+    lbufferWithoutLastWord = `${tokens.slice(0, -1).join(" ")} `;
+  }
+
+  const lastWord = lbuffer.split(" ").slice(-1)[0];
   const rbuffer = _rbuffer.join("\n");
 
   if (/(^$|^\s)/.exec(rbuffer) == null) {
@@ -31,18 +41,20 @@ export const autoSnippet = (): AutoSnippetData => {
 
     const keywordRegex = new RegExp(`^${keyword}$`);
 
-    if (keywordRegex.exec(lbuffer) != null) {
+    if (keywordRegex.exec(lastWord) != null) {
       const placeholderMatch = placeholderRegex.exec(snippet);
-      let cursor = snippet.length + 1;
 
-      if (placeholderMatch != null) {
+      let cursor: number;
+      if (placeholderMatch == null) {
+        cursor = (lbufferWithoutLastWord?.length ?? 0) + snippet.length + 1;
+      } else {
         snippet = snippet.replace(placeholderRegex, "");
-        cursor = placeholderMatch.index;
+        cursor = (lbufferWithoutLastWord?.length ?? 0) + placeholderMatch.index;
       }
 
       return {
         status: "success",
-        buffer: `${snippet} ${rbuffer}`.trim(),
+        buffer: `${lbufferWithoutLastWord ?? ""}${snippet}${rbuffer}`.trim(),
         cursor,
       };
     }
