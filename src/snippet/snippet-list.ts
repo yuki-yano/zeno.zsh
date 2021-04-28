@@ -8,16 +8,20 @@ const DEFAULT_SNIPPET_LIST_OPTION = [
 ];
 
 export const snippetListCommand = () => {
-  return `fzf ${DEFAULT_SNIPPET_LIST_OPTION.join(" ")}`
+  return `fzf ${DEFAULT_SNIPPET_LIST_OPTION.join(" ")}`;
 };
 
 export const snippetList = () => {
   const snippets = loadSnippets();
 
   let keyWidth = 0;
-  for (const snippet of snippets) {
-    if (snippet.keyword.length > keyWidth) {
-      keyWidth = snippet.keyword.length + 1;
+  for (const { keyword } of snippets) {
+    if (keyword == null) {
+      continue;
+    }
+
+    if (keyword.length > keyWidth) {
+      keyWidth = keyword.length + 1;
     }
   }
 
@@ -30,7 +34,11 @@ export const snippetList = () => {
 
     keywordAndSnippet = [
       ...keywordAndSnippet,
-      sprintf(`%-${keyWidth}s %s`, `${keyword}:`, snippet),
+      sprintf(
+        `%-${keyWidth}s %s`,
+        keyword != null ? `${keyword}:` : "",
+        snippet,
+      ),
     ];
   }
 

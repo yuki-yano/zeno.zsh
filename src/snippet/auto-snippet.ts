@@ -25,6 +25,10 @@ export const autoSnippet = (): AutoSnippetData => {
 
   const snippets = loadSnippets();
   for (let { snippet, keyword } of snippets) {
+    if (keyword == null) {
+      continue;
+    }
+
     const keywordRegex = new RegExp(`^${keyword}$`);
 
     if (keywordRegex.exec(lbuffer) != null) {
