@@ -7,7 +7,7 @@ export type Settings = {
 
 export type Snippet = {
   name: string;
-  keyword: string;
+  keyword?: string;
   snippet: string;
 };
 
