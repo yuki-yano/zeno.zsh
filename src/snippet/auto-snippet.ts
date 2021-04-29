@@ -39,9 +39,7 @@ export const autoSnippet = (): AutoSnippetData => {
       continue;
     }
 
-    const keywordRegex = new RegExp(`^${keyword}$`);
-
-    if (keywordRegex.exec(lastWord) != null) {
+    if (keyword === lastWord) {
       const placeholderMatch = placeholderRegex.exec(snippet);
 
       let cursor: number;
