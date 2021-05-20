@@ -51,7 +51,6 @@ export const loadCompletions = (): Array<CompletionSource> => {
     const completion: CompletionSource = {
       ...userCompletion,
       patterns: userCompletion.patterns.map((pattern) => new RegExp(pattern)),
-      preview: userCompletion.preview ?? "",
       options: {
         ...DEFAULT_OPTIONS,
         ...userCompletion.options ?? {},

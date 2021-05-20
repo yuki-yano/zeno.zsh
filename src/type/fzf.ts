@@ -3,6 +3,7 @@ export type FzfOptions = {
   "--multi"?: true;
   "--bind"?: FzfOptionBinds;
   "--expect"?: Array<string>;
+  "--preview"?: string;
   [otherProperty: string]: unknown;
 };
 
@@ -15,7 +16,6 @@ export type CompletionSource = {
   name: string;
   patterns: Array<RegExp>;
   sourceCommand: string;
-  preview: string;
   options: FzfOptions;
   callback: string;
 };
