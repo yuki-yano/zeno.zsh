@@ -21,6 +21,9 @@ const definedOptionsToArray = (options: FzfOptions) => {
   } else {
     arrayOptions.push(`--expect="alt-enter"`);
   }
+  if (options["--preview"] != null) {
+    arrayOptions.push(`--preview="${options["--preview"]}"`)
+  }
 
   return arrayOptions;
 };
