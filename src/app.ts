@@ -81,7 +81,6 @@ export const exec = () => {
 
       printf("success\n");
       printf("%s\n", source.sourceCommand);
-      printf("%s\n", source.preview);
       printf("%s\n", fzfOptionsToString(source.options));
       printf("%s\n", source.callback);
 
