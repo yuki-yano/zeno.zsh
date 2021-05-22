@@ -1,10 +1,8 @@
 import { DEFAULT_OPTIONS } from "../const/option.ts";
 import { existsSync, yamlParse } from "../deps.ts";
+import { HOME, SETTING_FILE } from "../settings.ts";
 import type { CompletionSource } from "../type/fzf.ts";
 import type { Settings, Snippet } from "../type/settings.ts";
-
-const HOME = Deno.env.get("HOME");
-const SETTING_FILE = `${HOME}/.config/zeno/config.yml`;
 
 const parseSettings = (): Settings => {
   if (HOME == null) {

@@ -1,10 +1,9 @@
-const ZENO_GIT_CAT = Deno.env.get("ZENO_GIT_CAT") ?? "cat";
-const ZENO_GIT_TREE = Deno.env.get("ZENO_GIT_TREE") ?? "tree";
+import { ZENO_GIT_CAT, ZENO_GIT_TREE } from "../settings.ts";
 
 export const GIT_STATUS_PREVIEW =
   `[[ \\$(git diff -- {-1}) ]] && git diff --color=always -- {-1} || [[ \\$(git diff --cached -- {-1} ) ]] && git diff --cached --color=always -- {-1} || ${ZENO_GIT_CAT} {-1} 2>/dev/null || ${ZENO_GIT_TREE} {-1} 2>/dev/null`;
 
-export const GIT_LS_FILES_PREVIEW = `${ZENO_GIT_CAT} {}`
+export const GIT_LS_FILES_PREVIEW = `${ZENO_GIT_CAT} {}`;
 
 export const GIT_LOG_PREVIEW = "git show --color=always {2}";
 

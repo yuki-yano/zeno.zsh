@@ -1,9 +1,7 @@
 import { loadCompletions } from "../../snippet/settings.ts";
 import { CompletionSource } from "../../type/fzf.ts";
 import { gitSources } from "./git.ts";
-
-const ZENO_DISABLE_BUILTIN_COMPLETION =
-  Deno.env.get("ZENO_DISABLE_BUILTIN_COMPLETION") == null ? false : true;
+import { ZENO_DISABLE_BUILTIN_COMPLETION } from "../../settings.ts";
 
 const userCompletions = loadCompletions();
 
