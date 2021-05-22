@@ -1,6 +1,6 @@
 #autoload
 
-local history=$(\history -n -r 1 | fzf --no-sort --exact --query="$LBUFFER" --prompt="History> ")
+local history=$(\history -n -r 1 | ${FZF_COMMAND} --no-sort --exact --query="$LBUFFER" --prompt="History> ")
 
 if [[ $history != "" ]]; then
   BUFFER=$history

@@ -13,6 +13,12 @@ for f in ${0:h}/shell/snippet/widget/*(N-.); do
 done
 unset f
 
+if [[ -z $ZENO_ENABLE_FZF_TMUX ]]; then
+  export FZF_COMMAND="fzf"
+else
+  export FZF_COMMAND="fzf-tmux"
+fi
+
 if [[ -z $ZENO_DISABLE_EXECUTE_CACHE_COMMAND ]]; then
   deno cache --no-check ${0:a:h}/bin/zeno
 fi
