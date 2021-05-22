@@ -12,7 +12,7 @@ local options=$(echo "$completion" | head -3 | tail -1)
 local callback=$(echo "$completion" | head -4 | tail -1 | tr '\n' ' ')
 
 local trim_result="tr '\n' ' ' | sed 's/\s*$//'"
-local command="${source_command} | fzf ${options}"
+local command="${source_command} | ${FZF_COMMAND} ${options}"
 
 local out=$(eval $command)
 local key=$(echo $out | head -1)
