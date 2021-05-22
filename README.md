@@ -83,6 +83,9 @@ Use zeno-history-completion zle
 ### Completion and abbrev snippet
 
 ```zsh
+# if disable builtin completion
+# export ZENO_ENABLE_BUILTIN_COMPLETION=0
+
 # default
 export ZENO_GIT_CAT="cat"
 # git file preview with color
