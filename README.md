@@ -4,15 +4,28 @@ zsh fuzzy completion and utility plugin with [Deno](https://deno.land/).
 
 **WARNING**: This project is in beta stage and WIP README.
 
+## Features
+
+- Insert snippet and abbrev snippet
+- Completion with fzf
+  - Builtin git completion
+  - User defined completion
+- ZLE utilities
+
+## Demo
+
+### Abbrev snippet
+
+![zeno](https://user-images.githubusercontent.com/5423775/119225771-e0dfda80-bb40-11eb-8001-f5b575e29707.gif "zeno")
+
+### Completion with fzf
+
+![zeno](https://user-images.githubusercontent.com/5423775/119226132-aaa35a80-bb42-11eb-9b90-1071fce1fc7d.gif "zeno")
+
 ## Requirements
 
 - [Deno](https://deno.land/)
-
-### Install macOS
-
-```sh
-$ brew install deno
-```
+- [fzf](https://github.com/junegunn/fzf)
 
 ## Installation
 
@@ -32,13 +45,6 @@ $ echo "source /path/to/dir/zeno.zsh" >> ~/.zshrc
 
 ## Usage
 
-### Completion
-
-```sh
-$ git add <Tab>
-Git Add Files> ...
-```
-
 ### Abbrev snippet
 
 Require [user configuration file](#user-configuration-file-example)
@@ -55,6 +61,13 @@ $ gs<Enter>
 
 Execute
 $ git status --short --branch
+```
+
+### Completion
+
+```sh
+$ git add <Tab>
+Git Add Files> ...
 ```
 
 ### Insert snippet
