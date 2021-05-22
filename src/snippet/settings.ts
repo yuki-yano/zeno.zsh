@@ -8,17 +8,20 @@ const SETTING_FILE = `${HOME}/.config/zeno.zsh/config.yml`;
 
 const parseSettings = (): Settings => {
   if (HOME == null) {
-    console.error("$HOME is not exist");
-    Deno.exit(1);
-  }
-  if (!existsSync(SETTING_FILE)) {
-    console.error(`SETTING_FILE(${SETTING_FILE}) is not exist`);
-    console.error(`Please execute command: "touch ${SETTING_FILE}"`);
     Deno.exit(1);
   }
 
-  const file = Deno.readTextFileSync(SETTING_FILE);
-  let settings: Settings;
+  let file: string;
+  let settings: Settings = {
+    snippets: [],
+    completions: [],
+  };
+
+  if (existsSync(SETTING_FILE)) {
+    file = Deno.readTextFileSync(SETTING_FILE);
+  } else {
+    return settings;
+  }
 
   try {
     const parsedSettings = yamlParse(file) as Partial<Settings> | undefined;
