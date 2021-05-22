@@ -1,9 +1,8 @@
 #autoload
 
-local out=$(echo "$LBUFFER\n$RBUFFER" | fzf-preview-deno --mode=auto-snippet)
+local out=$(echo "$BUFFER" | zeno --mode=next-placeholder)
 
 if [[ $(echo "$out" | head -1) != "success" ]]; then
-  LBUFFER+=" "
   return
 fi
 
@@ -14,5 +13,3 @@ if [[ $buffer != "" ]]; then
   BUFFER=$buffer
   CURSOR=$cursor
 fi
-
-zle reset-prompt

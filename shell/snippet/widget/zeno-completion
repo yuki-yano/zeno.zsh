@@ -1,6 +1,6 @@
 #autoload
 
-local completion=$(echo "$LBUFFER" | fzf-preview-deno --mode=completion)
+local completion=$(echo "$LBUFFER" | zeno --mode=completion)
 
 if [[ $(echo "$completion" | head -1) != "success" ]]; then
   zle expand-or-complete

@@ -4,7 +4,7 @@ import type { CompletionSource } from "../type/fzf.ts";
 import type { Settings, Snippet } from "../type/settings.ts";
 
 const HOME = Deno.env.get("HOME");
-const SETTING_FILE = `${HOME}/.config/fzf-preview.zsh/config.yml`;
+const SETTING_FILE = `${HOME}/.config/zeno.zsh/config.yml`;
 
 const parseSettings = (): Settings => {
   if (HOME == null) {
