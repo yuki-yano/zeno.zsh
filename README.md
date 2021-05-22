@@ -83,8 +83,11 @@ Use zeno-history-completion zle
 ### Completion and abbrev snippet
 
 ```zsh
+# if disable deno cache command when plugin loaded
+# export ZENO_DISABLE_EXECUTE_CACHE_COMMAND=1
+
 # if disable builtin completion
-# export ZENO_ENABLE_BUILTIN_COMPLETION=0
+# export ZENO_DISABLE_BUILTIN_COMPLETION=1
 
 # default
 export ZENO_GIT_CAT="cat"
