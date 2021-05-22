@@ -1,4 +1,5 @@
 export ZENO_DEFAULT_FZF_OPTIONS=""
+export ZENO_ENABLE_BUILTIN_COMPLETION="1"
 
 if ! whence deno > /dev/null; then
   return
