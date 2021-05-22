@@ -36,19 +36,6 @@ export const gitSources: Array<CompletionSource> = [
     callback: GIT_STATUS_CALLBACK,
   },
   {
-    name: "git diff",
-    patterns: [
-      /^git diff( ((-|--)\S+)*)? $/,
-    ],
-    sourceCommand: GIT_BRANCH_SOURCE,
-    options: {
-      ...GIT_BRANCH_LOG_TAG_REFLOG_OPTIONS,
-      "--prompt": "'Git Diff> '",
-      "--preview": GIT_BRANCH_LOG_TAG_REFLOG_PREVIEW,
-    },
-    callback: GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK,
-  },
-  {
     name: "git diff file",
     patterns: [
       /^git diff( ((-|--)\S+)*)? -- $/,
@@ -74,6 +61,19 @@ export const gitSources: Array<CompletionSource> = [
       "--preview": GIT_LS_FILES_PREVIEW,
     },
     callback: GIT_LS_FILES_CALLBACK,
+  },
+  {
+    name: "git diff",
+    patterns: [
+      /^git diff( ((-|--)\S+)*)? $/,
+    ],
+    sourceCommand: GIT_BRANCH_SOURCE,
+    options: {
+      ...GIT_BRANCH_LOG_TAG_REFLOG_OPTIONS,
+      "--prompt": "'Git Diff> '",
+      "--preview": GIT_BRANCH_LOG_TAG_REFLOG_PREVIEW,
+    },
+    callback: GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK,
   },
   {
     name: "git commit fixup",
