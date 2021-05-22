@@ -1,5 +1,4 @@
 export ZENO_DEFAULT_FZF_OPTIONS=""
-export ZENO_ENABLE_BUILTIN_COMPLETION="1"
 
 if ! whence deno > /dev/null; then
   return
@@ -13,3 +12,7 @@ for f in ${0:h}/shell/snippet/widget/*(N-.); do
   zle -N -- "${function_name}"
 done
 unset f
+
+if [[ -z $ZENO_DISABLE_EXECUTE_CACHE_COMMAND ]]; then
+  deno cache --no-check ${0:a:h}/bin/zeno
+fi
