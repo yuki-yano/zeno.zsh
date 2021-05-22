@@ -1,5 +1,4 @@
 import { sprintf } from "../deps.ts";
-// import { FZF_PREVIEW_DEFAULT_FZF_OPTIONS } from "../settings.ts";
 import { loadSnippets } from "./settings.ts";
 
 const DEFAULT_SNIPPET_LIST_OPTION = [

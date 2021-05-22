@@ -1,4 +1,4 @@
-export FZF_PREVIEW_DEFAULT_FZF_OPTIONS=""
+export ZENO_DEFAULT_FZF_OPTIONS=""
 
 path+=${0:a:h}/bin
 fpath+=${0:a:h}/shell/snippet/widget

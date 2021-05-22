@@ -1,13 +1,13 @@
 #autoload
 
-local out=$(fzf-preview-deno --mode=snippet-list)
+local out=$(zeno --mode=snippet-list)
 
 local command=$(echo "$out" | head -1)
 local snippets=$(echo "$out" | tail +2)
 
 local selected_snippet=$(echo $snippets | eval $command)
 
-local out=$(echo -n "$selected_snippet\n$LBUFFER\n$RBUFFER" | fzf-preview-deno --mode=insert-snippet)
+local out=$(echo -n "$selected_snippet\n$LBUFFER\n$RBUFFER" | zeno --mode=insert-snippet)
 
 if [[ $(echo "$out" | head -1) != "success" ]]; then
   return
