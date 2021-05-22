@@ -158,3 +158,10 @@ completions:
       --prompt: "'Kill Process> '"
     callback: "awk '{print $2}'"
 ```
+
+## Related project
+
+- [fzf](https://github.com/junegunn/fzf)
+- [fzf-tab](https://github.com/Aloxaf/fzf-tab)
+- [fzf-zsh-completions](https://github.com/chitoku-k/fzf-zsh-completions)
+- [pmy](https://github.com/relastle/pmy/)
