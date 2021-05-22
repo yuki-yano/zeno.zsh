@@ -7,7 +7,7 @@ if [[ $#tokens != 1 ]]; then
   return
 fi
 
-local out=$(echo "$LBUFFER\n$RBUFFER" | fzf-preview-deno --mode=auto-snippet)
+local out=$(echo "$LBUFFER\n$RBUFFER" | zeno --mode=auto-snippet)
 
 if [[ $(echo "$out" | head -1) != "success" ]]; then
   zle accept-line
