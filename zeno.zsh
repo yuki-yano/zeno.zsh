@@ -1,5 +1,3 @@
-export ZENO_DEFAULT_FZF_OPTIONS=""
-
 if ! whence deno > /dev/null; then
   return
 fi
@@ -16,7 +14,7 @@ unset f
 if [[ -z $ZENO_ENABLE_FZF_TMUX ]]; then
   export FZF_COMMAND="fzf"
 else
-  export FZF_COMMAND="fzf-tmux"
+  export FZF_COMMAND="fzf-tmux ${ZENO_FZF_TMUX_OPTIONS}"
 fi
 
 if [[ -z $ZENO_DISABLE_EXECUTE_CACHE_COMMAND ]]; then
