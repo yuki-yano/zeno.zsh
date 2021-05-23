@@ -3,8 +3,13 @@
 local completion=$(echo "$LBUFFER" | zeno --mode=completion)
 
 if [[ $(echo "$completion" | head -1) != "success" ]]; then
-  zle expand-or-complete
-  return
+  if whence fzf-completion > /dev/null; then
+    zle fzf-completion
+    return
+  else
+    zle expand-or-complete
+    return
+  fi
 fi
 
 local source_command=$(echo "$completion" | head -2 | tail -1)
