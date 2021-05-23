@@ -12,9 +12,9 @@ done
 unset f
 
 if [[ -z $ZENO_ENABLE_FZF_TMUX ]]; then
-  export FZF_COMMAND="fzf"
+  export ZENO_FZF_COMMAND="fzf"
 else
-  export FZF_COMMAND="fzf-tmux ${ZENO_FZF_TMUX_OPTIONS}"
+  export ZENO_FZF_COMMAND="fzf-tmux"
 fi
 
 if [[ -z $ZENO_DISABLE_EXECUTE_CACHE_COMMAND ]]; then
