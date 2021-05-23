@@ -78,6 +78,10 @@ Use zeno-insert-snippet zle
 
 Use zeno-history-completion zle
 
+### Change ghq managed repository
+
+Use zeno-ghq-cd zle
+
 ## Configuration example
 
 ### Completion and abbrev snippet
@@ -115,6 +119,7 @@ bindkey '^i' zeno-completion
 ```zsh
 bindkey '^r'   zeno-history-selection
 bindkey '^x^s' zeno-insert-snippet
+bindkey '^x^f' zeno-ghq-cd
 ```
 
 ## Builtin completion
