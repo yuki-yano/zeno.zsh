@@ -13,6 +13,10 @@ export const insertSnippet = () => {
 
   let snippet = snipArray.join(":").trim();
 
+  if (snippet === "") {
+    Deno.exit(0);
+  }
+
   const placeholderRegex = /\{\{\S*\}\}/;
   const placeholderMatch = placeholderRegex.exec(snippet);
 

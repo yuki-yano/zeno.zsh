@@ -2,10 +2,9 @@
 
 local out=$(zeno --mode=snippet-list)
 
-local command=$(echo "$out" | head -1)
-local snippets=$(echo "$out" | tail +2)
-
-local selected_snippet=$(echo $snippets | eval $command)
+local options=$(echo "$out" | head -1)
+local command="zeno --mode=snippet-list | tail +2 | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} ${options}"
+local selected_snippet=$(eval $command)
 
 local out=$(echo -n "$selected_snippet\n$LBUFFER\n$RBUFFER" | zeno --mode=insert-snippet)
 
