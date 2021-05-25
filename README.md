@@ -158,6 +158,10 @@ snippets:
   - name: git commit message
     keyword: gcim
     snippet: git commit -m '{{commit_message}}'
+  - name: "null"
+    keyword: "null"
+    snippet: ">/dev/null 2>&1"
+    enableMiddleOfLine: true # auto expand in middle of line
 
 completions:
   - name: kill
