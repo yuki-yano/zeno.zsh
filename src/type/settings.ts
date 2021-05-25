@@ -9,6 +9,7 @@ export type Snippet = {
   name: string;
   keyword?: string;
   snippet: string;
+  enableMiddleOfLine?: boolean;
 };
 
 export type UserCompletionSource = {
