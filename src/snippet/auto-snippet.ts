@@ -34,8 +34,12 @@ export const autoSnippet = (): AutoSnippetData => {
   const placeholderRegex = /\{\{\S*\}\}/;
 
   const snippets = loadSnippets();
-  for (let { snippet, keyword } of snippets) {
+  for (let { snippet, keyword, enableMiddleOfLine } of snippets) {
     if (keyword == null) {
+      continue;
+    }
+
+    if (enableMiddleOfLine !== true && lbuffer !== keyword) {
       continue;
     }
 
