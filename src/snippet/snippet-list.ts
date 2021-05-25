@@ -6,8 +6,8 @@ const DEFAULT_SNIPPET_LIST_OPTION = [
   "--prompt='Snippet> '",
 ];
 
-export const snippetListCommand = () => {
-  return `fzf ${DEFAULT_SNIPPET_LIST_OPTION.join(" ")}`;
+export const snippetListOptions = () => {
+  return `${DEFAULT_SNIPPET_LIST_OPTION.join(" ")}`;
 };
 
 export const snippetList = () => {

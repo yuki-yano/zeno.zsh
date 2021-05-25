@@ -1,7 +1,7 @@
 import { argParse, printf } from "./deps.ts";
 import { autoSnippet } from "./snippet/auto-snippet.ts";
 import { insertSnippet } from "./snippet/insert-snippet.ts";
-import { snippetList, snippetListCommand } from "./snippet/snippet-list.ts";
+import { snippetList, snippetListOptions } from "./snippet/snippet-list.ts";
 import { readFromStdin } from "./util/io.ts";
 import { fzfOptionsToString } from "./fzf/option/convert.ts";
 import { completion } from "./completion/completion.ts";
@@ -19,7 +19,7 @@ export const exec = () => {
     case "snippet-list": {
       const snippets = snippetList();
 
-      printf(`${snippetListCommand()}\n`);
+      printf("%s\n", snippetListOptions());
       for (const snippet of snippets) {
         printf(`${snippet}\n`);
       }
