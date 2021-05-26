@@ -1,6 +1,11 @@
 #autoload
 
-local out=$(echo "$LBUFFER\n$RBUFFER" | zeno --mode=auto-snippet)
+if [[ $RBUFFER != "" ]]
+then
+  local out=$(echo "$LBUFFER\n$RBUFFER" | zeno --mode=auto-snippet)
+else
+  local out=$(echo "$LBUFFER" | zeno --mode=auto-snippet)
+fi
 
 if [[ $(echo "$out" | head -1) != "success" ]]; then
   LBUFFER+=" "
