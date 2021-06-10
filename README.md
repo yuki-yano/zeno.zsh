@@ -109,17 +109,21 @@ export ZENO_GIT_TREE="tree"
 # git folder preview with color
 # export ZENO_GIT_TREE="exa --tree"
 
-bindkey ' '  zeno-auto-snippet
-bindkey '^m' zeno-auto-snippet-and-accept-line
-bindkey '^i' zeno-completion
+if [[ -n $ZENO_LOADED ]]; then
+  bindkey ' '  zeno-auto-snippet
+  bindkey '^m' zeno-auto-snippet-and-accept-line
+  bindkey '^i' zeno-completion
+fi
 ```
 
 ### ZLE widget
 
 ```zsh
-bindkey '^r'   zeno-history-selection
-bindkey '^x^s' zeno-insert-snippet
-bindkey '^x^f' zeno-ghq-cd
+if [[ -n $ZENO_LOADED ]]; then
+  bindkey '^r'   zeno-history-selection
+  bindkey '^x^s' zeno-insert-snippet
+  bindkey '^x^f' zeno-ghq-cd
+fi
 ```
 
 ## Builtin completion
