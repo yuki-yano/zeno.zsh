@@ -20,3 +20,5 @@ fi
 if [[ -z $ZENO_DISABLE_EXECUTE_CACHE_COMMAND ]]; then
   deno cache --no-check ${0:a:h}/bin/zeno
 fi
+
+export ZENO_LOADED=1
