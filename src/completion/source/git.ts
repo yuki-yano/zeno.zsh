@@ -66,6 +66,7 @@ export const gitSources: Array<CompletionSource> = [
     name: "git diff",
     patterns: [
       /^git diff( ((-|--)\S+)*)? $/,
+      /^git diff( ((-|--)\S+)*)?( \S+) $/,
     ],
     sourceCommand: GIT_BRANCH_SOURCE,
     options: {
