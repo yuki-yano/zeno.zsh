@@ -98,7 +98,6 @@ export const gitSources: Array<CompletionSource> = [
     options: {
       ...GIT_BRANCH_LOG_TAG_REFLOG_OPTIONS,
       "--prompt": "'Git Checkout> '",
-      "--no-sort": true,
       "--preview": GIT_BRANCH_LOG_TAG_REFLOG_PREVIEW,
     },
     callback: GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK,
@@ -141,7 +140,6 @@ export const gitSources: Array<CompletionSource> = [
     options: {
       ...GIT_BRANCH_LOG_TAG_REFLOG_OPTIONS,
       "--prompt": "'Git Reset> '",
-      "--no-sort": true,
       "--preview": GIT_BRANCH_LOG_TAG_REFLOG_PREVIEW,
     },
     callback: GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK,
@@ -185,7 +183,6 @@ export const gitSources: Array<CompletionSource> = [
     options: {
       ...GIT_BRANCH_LOG_TAG_REFLOG_OPTIONS,
       "--prompt": "'Git Switch> '",
-      "--no-sort": true,
       "--preview": GIT_BRANCH_LOG_TAG_REFLOG_PREVIEW,
     },
     callback: GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK,
@@ -214,7 +211,6 @@ export const gitSources: Array<CompletionSource> = [
     options: {
       ...GIT_BRANCH_LOG_TAG_REFLOG_OPTIONS,
       "--prompt": "'Git Restore Target Commit> '",
-      "--no-sort": true,
       "--preview": GIT_BRANCH_LOG_TAG_REFLOG_PREVIEW,
     },
     callback: GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK,
@@ -242,7 +238,6 @@ export const gitSources: Array<CompletionSource> = [
     options: {
       ...GIT_BRANCH_LOG_TAG_REFLOG_OPTIONS,
       "--prompt": "'Git Rebase> '",
-      "--no-sort": true,
       "--preview": GIT_BRANCH_LOG_TAG_REFLOG_PREVIEW,
     },
     callback: GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK,
@@ -256,7 +251,6 @@ export const gitSources: Array<CompletionSource> = [
     options: {
       ...GIT_BRANCH_LOG_TAG_REFLOG_OPTIONS,
       "--prompt": "'Git Merge> '",
-      "--no-sort": true,
       "--preview": GIT_BRANCH_LOG_TAG_REFLOG_PREVIEW,
     },
     callback: GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK,
