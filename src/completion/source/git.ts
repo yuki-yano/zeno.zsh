@@ -78,7 +78,7 @@ export const gitSources: Array<CompletionSource> = [
   },
   {
     name: "git commit fixup",
-    patterns: [/^git commit (--fixup|--squash)\s$/],
+    patterns: [/^git commit (--fixup|--squash) $/],
     sourceCommand: GIT_LOG_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
@@ -232,7 +232,7 @@ export const gitSources: Array<CompletionSource> = [
   {
     name: "git rebase",
     patterns: [
-      /git rebase( ((-|--)\S+)*)? /,
+      /git rebase( ((-|--)\S+)*)? $/,
     ],
     sourceCommand: GIT_LOG_SOURCE,
     options: {
@@ -245,7 +245,7 @@ export const gitSources: Array<CompletionSource> = [
   {
     name: "git merge",
     patterns: [
-      /git merge( ((-|--)\S+)*)? /,
+      /git merge( ((-|--)\S+)*)? $/,
     ],
     sourceCommand: GIT_LOG_SOURCE,
     options: {
