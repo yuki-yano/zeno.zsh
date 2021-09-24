@@ -12,7 +12,7 @@ type Args = {
   mode: string;
 };
 
-export const exec = () => {
+export const exec = async () => {
   const { mode } = argParse(Deno.args) as Args;
 
   switch (mode) {
@@ -28,7 +28,7 @@ export const exec = () => {
     }
 
     case "auto-snippet": {
-      const result = autoSnippet();
+      const result = await autoSnippet();
 
       if (result.status === "failure") {
         printf(`${result.status}\n`);
@@ -44,10 +44,16 @@ export const exec = () => {
     }
 
     case "insert-snippet": {
-      const { status, buffer, cursor } = insertSnippet();
-      printf(`${status}\n`);
-      printf("%s\n", buffer);
-      printf(`${cursor}\n`);
+      const result = await insertSnippet();
+      if (result.status === "failure") {
+        printf(`${result.status}\n`);
+      }
+
+      if (result.status === "success") {
+        printf(`${result.status}\n`);
+        printf("%s\n", result.buffer);
+        printf(`${result.cursor}\n`);
+      }
 
       break;
     }

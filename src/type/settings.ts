@@ -9,7 +9,12 @@ export type Snippet = {
   name: string;
   keyword?: string;
   snippet: string;
-  enableMiddleOfLine?: boolean;
+  context?: {
+    buffer?: string;
+    lbuffer?: string;
+    rbuffer?: string;
+  };
+  evaluate?: boolean
 };
 
 export type UserCompletionSource = {
