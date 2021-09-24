@@ -1,6 +1,18 @@
+import { exec, OutputMode } from "../deps.ts";
 import { readFromStdin } from "../util/io.ts";
+import { loadSnippets } from "./settings.ts";
 
-export const insertSnippet = () => {
+type InsertSnippetData = {
+  status: "success";
+  buffer: string;
+  cursor: number;
+} | {
+  status: "failure";
+  buffer?: undefined;
+  cursor?: undefined;
+};
+
+export const insertSnippet = async (): Promise<InsertSnippetData> => {
   const content = readFromStdin().split("\n");
 
   if (content.length > 4) {
@@ -9,26 +21,34 @@ export const insertSnippet = () => {
   }
 
   const [snippetLine, lbuffer, rbuffer] = content;
-  const [_, ...snipArray] = snippetLine.split(":");
+  const [snippetName] = snippetLine.split(":");
 
-  let snippet = snipArray.join(":").trim();
+  const snippets = loadSnippets();
 
-  if (snippet === "") {
-    Deno.exit(0);
+  for (const { snippet, name, evaluate } of snippets) {
+    if (name == null || snippetName.trim() !== name.trim()) {
+      continue;
+    }
+
+    const placeholderRegex = /\{\{\S*\}\}/;
+    const placeholderMatch = placeholderRegex.exec(snippet);
+
+    let snipText = evaluate === true
+      ? (await exec(snippet, { output: OutputMode.Capture })).output.trimEnd()
+      : snippet;
+
+    let cursor = snipText.length + 1;
+    if (placeholderMatch != null) {
+      snipText = snipText.replace(placeholderRegex, "");
+      cursor = placeholderMatch.index;
+    }
+
+    return {
+      status: "success",
+      buffer: `${lbuffer}${snipText}${rbuffer ?? ""} `,
+      cursor: (lbuffer.length + cursor),
+    } as const;
   }
 
-  const placeholderRegex = /\{\{\S*\}\}/;
-  const placeholderMatch = placeholderRegex.exec(snippet);
-
-  let cursor = snippet.length + 1;
-  if (placeholderMatch != null) {
-    snippet = snippet.replace(placeholderRegex, "");
-    cursor = placeholderMatch.index;
-  }
-
-  return {
-    status: "success",
-    buffer: `${lbuffer}${snippet}${rbuffer} `,
-    cursor: (lbuffer.length + cursor).toString(),
-  } as const;
+  return { status: "failure" };
 };
