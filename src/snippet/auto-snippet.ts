@@ -1,5 +1,6 @@
 import { readFromStdin } from "../util/io.ts";
 import { loadSnippets } from "./settings.ts";
+import { exec, OutputMode } from "../deps.ts";
 
 type AutoSnippetData = {
   status: "success";
@@ -11,9 +12,19 @@ type AutoSnippetData = {
   cursor?: undefined;
 };
 
-export const autoSnippet = (): AutoSnippetData => {
+const matchContext = (buffer: string, context: string): boolean => {
+  const bufferRegex = new RegExp(context);
+  if (bufferRegex.exec(buffer) == null) {
+    return false;
+  }
+
+  return true;
+};
+
+export const autoSnippet = async (): Promise<AutoSnippetData> => {
   const input = readFromStdin();
 
+  const buffer = input.split("\n").join(" ");
   const [lbuffer, ..._rbuffer] = input.split("\n");
   const tokens = lbuffer.split(" ");
 
@@ -34,13 +45,27 @@ export const autoSnippet = (): AutoSnippetData => {
   const placeholderRegex = /\{\{\S*\}\}/;
 
   const snippets = loadSnippets();
-  for (let { snippet, keyword, enableMiddleOfLine } of snippets) {
+  for (let { snippet, keyword, context, evaluate } of snippets) {
     if (keyword == null) {
       continue;
     }
 
-    if (enableMiddleOfLine !== true && lbuffer !== keyword) {
-      continue;
+    if (context != null) {
+      const {
+        buffer: bufferContext,
+        lbuffer: lbufferContext,
+        rbuffer: rbufferContext,
+      } = context;
+
+      if (bufferContext != null && !matchContext(buffer, bufferContext)) {
+        continue;
+      }
+      if (lbufferContext != null && !matchContext(lbuffer, lbufferContext)) {
+        continue;
+      }
+      if (rbufferContext != null && !matchContext(rbuffer, rbufferContext)) {
+        continue;
+      }
     }
 
     if (keyword === lastWord) {
@@ -54,9 +79,13 @@ export const autoSnippet = (): AutoSnippetData => {
         cursor = (lbufferWithoutLastWord?.length ?? 0) + placeholderMatch.index;
       }
 
+      const snipText = evaluate === true
+        ? (await exec(snippet, { output: OutputMode.Capture })).output.trimEnd()
+        : snippet;
+
       return {
         status: "success",
-        buffer: `${lbufferWithoutLastWord ?? ""}${snippet}${rbuffer}`.trim(),
+        buffer: `${lbufferWithoutLastWord ?? ""}${snipText}${rbuffer}`.trim(),
         cursor,
       };
     }
