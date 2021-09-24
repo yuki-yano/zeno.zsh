@@ -165,7 +165,18 @@ snippets:
   - name: "null"
     keyword: "null"
     snippet: ">/dev/null 2>&1"
-    enableMiddleOfLine: true # auto expand in middle of line
+    # auto expand condition
+    # If not defined, it is only valid at the beginning of a line.
+    context:
+      # buffer: '' 
+      lbuffer: '.+\s'
+      # rbuffer: ''
+  - name: branch
+    keyword: B
+    snippet: git symbolic-ref --short HEAD
+    context:
+      lbuffer: '^git\s+checkout\s+'
+    evaluate: true # eval snippet
 
 completions:
   - name: kill
@@ -184,3 +195,4 @@ completions:
 - [fzf-tab](https://github.com/Aloxaf/fzf-tab)
 - [fzf-zsh-completions](https://github.com/chitoku-k/fzf-zsh-completions)
 - [pmy](https://github.com/relastle/pmy/)
+- [zabrze](https://github.com/Ryooooooga/zabrze)
