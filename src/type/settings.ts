@@ -14,7 +14,7 @@ export type Snippet = {
     lbuffer?: string;
     rbuffer?: string;
   };
-  evaluate?: boolean
+  evaluate?: boolean;
 };
 
 export type UserCompletionSource = {
