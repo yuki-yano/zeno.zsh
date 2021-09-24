@@ -1,6 +1,10 @@
 #autoload
 
-local completion=$(echo "$LBUFFER" | zeno --mode=completion)
+if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
+  local completion=$(zeno-client "--mode=completion $LBUFFER")
+else
+  local completion=$(echo "$LBUFFER" | zeno --mode=completion)
+fi
 
 if [[ $(echo "$completion" | head -1) != "success" ]]; then
   if whence fzf-completion > /dev/null; then

@@ -1,6 +1,24 @@
-#!/usr/bin/env -S deno run --unstable --allow-env --allow-read --allow-run --no-check
+#!/usr/bin/env -S deno run --unstable --allow-env --allow-read --allow-run --allow-write --no-check
 
 import { exec } from "../src/app.ts";
+import { existsSync } from "../src/deps.ts";
+import { ZENO_ENABLE_SOCK, ZENO_SOCK } from "../src/settings.ts";
+
+if (ZENO_ENABLE_SOCK != null) {
+  const socketPath = ZENO_SOCK;
+
+  if (socketPath == null) {
+    Deno.exit(1);
+  }
+
+  if (existsSync(socketPath)) {
+    Deno.exit(0);
+  }
+
+  window.onunload = () => {
+    Deno.removeSync(socketPath);
+  };
+}
 
 exec();
 
