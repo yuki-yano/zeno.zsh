@@ -1,6 +1,33 @@
-#!/usr/bin/env -S deno run --unstable --allow-env --allow-read --allow-run --no-check
+#!/usr/bin/env -S deno run --unstable --allow-env --allow-read --allow-run --allow-write --no-check
 
 import { exec } from "../src/app.ts";
+
+import { existsSync } from "../src/deps.ts"
+
+const socketPath = Deno.env.get("ZENO_SOCK")
+
+Deno.signal("SIGTERM").then(() => {
+  Deno.removeSync(socketPath)
+})
+
+/* Deno.signal("SIGINT").then(() => {
+  Deno.removeSync(socketPath)
+  Deno.exit(0)
+})
+
+Deno.signal("SIGHUP").then(() => {
+  Deno.removeSync(socketPath)
+  Deno.exit(0)
+})
+
+Deno.signal("SIGKILL").then(() => {
+  Deno.removeSync(socketPath)
+  Deno.exit(0)
+}) */
+
+if (existsSync(socketPath)) {
+  Deno.exit(0)
+}
 
 exec();
 

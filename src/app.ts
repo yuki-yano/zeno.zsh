@@ -1,8 +1,7 @@
-import { argParse, printf } from "./deps.ts";
+import { argParse, iter, sprintf } from "./deps.ts";
 import { autoSnippet } from "./snippet/auto-snippet.ts";
 import { insertSnippet } from "./snippet/insert-snippet.ts";
 import { snippetList, snippetListOptions } from "./snippet/snippet-list.ts";
-import { readFromStdin } from "./util/io.ts";
 import { fzfOptionsToString } from "./fzf/option/convert.ts";
 import { completion } from "./completion/completion.ts";
 import { nextPlaceholder } from "./snippet/next-placeholder.ts";
@@ -13,89 +12,133 @@ type Args = {
 };
 
 export const exec = async () => {
-  const { mode } = argParse(Deno.args) as Args;
+  const socketPath = Deno.env.get("ZENO_SOCK")!;
+  const listener = Deno.listen({
+    transport: "unix",
+    path: socketPath,
+  });
+  for await (const conn of listener) {
+    for await (const r of iter(conn)) {
+      const command = new TextDecoder().decode(r);
+      const args = command.split(/ +/);
+      const parsedArgs = argParse(args) as Args;
+      const { mode } = parsedArgs;
+      const input = parsedArgs._.join(" ");
 
-  switch (mode) {
-    case "snippet-list": {
-      const snippets = snippetList();
+      switch (mode) {
+        case "snippet-list": {
+          const snippets = snippetList();
 
-      printf("%s\n", snippetListOptions());
-      for (const snippet of snippets) {
-        printf(`${snippet}\n`);
+          conn.write(
+            new TextEncoder().encode(sprintf("%s\n", snippetListOptions())),
+          );
+          for (const snippet of snippets) {
+            conn.write(new TextEncoder().encode(sprintf(`%s\n`, snippet)));
+          }
+
+          break;
+        }
+
+        case "auto-snippet": {
+          const result = await autoSnippet(input);
+
+          if (result.status === "failure") {
+            conn.write(
+              new TextEncoder().encode(sprintf("%s\n", result.status)),
+            );
+          }
+
+          if (result.status === "success") {
+            conn.write(
+              new TextEncoder().encode(sprintf("%s\n", result.status)),
+            );
+            conn.write(
+              new TextEncoder().encode(sprintf("%s \n", result.buffer)),
+            );
+            conn.write(
+              new TextEncoder().encode(
+                sprintf("%s\n", (result.cursor).toString()),
+              ),
+            );
+          }
+
+          break;
+        }
+
+        case "insert-snippet": {
+          const result = await insertSnippet(input);
+          if (result.status === "failure") {
+            conn.write(
+              new TextEncoder().encode(sprintf("%s\n", result.status)),
+            );
+          }
+
+          if (result.status === "success") {
+            conn.write(
+              new TextEncoder().encode(sprintf("%s\n", result.status)),
+            );
+            conn.write(
+              new TextEncoder().encode(sprintf("%s\n", result.buffer)),
+            );
+            conn.write(
+              new TextEncoder().encode(sprintf("%s\n", result.cursor)),
+            );
+          }
+
+          break;
+        }
+
+        case "next-placeholder": {
+          const buffer = input.replace(/\n$/, "");
+          const result = nextPlaceholder(buffer);
+
+          if (result == null) {
+            conn.write(new TextEncoder().encode(sprintf("failure\n")));
+            break;
+          }
+
+          const { nextBuffer, index } = result;
+
+          conn.write(new TextEncoder().encode(sprintf("success\n")));
+          conn.write(new TextEncoder().encode(sprintf("%s\n", nextBuffer)));
+          conn.write(new TextEncoder().encode(sprintf("%s\n", index)));
+
+          break;
+        }
+
+        case "completion": {
+          const buffer = input.replace(/\n$/, "");
+          const source = completion(buffer);
+
+          if (source == null) {
+            conn.write(new TextEncoder().encode(sprintf("failure\n")));
+            break;
+          }
+
+          conn.write(new TextEncoder().encode(sprintf("success\n")));
+          conn.write(
+            new TextEncoder().encode(sprintf("%s\n", source.sourceCommand)),
+          );
+          conn.write(
+            new TextEncoder().encode(
+              sprintf("%s\n", fzfOptionsToString(source.options)),
+            ),
+          );
+          conn.write(
+            new TextEncoder().encode(sprintf("%s\n", source.callback)),
+          );
+
+          break;
+        }
+
+        default: {
+          conn.write(new TextEncoder().encode(sprintf("failure\n")));
+          conn.write(
+            new TextEncoder().encode(sprintf("%s mode is not exist\n", mode)),
+          );
+        }
       }
-
-      break;
-    }
-
-    case "auto-snippet": {
-      const result = await autoSnippet();
-
-      if (result.status === "failure") {
-        printf(`${result.status}\n`);
-      }
-
-      if (result.status === "success") {
-        printf(`${result.status}\n`);
-        printf("%s \n", result.buffer);
-        printf(`${(result.cursor).toString()}\n`);
-      }
-
-      break;
-    }
-
-    case "insert-snippet": {
-      const result = await insertSnippet();
-      if (result.status === "failure") {
-        printf(`${result.status}\n`);
-      }
-
-      if (result.status === "success") {
-        printf(`${result.status}\n`);
-        printf("%s\n", result.buffer);
-        printf(`${result.cursor}\n`);
-      }
-
-      break;
-    }
-
-    case "next-placeholder": {
-      const buffer = readFromStdin().replace(/\n$/, "");
-      const result = nextPlaceholder(buffer);
-
-      if (result == null) {
-        printf("failure\n");
-        return;
-      }
-
-      const { nextBuffer, index } = result;
-
-      printf("success\n");
-      printf("%s\n", nextBuffer);
-      printf(`${index}\n`);
-
-      break;
-    }
-
-    case "completion": {
-      const buffer = readFromStdin().replace(/\n$/, "");
-      const source = completion(buffer);
-
-      if (source == null) {
-        printf("failure\n");
-        return;
-      }
-
-      printf("success\n");
-      printf("%s\n", source.sourceCommand);
-      printf("%s\n", fzfOptionsToString(source.options));
-      printf("%s\n", source.callback);
-
-      break;
-    }
-
-    default: {
-      console.error(`${mode} mode is not exist`);
-      Deno.exit(1);
+      conn.closeWrite();
     }
   }
 };

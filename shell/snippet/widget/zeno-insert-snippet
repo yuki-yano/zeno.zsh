@@ -1,12 +1,12 @@
 #autoload
 
-local out=$(zeno --mode=snippet-list)
+local out=$(zeno-client "--mode=snippet-list")
 
 local options=$(echo "$out" | head -1)
-local command="zeno --mode=snippet-list | tail +2 | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} ${options}"
+local command="zeno-client --mode=snippet-list | tail +2 | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} ${options}"
 local selected_snippet=$(eval $command)
 
-local out=$(echo -n "$selected_snippet\n$LBUFFER\n$RBUFFER" | zeno --mode=insert-snippet)
+local out=$(zeno-client "--mode=insert-snippet $selected_snippet\n$LBUFFER\n$RBUFFER")
 
 if [[ $(echo "$out" | head -1) != "success" ]]; then
   return

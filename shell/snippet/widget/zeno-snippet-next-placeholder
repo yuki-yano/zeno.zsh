@@ -1,6 +1,6 @@
 #autoload
 
-local out=$(echo "$BUFFER" | zeno --mode=next-placeholder)
+local out=$(zeno-client "--mode=next-placeholder $BUFFER")
 
 if [[ $(echo "$out" | head -1) != "success" ]]; then
   return
