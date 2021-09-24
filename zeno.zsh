@@ -21,7 +21,9 @@ if [[ -z $ZENO_DISABLE_EXECUTE_CACHE_COMMAND ]]; then
   deno cache --no-check ${0:a:h}/bin/zeno
 fi
 
-export ZENO_SOCK="/tmp/zeno-${UID}.sock"
+if [[ -z $ZENO_SOCK ]]; then
+  export ZENO_SOCK="/tmp/zeno-${UID}.sock"
+fi
 
 function zeno-client() {
   setopt localoptions errreturn
