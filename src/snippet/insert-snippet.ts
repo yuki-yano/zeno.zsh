@@ -1,5 +1,4 @@
 import { exec, OutputMode } from "../deps.ts";
-import { readFromStdin } from "../util/io.ts";
 import { loadSnippets } from "./settings.ts";
 
 type InsertSnippetData = {
@@ -12,12 +11,14 @@ type InsertSnippetData = {
   cursor?: undefined;
 };
 
-export const insertSnippet = async (): Promise<InsertSnippetData> => {
-  const content = readFromStdin().split("\n");
+export const insertSnippet = async (
+  input: string,
+): Promise<InsertSnippetData> => {
+  const content = input.split("\n");
 
   if (content.length > 4) {
     console.error("Unsupported multi line");
-    Deno.exit(1);
+    return { status: "failure" };
   }
 
   const [snippetLine, lbuffer, rbuffer] = content;
