@@ -1,6 +1,10 @@
 #autoload
 
-local out=$(echo "$BUFFER" | zeno --mode=next-placeholder)
+if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
+  local out=$(zeno-client "--mode=next-placeholder $BUFFER")
+else
+ local out=$(echo "$BUFFER" | zeno --mode=next-placeholder)
+fi
 
 if [[ $(echo "$out" | head -1) != "success" ]]; then
   return

@@ -21,4 +21,21 @@ if [[ -z $ZENO_DISABLE_EXECUTE_CACHE_COMMAND ]]; then
   deno cache --no-check ${0:a:h}/bin/zeno
 fi
 
+if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
+  if [[ -z $ZENO_SOCK ]]; then
+    export ZENO_SOCK="/tmp/zeno-${UID}.sock"
+  fi
+
+  function zeno-client() {
+    setopt localoptions errreturn
+    zmodload zsh/net/socket
+    zsocket ${ZENO_SOCK}
+    typeset -i fd=$REPLY
+    print -nu $fd "${@//-/\\-}"
+    cat <&$fd
+    exec {fd}>&-
+  }
+  ${0:a:h}/bin/zeno &!
+fi
+
 export ZENO_LOADED=1

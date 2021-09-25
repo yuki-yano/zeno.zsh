@@ -4,6 +4,9 @@ export const ZENO_DEFAULT_FZF_OPTIONS =
 export const HOME = Deno.env.get("HOME");
 export const SETTING_FILE = `${HOME}/.config/zeno/config.yml`;
 
+export const ZENO_ENABLE_SOCK = Deno.env.get("ZENO_ENABLE_SOCK");
+export const ZENO_SOCK = Deno.env.get("ZENO_SOCK");
+
 export const ZENO_GIT_CAT = Deno.env.get("ZENO_GIT_CAT") ?? "cat";
 export const ZENO_GIT_TREE = Deno.env.get("ZENO_GIT_TREE") ?? "tree";
 
