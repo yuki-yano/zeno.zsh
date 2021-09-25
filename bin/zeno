@@ -11,13 +11,24 @@ if (ZENO_ENABLE_SOCK != null) {
     Deno.exit(1);
   }
 
-  if (existsSync(socketPath)) {
-    Deno.exit(0);
-  }
+  Deno.signal("SIGINT").then(() => {
+    Deno.removeSync(socketPath)
+    Deno.exit()
+  })
 
-  window.onunload = () => {
-    Deno.removeSync(socketPath);
-  };
+  Deno.signal("SIGTERM").then(() => {
+    Deno.removeSync(socketPath)
+    Deno.exit()
+  })
+
+  Deno.signal("SIGHUP").then(() => {
+    Deno.removeSync(socketPath)
+    Deno.exit()
+  })
+
+  if (existsSync(socketPath)) {
+    Deno.exit();
+  }
 }
 
 exec();
