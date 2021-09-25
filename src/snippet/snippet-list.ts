@@ -29,7 +29,7 @@ export const snippetList = () => {
   for (const { snippet, name } of snippets) {
     if (snippet.split("\n").length > 2) {
       console.error("Snippet must be single line");
-      Deno.exit(1);
+      break;
     }
 
     nameAndSnippet = [

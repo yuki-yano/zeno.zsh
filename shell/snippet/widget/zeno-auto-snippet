@@ -1,6 +1,10 @@
 #autoload
 
-local out=$(echo "$LBUFFER\n$RBUFFER" | zeno --mode=auto-snippet)
+if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
+  local out=$(zeno-client "--mode=auto-snippet $LBUFFER\n$RBUFFER")
+else
+  local out=$(echo "$LBUFFER\n$RBUFFER" | zeno --mode=auto-snippet)
+fi
 
 if [[ $(echo "$out" | head -1) != "success" ]]; then
   LBUFFER+=" "

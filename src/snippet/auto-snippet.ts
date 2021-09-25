@@ -1,4 +1,3 @@
-import { readFromStdin } from "../util/io.ts";
 import { loadSnippets } from "./settings.ts";
 import { exec, OutputMode } from "../deps.ts";
 
@@ -21,9 +20,7 @@ const matchContext = (buffer: string, context: string): boolean => {
   return true;
 };
 
-export const autoSnippet = async (): Promise<AutoSnippetData> => {
-  const input = readFromStdin();
-
+export const autoSnippet = async (input: string): Promise<AutoSnippetData> => {
   const buffer = input.split("\n").join(" ");
   const [lbuffer, ..._rbuffer] = input.split("\n");
   const tokens = lbuffer.split(" ");
@@ -35,11 +32,11 @@ export const autoSnippet = async (): Promise<AutoSnippetData> => {
     lbufferWithoutLastWord = `${tokens.slice(0, -1).join(" ")} `;
   }
 
-  const lastWord = lbuffer.split(" ").slice(-1)[0];
+  const lastWord = lbuffer.trim().split(" ").at(-1);
   const rbuffer = _rbuffer.join("\n");
 
   if (/(^$|^\s)/.exec(rbuffer) == null) {
-    Deno.exit(0);
+    return { status: "failure" };
   }
 
   const placeholderRegex = /\{\{\S*\}\}/;
