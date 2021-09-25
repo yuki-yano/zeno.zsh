@@ -50,7 +50,7 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
   }
 
   function zshexit() {
-    pkill -P ${$}
+    kill ${ZENO_PID}
   } 
 
   function clear-zeno-client() {
@@ -58,9 +58,11 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
       rm ${ZENO_SOCK}
     fi
     nohup ${0:a:h}/bin/zeno > /dev/null 2>&1 &!
+    export ZENO_PID=$!
   }
 
   nohup ${0:a:h}/bin/zeno >/dev/null 2>&1 &!
+  export ZENO_PID=$!
 fi
 
 export ZENO_LOADED=1
