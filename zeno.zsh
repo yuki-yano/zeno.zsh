@@ -40,6 +40,11 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
   function zeno-client() {
     zmodload zsh/net/socket
     zsocket ${ZENO_SOCK}
+    isok=$?
+    if [[ "$isok" != 0 ]]; then
+      restart-zeno-server
+      return
+    fi
     typeset -i fd=$REPLY
     print -nu $fd "${@//-/\\-}"
     cat <&$fd
@@ -52,7 +57,7 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
 
   function restart-zeno-server() {
     if [[ ! -z $ZENO_PID ]]; then
-      kill ${ZENO_PID}
+      kill ${ZENO_PID} || rm ${ZENO_SOCK}
     fi
     export ZENO_PID=
     start-zeno-server
@@ -65,12 +70,12 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
   }
 
   function zeno-onchpwd() {
-    zeno-client "--mode=chdir $(pwd)"
+    zeno-client "--zeno-mode=chdir $(pwd)"
   }
 
   function set-zeno-pid() {
     if [[ -S $ZENO_SOCK ]] && [[ -z $ZENO_PID ]]; then
-      export ZENO_PID=$(zeno-client "--mode=pid")
+      export ZENO_PID=$(zeno-client "--zeno-mode=pid")
     fi
   }
 
@@ -85,13 +90,13 @@ function call-deno-client-and-fallback() {
 
   if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
     if [[ -S $ZENO_SOCK ]]; then
-      local out=$(zeno-client "--mode=${mode} ${input}")
+      local out=$(zeno-client "--zeno-mode=${mode} ${input}")
     else
       start-zeno-server
-      local out=$(echo "${input}" | zeno --mode=${mode})
+      local out=$(echo "${input}" | zeno --zeno-mode=${mode})
     fi
   else
-    local out=$(echo "${input}" | zeno --mode=${mode})
+    local out=$(echo "${input}" | zeno --zeno-mode=${mode})
   fi
 
   echo $out
