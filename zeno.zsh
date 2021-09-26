@@ -38,6 +38,11 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
   export ZENO_SOCK="${ZENO_SOCK_DIR}/zeno-${$}.sock"
 
   function zeno-client() {
+    if  [[ ! -S "${ZENO_SOCK}" ]]; then
+      LBUFFER+=" "
+      return
+    fi
+
     # setopt localoptions errreturn
     zmodload zsh/net/socket
     zsocket ${ZENO_SOCK}
