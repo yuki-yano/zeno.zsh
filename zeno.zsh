@@ -39,7 +39,7 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
 
   function zeno-client() {
     zmodload zsh/net/socket
-    zsocket ${ZENO_SOCK}
+    zsocket ${ZENO_SOCK} >/dev/null 2>&1
     isok=$?
     if [[ "$isok" != 0 ]]; then
       restart-zeno-server
@@ -57,7 +57,7 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
 
   function restart-zeno-server() {
     if [[ ! -z $ZENO_PID ]]; then
-      kill ${ZENO_PID} || rm ${ZENO_SOCK}
+      kill ${ZENO_PID} >/dev/null 2>&1 || rm ${ZENO_SOCK}
     fi
     export ZENO_PID=
     start-zeno-server
