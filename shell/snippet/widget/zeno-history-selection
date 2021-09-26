@@ -1,8 +1,12 @@
 #autoload
 
-local history=$(\history -n -r 1 | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} --no-sort --exact --query="$LBUFFER" --prompt="History> ")
+() {
+  emulate -L zsh
 
-if [[ $history != "" ]]; then
-  BUFFER=$history
-  CURSOR=$#BUFFER
-fi
+  local history=$(\history -n -r 1 | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} --no-sort --exact --query="$LBUFFER" --prompt="History> ")
+
+  if [[ $history != "" ]]; then
+    BUFFER=$history
+    CURSOR=$#BUFFER
+  fi
+}

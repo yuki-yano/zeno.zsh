@@ -1,22 +1,26 @@
 #autoload
 
-if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
-  local out=$(zeno-client "--mode=auto-snippet $LBUFFER\n$RBUFFER")
-else
-  local out=$(echo "$LBUFFER\n$RBUFFER" | zeno --mode=auto-snippet)
-fi
+() {
+  emulate -L zsh
 
-if [[ $(echo "$out" | head -1) != "success" ]]; then
-  LBUFFER+=" "
-  return
-fi
+  if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
+    local out=$(zeno-client "--mode=auto-snippet $LBUFFER\n$RBUFFER")
+  else
+    local out=$(echo "$LBUFFER\n$RBUFFER" | zeno --mode=auto-snippet)
+  fi
 
-local buffer=$(echo "$out" | head -2 | tail -1)
-local cursor=$(echo "$out" | head -3 | tail -1)
+  if [[ $(echo "$out" | head -1) != "success" ]]; then
+    LBUFFER+=" "
+    return
+  fi
 
-if [[ $buffer != "" ]]; then
-  BUFFER=$buffer
-  CURSOR=$cursor
-fi
+  local buffer=$(echo "$out" | head -2 | tail -1)
+  local cursor=$(echo "$out" | head -3 | tail -1)
 
-zle reset-prompt
+  if [[ $buffer != "" ]]; then
+    BUFFER=$buffer
+    CURSOR=$cursor
+  fi
+
+  zle reset-prompt
+}

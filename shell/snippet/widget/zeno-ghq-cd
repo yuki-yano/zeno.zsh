@@ -1,24 +1,28 @@
 #autoload
 
-local project dir repository session current_session
-dir=$(ghq list -p | sed -e "s|${HOME}|~|" | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} --prompt='Project >' --preview "cat \$(eval echo {})/README.md" --bind ctrl-d:preview-page-down,ctrl-u:preview-page-up)
+() {
+  emulate -L zsh
 
-if [[ $dir == "" ]]; then
-  return 1
-fi
+  local project dir repository session current_session
+  dir=$(ghq list -p | sed -e "s|${HOME}|~|" | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} --prompt='Project >' --preview "cat \$(eval echo {})/README.md" --bind ctrl-d:preview-page-down,ctrl-u:preview-page-up)
 
-if [[ ! -z ${TMUX} ]]; then
-  repository=${dir##*/}
-  session=${repository//./-}
-
-  BUFFER="cd ${dir}"
-  zle accept-line
-
-  current_session=$(tmux list-sessions | grep 'attached' | cut -d":" -f1)
-  if [[ $session -eq $current_session ]]; then
-    tmux rename-session "${session}"
+  if [[ $dir == "" ]]; then
+    return 1
   fi
-else
-  BUFFER="cd ${dir}"
-  zle accept-line
-fi
+
+  if [[ ! -z ${TMUX} ]]; then
+    repository=${dir##*/}
+    session=${repository//./-}
+
+    BUFFER="cd ${dir}"
+    zle accept-line
+
+    current_session=$(tmux list-sessions | grep 'attached' | cut -d":" -f1)
+    if [[ $session -eq $current_session ]]; then
+      tmux rename-session "${session}"
+    fi
+  else
+    BUFFER="cd ${dir}"
+    zle accept-line
+  fi
+}
