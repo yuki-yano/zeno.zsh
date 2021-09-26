@@ -1,36 +1,7 @@
 #!/usr/bin/env -S deno run --unstable --allow-env --allow-read --allow-run --allow-write --no-check
 
 import { exec } from "../src/app.ts";
-import { existsSync } from "../src/deps.ts";
-import { ZENO_ENABLE_SOCK, ZENO_SOCK } from "../src/settings.ts";
 
-if (ZENO_ENABLE_SOCK != null) {
-  const socketPath = ZENO_SOCK;
-
-  if (socketPath == null) {
-    Deno.exit(1);
-  }
-
-  Deno.signal("SIGINT").then(() => {
-    Deno.removeSync(socketPath)
-    Deno.exit()
-  })
-
-  Deno.signal("SIGTERM").then(() => {
-    Deno.removeSync(socketPath)
-    Deno.exit()
-  })
-
-  Deno.signal("SIGHUP").then(() => {
-    Deno.removeSync(socketPath)
-    Deno.exit()
-  })
-
-  if (existsSync(socketPath)) {
-    Deno.exit();
-  }
-}
-
-exec();
+exec({ zenoMode: "cli" });
 
 // vim:set filetype=javascript:
