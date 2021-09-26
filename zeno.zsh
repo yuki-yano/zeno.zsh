@@ -25,6 +25,7 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
   autoload -Uz add-zsh-hook
 
   export ZENO_SERVER_BIN=${0:a:h}/bin/zeno-server
+  export ZENO_PID=
 
   if [[ -z $ZENO_SOCK_DIR ]]; then
     export ZENO_SOCK_DIR="/tmp/zeno-${UID}"
