@@ -34,10 +34,7 @@ const clearConn = (): void => {
 };
 
 const write = async (
-  { format, text }: {
-    format: string;
-    text: string;
-  },
+  { format, text }: { format: string; text: string },
 ): Promise<void> => {
   if (ZENO_SOCK != null && conn != null) {
     const conn = getConn();
