@@ -4,7 +4,6 @@
   emulate -L zsh
 
   local out=$(call-deno-client-and-fallback "snippet-list")
-  set-zeno-pid
 
   local options=$(echo "$out" | head -1)
   if [[ ! -z $ZENO_ENABLE_SOCK ]]; then

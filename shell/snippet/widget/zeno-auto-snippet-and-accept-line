@@ -11,7 +11,6 @@
   fi
 
   local out=$(call-deno-client-and-fallback "auto-snippet" "${LBUFFER}\n${RBUFFER}")
-  set-zeno-pid
 
   if [[ $(echo "$out" | head -1) != "success" ]]; then
     zle accept-line
