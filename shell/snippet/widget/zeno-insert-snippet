@@ -23,6 +23,10 @@
     local out=$(echo -n "$selected_snippet\n$LBUFFER\n$RBUFFER" | zeno --mode=insert-snippet)
   fi
 
+  if [[ $(echo "$out" | head -1) == "zeno server restarted" ]]; then
+    export ZENO_PID=$(echo $out | head -2 | tail -1)
+  fi
+
   if [[ $(echo "$out" | head -1) != "success" ]]; then
     zle reset-prompt
     return
