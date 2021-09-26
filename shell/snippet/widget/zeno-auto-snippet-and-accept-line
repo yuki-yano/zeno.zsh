@@ -1,26 +1,30 @@
 #autoload
 
-local tokens=(${(z)LBUFFER})
+() {
+  emulate -L zsh
 
-if [[ $#tokens != 1 ]]; then
-  zle accept-line
-  return
-fi
+  local tokens=(${(z)LBUFFER})
 
-if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
-  local out=$(zeno-client "--mode=auto-snippet $LBUFFER\n$RBUFFER")
-else
-  local out=$(echo "$LBUFFER\n$RBUFFER" | zeno --mode=auto-snippet)
-fi
+  if [[ $#tokens != 1 ]]; then
+    zle accept-line
+    return
+  fi
 
-if [[ $(echo "$out" | head -1) != "success" ]]; then
-  zle accept-line
-  return
-fi
+  if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
+    local out=$(zeno-client "--mode=auto-snippet $LBUFFER\n$RBUFFER")
+  else
+    local out=$(echo "$LBUFFER\n$RBUFFER" | zeno --mode=auto-snippet)
+  fi
 
-local buffer=$(echo "$out" | head -2 | tail -1)
+  if [[ $(echo "$out" | head -1) != "success" ]]; then
+    zle accept-line
+    return
+  fi
 
-if [[ $buffer != "" ]]; then
-  BUFFER=$buffer
-  zle accept-line
-fi
+  local buffer=$(echo "$out" | head -2 | tail -1)
+
+  if [[ $buffer != "" ]]; then
+    BUFFER=$buffer
+    zle accept-line
+  fi
+}
