@@ -9,6 +9,10 @@
     local completion=$(echo "$LBUFFER" | zeno --mode=completion)
   fi
 
+  if [[ $(echo "$completion" | head -1) == "zeno server restarted" ]]; then
+    export ZENO_PID=$(echo $completion | head -2 | tail -1)
+  fi
+
   if [[ $(echo "$completion" | head -1) != "success" ]]; then
     if whence fzf-completion > /dev/null; then
       zle fzf-completion

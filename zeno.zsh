@@ -37,18 +37,12 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
   export ZENO_SOCK="${ZENO_SOCK_DIR}/zeno-${$}.sock"
 
   function zeno-client() {
-    if  [[ ! -S "${ZENO_SOCK}" ]]; then
-      LBUFFER+=" "
-      return
-    fi
-
     # setopt localoptions errreturn
     zmodload zsh/net/socket
-    zsocket ${ZENO_SOCK}
+    zsocket ${ZENO_SOCK} 2>/dev/null
     isok=$?
     if [[ $isok -ne 0 ]]; then
       clear-zeno-client
-      echo "failure"
       return
     fi
     typeset -i fd=$REPLY
