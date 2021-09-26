@@ -22,6 +22,10 @@ if [[ -z $ZENO_DISABLE_EXECUTE_CACHE_COMMAND ]]; then
 fi
 
 if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
+  autoload -Uz add-zsh-hook
+
+  export ZENO_BIN_PATH=${0:a:h}/bin/zeno
+
   if [[ -z $ZENO_SOCK_DIR ]]; then
     export ZENO_SOCK_DIR="/tmp/zeno-${UID}"
   fi
@@ -49,22 +53,29 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
     exec {fd}>&-
   }
 
+  function clear-zeno-client() {
+    if [[ -S ${ZENO_SOCK} ]]; then
+      rm ${ZENO_SOCK}
+    fi
+    nohup ${ZENO_BIN_PATH} >/dev/null 2>&1 &!
+    pid=$!
+    echo "zeno server restarted\n${pid}"
+  }
+
+  function restart-zeno-server() {
+    kill ${ZENO_PID}
+    nohup ${ZENO_BIN_PATH} >/dev/null 2>&1 &!
+    export ZENO_PID=$!
+  }
+
   function zeno-onexit() {
     kill ${ZENO_PID}
   } 
 
-  autoload -Uz add-zsh-hook
+  add-zsh-hook chpwd restart-zeno-server
   add-zsh-hook zshexit zeno-onexit
 
-  function clear-zeno-client() {
-    if [[ -e ${ZENO_SOCK} ]]; then
-      rm ${ZENO_SOCK}
-    fi
-    nohup ${0:a:h}/bin/zeno > /dev/null 2>&1 &!
-    export ZENO_PID=$!
-  }
-
-  nohup ${0:a:h}/bin/zeno >/dev/null 2>&1 &!
+  nohup ${ZENO_BIN_PATH} >/dev/null 2>&1 &!
   export ZENO_PID=$!
 fi
 
