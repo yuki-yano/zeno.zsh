@@ -6,7 +6,11 @@
   if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
     local out=$(zeno-client "--mode=next-placeholder $BUFFER")
   else
-   local out=$(echo "$BUFFER" | zeno --mode=next-placeholder)
+    local out=$(echo "$BUFFER" | zeno --mode=next-placeholder)
+  fi
+
+  if [[ $(echo "$out" | head -1) == "zeno server restarted" ]]; then
+    export ZENO_PID=$(echo $out | head -2 | tail -1)
   fi
 
   if [[ $(echo "$out" | head -1) != "success" ]]; then
