@@ -3,15 +3,8 @@
 () {
   emulate -L zsh
 
-  if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
-    local completion=$(zeno-client "--mode=completion $LBUFFER")
-  else
-    local completion=$(echo "$LBUFFER" | zeno --mode=completion)
-  fi
-
-  if [[ $(echo "$completion" | head -1) == "zeno server restarted" ]]; then
-    export ZENO_PID=$(echo $completion | head -2 | tail -1)
-  fi
+  local completion=$(call-deno-client-and-fallback "completion" "${LBUFFER}")
+  set-zeno-pid
 
   if [[ $(echo "$completion" | head -1) != "success" ]]; then
     if whence fzf-completion > /dev/null; then
