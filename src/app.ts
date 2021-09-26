@@ -10,7 +10,7 @@ import { readFromStdin } from "./util/io.ts";
 
 type Args = {
   _: Array<string | number>;
-  mode: string;
+  "zeno-mode": string;
 };
 
 let textEncoder: TextEncoder;
@@ -159,7 +159,7 @@ export const exec = async ({ zenoMode }: { zenoMode: "cli" | "server" }) => {
         const command = textDecoder.decode(r);
         const args = command.split(/ +/);
         const parsedArgs = argParse(args) as Args;
-        const { mode } = parsedArgs;
+        const mode = parsedArgs["zeno-mode"];
         const input = parsedArgs._.join(" ");
 
         await execCommand({ mode, input });
@@ -170,7 +170,7 @@ export const exec = async ({ zenoMode }: { zenoMode: "cli" | "server" }) => {
     }
   } else {
     const command = readFromStdin();
-    const { mode } = argParse(Deno.args) as Args;
+    const mode = (argParse(Deno.args) as Args)["zeno-mode"];
     const args = command.split(/ +/);
     const parsedArgs = argParse(args) as Args;
     const input = parsedArgs._.join(" ");
