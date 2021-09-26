@@ -34,7 +34,6 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
     mkdir -p $ZENO_SOCK_DIR
   fi
 
-
   export ZENO_SOCK="${ZENO_SOCK_DIR}/zeno-${$}.sock"
 
   function zeno-client() {
@@ -75,7 +74,7 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
 
   function zeno-onexit() {
     kill ${ZENO_PID}
-  } 
+  }
 
   add-zsh-hook chpwd restart-zeno-server
   add-zsh-hook zshexit zeno-onexit
