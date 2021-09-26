@@ -21,7 +21,10 @@ export const insertSnippet = async (
     return { status: "failure" };
   }
 
-  const [snippetLine, lbuffer, rbuffer] = content;
+  let [snippetLine, lbuffer, rbuffer] = content;
+  lbuffer = lbuffer ?? ""
+  rbuffer = rbuffer ?? ""
+
   const [snippetName] = snippetLine.split(":");
 
   const snippets = loadSnippets();
