@@ -49,9 +49,12 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
     exec {fd}>&-
   }
 
-  function zshexit() {
+  function zeno-onexit() {
     kill ${ZENO_PID}
   } 
+
+  autoload -Uz add-zsh-hook
+  add-zsh-hook zshexit zeno-onexit
 
   function clear-zeno-client() {
     if [[ -e ${ZENO_SOCK} ]]; then
