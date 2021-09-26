@@ -1,35 +1,40 @@
 #autoload
 
-if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
-  local out=$(zeno-client "--mode=snippet-list")
-else
-  local out=$(zeno --mode=snippet-list)
-fi
+() {
+  emulate -L zsh
 
-local options=$(echo "$out" | head -1)
-if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
-  local command="zeno-client --mode=snippet-list | tail +2 | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} ${options}"
-else
-  local command="zeno --mode=snippet-list | tail +2 | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} ${options}"
-fi
-local selected_snippet=$(eval $command)
+  if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
+    local out=$(zeno-client "--mode=snippet-list")
+  else
+    local out=$(zeno --mode=snippet-list)
+  fi
 
-if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
-  local out=$(zeno-client "--mode=insert-snippet $selected_snippet\n$LBUFFER\n$RBUFFER")
-else
-  local out=$(echo -n "$selected_snippet\n$LBUFFER\n$RBUFFER" | zeno --mode=insert-snippet)
-fi
+  local options=$(echo "$out" | head -1)
+  if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
+    local command="zeno-client --mode=snippet-list | tail +2 | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} ${options}"
+  else
+    local command="zeno --mode=snippet-list | tail +2 | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} ${options}"
+  fi
+  local selected_snippet=$(eval $command)
 
-if [[ $(echo "$out" | head -1) != "success" ]]; then
-  return
-fi
+  if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
+    local out=$(zeno-client "--mode=insert-snippet $selected_snippet\n$LBUFFER\n$RBUFFER")
+  else
+    local out=$(echo -n "$selected_snippet\n$LBUFFER\n$RBUFFER" | zeno --mode=insert-snippet)
+  fi
 
-local buffer=$(echo "$out" | head -2 | tail -1)
-local cursor=$(echo "$out" | head -3 | tail -1)
+  if [[ $(echo "$out" | head -1) != "success" ]]; then
+    zle reset-prompt
+    return
+  fi
 
-if [[ $buffer != "" ]]; then
-  BUFFER=$buffer
-  CURSOR=$cursor
-fi
+  local buffer=$(echo "$out" | head -2 | tail -1)
+  local cursor=$(echo "$out" | head -3 | tail -1)
 
-zle reset-prompt
+  if [[ $buffer != "" ]]; then
+    BUFFER=$buffer
+    CURSOR=$cursor
+  fi
+
+  zle reset-prompt
+}
