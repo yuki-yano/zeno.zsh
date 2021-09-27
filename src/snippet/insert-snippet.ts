@@ -22,8 +22,8 @@ export const insertSnippet = async (
   }
 
   let [snippetLine, lbuffer, rbuffer] = content;
-  lbuffer = lbuffer ?? ""
-  rbuffer = rbuffer ?? ""
+  lbuffer = lbuffer ?? "";
+  rbuffer = rbuffer ?? "";
 
   const [snippetName] = snippetLine.split(":");
 

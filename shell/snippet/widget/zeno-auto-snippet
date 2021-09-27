@@ -3,15 +3,7 @@
 () {
   emulate -L zsh
 
-  if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
-    local out=$(zeno-client "--mode=auto-snippet $LBUFFER\n$RBUFFER")
-  else
-    local out=$(echo "$LBUFFER\n$RBUFFER" | zeno --mode=auto-snippet)
-  fi
-
-  if [[ $(echo "$out" | head -1) == "zeno server restarted" ]]; then
-    export ZENO_PID=$(echo $out | head -2 | tail -1)
-  fi
+  local out=$(call-deno-client-and-fallback "auto-snippet" "${LBUFFER}\n${RBUFFER}")
 
   if [[ $(echo "$out" | head -1) != "success" ]]; then
     LBUFFER+=" "
