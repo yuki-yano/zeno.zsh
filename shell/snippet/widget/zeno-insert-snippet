@@ -3,11 +3,7 @@
 () {
   emulate -L zsh
 
-  if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
-    local out=$(zeno-client "--mode=snippet-list")
-  else
-    local out=$(zeno --mode=snippet-list)
-  fi
+  local out=$(call-deno-client-and-fallback "snippet-list")
 
   local options=$(echo "$out" | head -1)
   if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
@@ -21,10 +17,6 @@
     local out=$(zeno-client "--mode=insert-snippet $selected_snippet\n$LBUFFER\n$RBUFFER")
   else
     local out=$(echo -n "$selected_snippet\n$LBUFFER\n$RBUFFER" | zeno --mode=insert-snippet)
-  fi
-
-  if [[ $(echo "$out" | head -1) == "zeno server restarted" ]]; then
-    export ZENO_PID=$(echo $out | head -2 | tail -1)
   fi
 
   if [[ $(echo "$out" | head -1) != "success" ]]; then

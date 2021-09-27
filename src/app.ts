@@ -5,12 +5,12 @@ import { snippetList, snippetListOptions } from "./snippet/snippet-list.ts";
 import { fzfOptionsToString } from "./fzf/option/convert.ts";
 import { completion } from "./completion/completion.ts";
 import { nextPlaceholder } from "./snippet/next-placeholder.ts";
-import { ZENO_ENABLE_SOCK, ZENO_SOCK } from "./settings.ts";
+import { ZENO_SOCK } from "./settings.ts";
 import { readFromStdin } from "./util/io.ts";
 
 type Args = {
   _: Array<string | number>;
-  mode: string;
+  "zeno-mode": string;
 };
 
 let textEncoder: TextEncoder;
@@ -127,6 +127,16 @@ const execCommand = async (
       break;
     }
 
+    case "pid": {
+      await write({ format: "%s\n", text: Deno.pid.toString() });
+      break;
+    }
+
+    case "chdir": {
+      Deno.chdir(input);
+      break;
+    }
+
     default: {
       await write({ format: "%s\n", text: "failure" });
       await write({ format: "%s mode is not exist\n", text: mode });
@@ -134,8 +144,8 @@ const execCommand = async (
   }
 };
 
-export const exec = async () => {
-  if (ZENO_ENABLE_SOCK != null && ZENO_SOCK != null) {
+export const exec = async ({ zenoMode }: { zenoMode: "cli" | "server" }) => {
+  if (zenoMode === "server" && ZENO_SOCK != null) {
     const listener = Deno.listen({
       transport: "unix",
       path: ZENO_SOCK,
@@ -149,7 +159,7 @@ export const exec = async () => {
         const command = textDecoder.decode(r);
         const args = command.split(/ +/);
         const parsedArgs = argParse(args) as Args;
-        const { mode } = parsedArgs;
+        const mode = parsedArgs["zeno-mode"];
         const input = parsedArgs._.join(" ");
 
         await execCommand({ mode, input });
@@ -160,7 +170,7 @@ export const exec = async () => {
     }
   } else {
     const command = readFromStdin();
-    const { mode } = argParse(Deno.args) as Args;
+    const mode = (argParse(Deno.args) as Args)["zeno-mode"];
     const args = command.split(/ +/);
     const parsedArgs = argParse(args) as Args;
     const input = parsedArgs._.join(" ");
