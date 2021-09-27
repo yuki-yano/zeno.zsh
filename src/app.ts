@@ -1,4 +1,4 @@
-import { argParse, iter, printf, sprintf } from "./deps.ts";
+import { argsParser, iter, printf, sprintf } from "./deps.ts";
 import { autoSnippet } from "./snippet/auto-snippet.ts";
 import { insertSnippet } from "./snippet/insert-snippet.ts";
 import { snippetList, snippetListOptions } from "./snippet/snippet-list.ts";
@@ -11,6 +11,13 @@ import { readFromStdin } from "./util/io.ts";
 type Args = {
   _: Array<string | number>;
   "zeno-mode": string;
+};
+
+const argsParseOption = {
+  string: ["zeno-mode"],
+  configuration: {
+    "unknown-options-as-args": true,
+  },
 };
 
 let textEncoder: TextEncoder;
@@ -158,7 +165,7 @@ export const exec = async ({ zenoMode }: { zenoMode: "cli" | "server" }) => {
 
         const command = textDecoder.decode(r);
         const args = command.split(/ +/);
-        const parsedArgs = argParse(args) as Args;
+        const parsedArgs = argsParser(args, argsParseOption);
         const mode = parsedArgs["zeno-mode"];
         const input = parsedArgs._.join(" ");
 
@@ -170,9 +177,9 @@ export const exec = async ({ zenoMode }: { zenoMode: "cli" | "server" }) => {
     }
   } else {
     const command = readFromStdin();
-    const mode = (argParse(Deno.args) as Args)["zeno-mode"];
+    const mode = (argsParser(Deno.args) as Args)["zeno-mode"];
     const args = command.split(/ +/);
-    const parsedArgs = argParse(args) as Args;
+    const parsedArgs = argsParser(args, argsParseOption);
     const input = parsedArgs._.join(" ");
 
     await execCommand({ mode, input });
