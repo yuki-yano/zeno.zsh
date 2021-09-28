@@ -24,7 +24,7 @@ zsh fuzzy completion and utility plugin with [Deno](https://deno.land/).
 
 ## Requirements
 
-- [Deno](https://deno.land/)
+- [Deno](https://deno.land/) latest
 - [fzf](https://github.com/junegunn/fzf)
 
 ## Installation
