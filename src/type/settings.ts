@@ -10,6 +10,7 @@ export type Snippet = {
   keyword?: string;
   snippet: string;
   context?: {
+    global?: boolean;
     buffer?: string;
     lbuffer?: string;
     rbuffer?: string;
