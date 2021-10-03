@@ -35,7 +35,7 @@ export const snippetList = () => {
     nameAndSnippet = [
       ...nameAndSnippet,
       sprintf(
-        `%-${nameWidth}s %s`,
+        `%-${nameWidth + 1}s %s`,
         name != null ? `${name}:` : "",
         snippet,
       ),
