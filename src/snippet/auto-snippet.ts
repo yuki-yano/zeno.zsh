@@ -1,5 +1,6 @@
 import { loadSnippets } from "./settings.ts";
 import { exec, OutputMode } from "../deps.ts";
+import { Snippet } from "../type/settings.ts";
 
 type AutoSnippetData = {
   status: "success";
@@ -9,6 +10,15 @@ type AutoSnippetData = {
   status: "failure";
   buffer?: undefined;
   cursor?: undefined;
+};
+
+const isStartLine = (lbuffer: string, keyword: string) => {
+  const regexp = new RegExp(`^${keyword}\s*$`);
+  if (regexp.exec(lbuffer) == null) {
+    return false;
+  }
+
+  return true;
 };
 
 const matchContext = (buffer: string, context: string): boolean => {
@@ -47,7 +57,11 @@ export const autoSnippet = async (input: string): Promise<AutoSnippetData> => {
       continue;
     }
 
-    if (context != null) {
+    if (context == null) {
+      if (!isStartLine(lbuffer, keyword)) {
+        continue;
+      }
+    } else if (context != null && context.global !== true) {
       const {
         buffer: bufferContext,
         lbuffer: lbufferContext,
