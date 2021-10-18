@@ -15,6 +15,8 @@ fi
 export ZENO_SOCK="${ZENO_SOCK_DIR}/zeno-${$}.sock"
 
 function zeno-client() {
+  local REPLY
+  local -i isok fd
   zmodload zsh/net/socket
   zsocket ${ZENO_SOCK} >/dev/null 2>&1
   isok=$?
@@ -22,7 +24,7 @@ function zeno-client() {
     zeno-restart-server
     return
   fi
-  typeset -i fd=$REPLY
+  fd=$REPLY
   print -nu $fd "${@//-/\\-}"
   cat <&$fd
   exec {fd}>&-
