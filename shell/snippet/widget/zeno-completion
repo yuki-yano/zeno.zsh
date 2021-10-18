@@ -1,35 +1,36 @@
 #autoload
 
-() {
-  emulate -L zsh
+emulate -L zsh
 
-  local completion=$(zeno-call-client-and-fallback "completion" "${LBUFFER}")
+local callback command key options source_command
+local -a out
 
-  if [[ $(echo "$completion" | head -1) != "success" ]]; then
-    if whence fzf-completion > /dev/null; then
-      zle fzf-completion
-      return
-    else
-      zle expand-or-complete
-      return
-    fi
+out=( "${(f)$(zeno-call-client-and-fallback "completion" "${LBUFFER}")}" )
+
+if [[ $out[1] != success ]]; then
+  if whence fzf-completion > /dev/null; then
+    zle fzf-completion
+  else
+    zle expand-or-complete
   fi
+  return
+fi
 
-  local source_command=$(echo "$completion" | head -2 | tail -1)
-  local options=$(echo "$completion" | head -3 | tail -1)
-  local callback=$(echo "$completion" | head -4 | tail -1 | tr '\n' ' ')
+source_command=$out[2]
+options=$out[3]
+callback=$out[4]
 
-  local trim_result="tr '\n' ' ' | sed 's/\s*$//'"
-  local command="${source_command} | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} ${options}"
+command="${source_command} | \"\${ZENO_FZF_COMMAND}\" ${ZENO_FZF_TMUX_OPTIONS} ${options}"
+out=( "${(f)$(eval $command)}" )
 
-  local out=$(eval $command)
-  local key=$(echo $out | head -1)
-  local lines=$(echo $out | sed -e '1d')
-  local result=$(echo $lines | eval ${callback} | eval ${trim_result})
+key=$out[1]
+shift out
 
-  LBUFFER+=$result
+if [[ -n $callback ]]; then
+  out=( "${(f)$(echo "${(F)out}" | eval $callback)}" )
+fi
 
-  zle zeno-snippet-next-placeholder
+LBUFFER+=$out
 
-  zle reset-prompt
-}
+zle zeno-snippet-next-placeholder
+zle reset-prompt

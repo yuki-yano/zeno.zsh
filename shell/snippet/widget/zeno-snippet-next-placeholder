@@ -1,19 +1,12 @@
 #autoload
 
-() {
-  emulate -L zsh
+emulate -L zsh
 
-  local out=$(zeno-call-client-and-fallback "next-placeholder" "${BUFFER}")
+local -a out
 
-  if [[ $(echo "$out" | head -1) != "success" ]]; then
-    return
-  fi
+out=( "${(f)$(zeno-call-client-and-fallback 'next-placeholder' "${BUFFER}")}" )
 
-  local buffer=$(echo "$out" | head -2 | tail -1)
-  local cursor=$(echo "$out" | head -3 | tail -1)
-
-  if [[ $buffer != "" ]]; then
-    BUFFER=$buffer
-    CURSOR=$cursor
-  fi
-}
+if [[ $out[1] == success && -n $out[2] ]]; then
+  BUFFER=$out[2]
+  CURSOR=$out[3]
+fi
