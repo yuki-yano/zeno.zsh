@@ -1,5 +1,5 @@
 #autoload
 
-deno run --unstable --no-check \
+command deno run --unstable --no-check \
   --allow-env --allow-read --allow-run --allow-write \
   "$ZENO_ROOT/src/cli.ts" "$@"

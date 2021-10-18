@@ -1,4 +1,4 @@
-if ! whence deno > /dev/null; then
+if ! whence -p deno> /dev/null; then
   return
 fi
 
@@ -28,7 +28,7 @@ else
 fi
 
 if [[ -z $ZENO_DISABLE_EXECUTE_CACHE_COMMAND ]]; then
-  deno cache --no-check "${ZENO_ROOT}/src/cli.ts"
+  command deno cache --no-check "${ZENO_ROOT}/src/cli.ts"
 fi
 
 if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
