@@ -1,30 +1,25 @@
 #autoload
 
-() {
-  emulate -L zsh
+emulate -L zsh
 
-  local out=$(zeno-call-client-and-fallback "snippet-list")
+local command input lines options selected_snippet
+local -a out
 
-  local options=$(echo "$out" | head -1)
+out=( "${(f)$(zeno-call-client-and-fallback 'snippet-list')}" )
 
-  local command="tail +2 | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} ${options}"
-  local selected_snippet=$(zeno-call-client-and-fallback "snippet-list" | eval $command)
+options=$out[1]
+shift out
+lines=${(F)out}
 
-  local input=$(printf '%s\n%s\n%s' "$selected_snippet" "$LBUFFER" "$RBUFFER")
-  local out=$(zeno-call-client-and-fallback "insert-snippet" "$input")
+command="\"\${ZENO_FZF_COMMAND}\" ${ZENO_FZF_TMUX_OPTIONS} ${options}"
+selected_snippet=$(echo "$lines" | eval $command)
 
-  if [[ $(echo "$out" | head -1) != "success" ]]; then
-    zle reset-prompt
-    return
-  fi
+input=$(printf '%s\n%s\n%s' "$selected_snippet" "$LBUFFER" "$RBUFFER")
+out=( "${(f)$(zeno-call-client-and-fallback 'insert-snippet' "$input")}" )
 
-  local buffer=$(echo "$out" | head -2 | tail -1)
-  local cursor=$(echo "$out" | head -3 | tail -1)
+if [[ $out[1] == success && -n $out[2] ]]; then
+  BUFFER=$out[2]
+  CURSOR=$out[3]
+fi
 
-  if [[ $buffer != "" ]]; then
-    BUFFER=$buffer
-    CURSOR=$cursor
-  fi
-
-  zle reset-prompt
-}
+zle reset-prompt

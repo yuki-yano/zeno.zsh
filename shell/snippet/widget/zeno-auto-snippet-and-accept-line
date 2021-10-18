@@ -1,26 +1,19 @@
 #autoload
 
-() {
-  emulate -L zsh
+emulate -L zsh
 
-  local tokens=(${(z)LBUFFER})
+local input
+local -a out tokens
 
-  if [[ $#tokens != 1 ]]; then
-    zle accept-line
-    return
+tokens=( ${(z)LBUFFER} )
+
+if [[ $#tokens == 1 ]]; then
+  input="${LBUFFER}\n${RBUFFER}"
+  out=( "${(f)$(zeno-call-client-and-fallback 'auto-snippet' "$input")}" )
+
+  if [[ $out[1] == success && -n $out[2] ]]; then
+    BUFFER=$out[2]
   fi
+fi
 
-  local out=$(zeno-call-client-and-fallback "auto-snippet" "${LBUFFER}\n${RBUFFER}")
-
-  if [[ $(echo "$out" | head -1) != "success" ]]; then
-    zle accept-line
-    return
-  fi
-
-  local buffer=$(echo "$out" | head -2 | tail -1)
-
-  if [[ $buffer != "" ]]; then
-    BUFFER=$buffer
-    zle accept-line
-  fi
-}
+zle accept-line
