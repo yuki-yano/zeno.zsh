@@ -20,14 +20,12 @@ function zeno-client() {
   zmodload zsh/net/socket
   zsocket ${ZENO_SOCK} >/dev/null 2>&1
   isok=$?
-  if [[ $isok != 0 ]]; then
-    zeno-restart-server
-    return
+  if (( isok == 0 )); then
+    fd=$REPLY
+    print -nu $fd "${@//-/\\-}"
+    cat <&$fd
+    exec {fd}>&-
   fi
-  fd=$REPLY
-  print -nu $fd "${@//-/\\-}"
-  cat <&$fd
-  exec {fd}>&-
 }
 
 function zeno-start-server() {
