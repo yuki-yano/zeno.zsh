@@ -28,7 +28,7 @@ else
 fi
 
 if [[ -z $ZENO_DISABLE_EXECUTE_CACHE_COMMAND ]]; then
-  deno cache --no-check ${ZENO_ROOT}/src/cli.ts
+  deno cache --no-check "${ZENO_ROOT}/src/cli.ts"
 fi
 
 if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
@@ -41,7 +41,7 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
   fi
 
   if [[ ! -d $ZENO_SOCK_DIR ]]; then
-    mkdir -p $ZENO_SOCK_DIR
+    mkdir -p "$ZENO_SOCK_DIR"
   fi
 
   export ZENO_SOCK="${ZENO_SOCK_DIR}/zeno-${$}.sock"
@@ -61,12 +61,12 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
   }
 
   function start-zeno-server() {
-    nohup ${ZENO_SERVER_BIN:-${ZENO_ROOT}/bin/zeno-server} > /dev/null 2>&1 &!
+    nohup "${ZENO_SERVER_BIN:-${ZENO_ROOT}/bin/zeno-server}" >/dev/null 2>&1 &!
   }
 
   function restart-zeno-server() {
     if [[ ! -z $ZENO_PID ]]; then
-      kill ${ZENO_PID} >/dev/null 2>&1 || rm ${ZENO_SOCK}
+      kill ${ZENO_PID} >/dev/null 2>&1 || rm "${ZENO_SOCK}"
     fi
     export ZENO_PID=
     start-zeno-server
