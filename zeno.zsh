@@ -36,9 +36,8 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
 
   export ZENO_PID=
 
-  if [[ -z $ZENO_SOCK_DIR ]]; then
-    export ZENO_SOCK_DIR="/tmp/zeno-${UID}"
-  fi
+  : ${ZENO_SOCK_DIR:="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}/zeno-${UID}"}
+  export ZENO_SOCK_DIR
 
   if [[ ! -d $ZENO_SOCK_DIR ]]; then
     mkdir -p "$ZENO_SOCK_DIR"
