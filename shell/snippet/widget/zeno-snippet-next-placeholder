@@ -3,7 +3,7 @@
 () {
   emulate -L zsh
 
-  local out=$(call-deno-client-and-fallback "next-placeholder" "${BUFFER}")
+  local out=$(zeno-call-client-and-fallback "next-placeholder" "${BUFFER}")
 
   if [[ $(echo "$out" | head -1) != "success" ]]; then
     return

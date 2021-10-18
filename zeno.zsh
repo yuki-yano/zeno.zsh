@@ -92,7 +92,7 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
   add-zsh-hook zshexit zeno-onexit
 fi
 
-function call-deno-client-and-fallback() {
+function zeno-call-client-and-fallback() {
   mode=$1
   input=$2
 

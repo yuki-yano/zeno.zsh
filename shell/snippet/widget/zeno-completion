@@ -3,7 +3,7 @@
 () {
   emulate -L zsh
 
-  local completion=$(call-deno-client-and-fallback "completion" "${LBUFFER}")
+  local completion=$(zeno-call-client-and-fallback "completion" "${LBUFFER}")
 
   if [[ $(echo "$completion" | head -1) != "success" ]]; then
     if whence fzf-completion > /dev/null; then
