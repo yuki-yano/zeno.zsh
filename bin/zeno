@@ -1,7 +1,5 @@
-#!/usr/bin/env -S deno run --unstable --allow-env --allow-read --allow-run --allow-write --no-check
+#!/usr/bin/env zsh
 
-import { exec } from "../src/app.ts";
-
-exec({ zenoMode: "cli" });
-
-// vim:set filetype=javascript:
+exec deno run --unstable --no-check \
+  --allow-env --allow-read --allow-run --allow-write \
+  "${ZENO_ROOT:-${0:a:h:h}}/src/cli.ts" "$@"
