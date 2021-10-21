@@ -1,34 +1,5 @@
-#!/usr/bin/env -S deno run --unstable --allow-env --allow-read --allow-run --allow-write --no-check
+#!/usr/bin/env zsh
 
-import { exec } from "../src/app.ts";
-import { existsSync } from "../src/deps.ts";
-import { ZENO_SOCK } from "../src/settings.ts";
-
-const socketPath = ZENO_SOCK;
-
-if (socketPath == null) {
-  Deno.exit(1);
-}
-
-Deno.signal("SIGINT").then(() => {
-  Deno.removeSync(socketPath);
-  Deno.exit();
-});
-
-Deno.signal("SIGTERM").then(() => {
-  Deno.removeSync(socketPath);
-  Deno.exit();
-});
-
-Deno.signal("SIGHUP").then(() => {
-  Deno.removeSync(socketPath);
-  Deno.exit();
-});
-
-if (existsSync(socketPath)) {
-  Deno.exit();
-}
-
-exec({ zenoMode: "server" });
-
-// vim:set filetype=javascript:
+exec deno run --unstable --no-check \
+  --allow-env --allow-read --allow-run --allow-write \
+  "${ZENO_ROOT:-${0:a:h:h}}/src/server.ts" "$@"

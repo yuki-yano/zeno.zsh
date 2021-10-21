@@ -1,15 +1,25 @@
-if ! whence deno > /dev/null; then
+if ! whence -p deno> /dev/null; then
   return
 fi
 
-path+=${0:a:h}/bin
-fpath+=${0:a:h}/shell/snippet/widget
-for f in ${0:h}/shell/snippet/widget/*(N-.); do
-  local function_name="${f:t}"
-  autoload -Uz -- "${function_name}"
-  zle -N -- "${function_name}"
-done
-unset f
+export ZENO_ROOT=${ZENO_ROOT:-${0:a:h}}
+
+path+=${ZENO_ROOT}/bin
+
+() {
+  local widget_dirs=(
+    "${ZENO_ROOT}/shell/snippet/widget"
+  )
+  local autoload_dirs=(
+    "${ZENO_ROOT}/shell/function"
+    "${(@)widget_dirs}"
+  )
+  local f
+
+  fpath+=("${(@)autoload_dirs}")
+  for f in "${(@)autoload_dirs}"/*(N-.); autoload -Uz -- "${f:t}"
+  for f in "${(@)widget_dirs}"/*(N-.); zle -N -- "${f:t}"
+}
 
 if [[ -z $ZENO_ENABLE_FZF_TMUX ]]; then
   export ZENO_FZF_COMMAND="fzf"
@@ -18,13 +28,12 @@ else
 fi
 
 if [[ -z $ZENO_DISABLE_EXECUTE_CACHE_COMMAND ]]; then
-  deno cache --no-check ${0:a:h}/bin/zeno
+  command deno cache --no-check "${ZENO_ROOT}/src/cli.ts"
 fi
 
 if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
   autoload -Uz add-zsh-hook
 
-  export ZENO_SERVER_BIN=${0:a:h}/bin/zeno-server
   export ZENO_PID=
 
   if [[ -z $ZENO_SOCK_DIR ]]; then
@@ -32,7 +41,7 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
   fi
 
   if [[ ! -d $ZENO_SOCK_DIR ]]; then
-    mkdir -p $ZENO_SOCK_DIR
+    mkdir -p "$ZENO_SOCK_DIR"
   fi
 
   export ZENO_SOCK="${ZENO_SOCK_DIR}/zeno-${$}.sock"
@@ -52,12 +61,12 @@ if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
   }
 
   function start-zeno-server() {
-    nohup ${ZENO_SERVER_BIN} > /dev/null 2>&1 &!
+    nohup "${ZENO_SERVER_BIN:-${ZENO_ROOT}/bin/zeno-server}" >/dev/null 2>&1 &!
   }
 
   function restart-zeno-server() {
     if [[ ! -z $ZENO_PID ]]; then
-      kill ${ZENO_PID} >/dev/null 2>&1 || rm ${ZENO_SOCK}
+      kill ${ZENO_PID} >/dev/null 2>&1 || rm "${ZENO_SOCK}"
     fi
     export ZENO_PID=
     start-zeno-server
