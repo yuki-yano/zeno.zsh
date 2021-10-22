@@ -1,0 +1,63 @@
+#autoload
+
+autoload -Uz add-zsh-hook
+
+export ZENO_ENABLE_SOCK=1
+export ZENO_PID=
+
+: ${ZENO_SOCK_DIR:="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}/zeno-${UID}"}
+export ZENO_SOCK_DIR
+
+if [[ ! -d $ZENO_SOCK_DIR ]]; then
+  mkdir -p "$ZENO_SOCK_DIR"
+fi
+
+export ZENO_SOCK="${ZENO_SOCK_DIR}/zeno-${$}.sock"
+
+function zeno-client() {
+  local REPLY
+  local -i isok fd
+  zmodload zsh/net/socket
+  zsocket ${ZENO_SOCK} >/dev/null 2>&1
+  isok=$?
+  if (( isok == 0 )); then
+    fd=$REPLY
+    print -nu $fd "${@//-/\\-}"
+    cat <&$fd
+    exec {fd}>&-
+  fi
+}
+
+function zeno-start-server() {
+  nohup "${ZENO_SERVER_BIN:-${ZENO_ROOT}/bin/zeno-server}" >/dev/null 2>&1 &!
+}
+
+function zeno-restart-server() {
+  zeno-stop-server
+  zeno-start-server
+}
+
+function zeno-stop-server() {
+  if [[ -n $ZENO_PID ]]; then
+    kill "$ZENO_PID" >/dev/null 2>&1
+    ZENO_PID=
+    rm -f "$ZENO_SOCK"
+  fi
+}
+
+function zeno-onchpwd() {
+  zeno-client "--zeno-mode=chdir $(pwd)"
+}
+
+function zeno-set-pid() {
+  if [[ -z $ZENO_PID && -S $ZENO_SOCK ]]; then
+    export ZENO_PID=$(zeno-client "--zeno-mode=pid")
+  fi
+}
+
+add-zsh-hook precmd zeno-set-pid
+add-zsh-hook chpwd zeno-onchpwd
+add-zsh-hook zshexit zeno-stop-server
+
+unfunction zeno-enable-sock
+autoload -Uz zeno-enable-sock
