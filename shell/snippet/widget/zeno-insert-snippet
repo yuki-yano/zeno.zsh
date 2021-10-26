@@ -2,7 +2,7 @@
 
 emulate -L zsh
 
-local command input lines options selected_snippet
+local input lines options selected_snippet
 local -a out
 
 out=( "${(f)$(zeno-call-client-and-fallback 'snippet-list')}" )
@@ -11,8 +11,8 @@ options=$out[1]
 shift out
 lines=${(F)out}
 
-command="\"\${ZENO_FZF_COMMAND}\" ${ZENO_FZF_TMUX_OPTIONS} ${options}"
-selected_snippet=$(echo "$lines" | eval $command)
+options="${ZENO_ENABLE_FZF_TMUX:+${ZENO_FZF_TMUX_OPTIONS}} $options"
+selected_snippet=$(echo "$lines" | eval "${ZENO_FZF_COMMAND} ${options}")
 
 input=$(printf '%s\n%s\n%s' "$selected_snippet" "$LBUFFER" "$RBUFFER")
 out=( "${(f)$(zeno-call-client-and-fallback 'insert-snippet' "$input")}" )

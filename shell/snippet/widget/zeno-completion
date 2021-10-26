@@ -2,7 +2,7 @@
 
 emulate -L zsh
 
-local callback command key options source_command
+local callback key options source_command
 local -a out
 
 out=( "${(f)$(zeno-call-client-and-fallback "completion" "${LBUFFER}")}" )
@@ -20,8 +20,10 @@ source_command=$out[2]
 options=$out[3]
 callback=$out[4]
 
-command="${source_command} | \"\${ZENO_FZF_COMMAND}\" ${ZENO_FZF_TMUX_OPTIONS} ${options}"
-out=( "${(f)$(eval $command)}" )
+options="${ZENO_ENABLE_FZF_TMUX:+${ZENO_FZF_TMUX_OPTIONS}} $options"
+out=(
+  "${(f)$(eval "${source_command} | ${ZENO_FZF_COMMAND} ${options}")}"
+)
 
 key=$out[1]
 shift out

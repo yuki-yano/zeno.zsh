@@ -2,7 +2,7 @@
 
 emulate -L zsh
 
-local command current_session dir repository session
+local current_session dir options repository session
 local -a out
 
 out=( "${(f)^$(ghq list -p)}"(N-/) )
@@ -12,8 +12,10 @@ if [[ $#out == 0 ]]; then
   return 1
 fi
 
-command="\"\${ZENO_FZF_COMMAND}\" ${ZENO_FZF_TMUX_OPTIONS} --prompt='Project >' --preview 'cat \$(eval echo {})/README.md' --bind ctrl-d:preview-page-down,ctrl-u:preview-page-up"
-dir=$(echo "${(F)out}" | eval $command)
+options=${ZENO_ENABLE_FZF_TMUX:+${ZENO_FZF_TMUX_OPTIONS}}
+options+=" --prompt='Project >' --preview 'cat \$(eval echo {})/README.md'"
+options+=" --bind ctrl-d:preview-page-down,ctrl-u:preview-page-up"
+dir=$(echo "${(F)out}" | eval "${ZENO_FZF_COMMAND} $options")
 
 if [[ -z $dir ]]; then
   return 1

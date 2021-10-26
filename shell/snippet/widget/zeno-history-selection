@@ -2,10 +2,11 @@
 
 emulate -L zsh
 
-local command history
+local history options
 
-command="\"\${ZENO_FZF_COMMAND}\" ${ZENO_FZF_TMUX_OPTIONS} --no-sort --exact --query=\"\$LBUFFER\" --prompt='History> '"
-history=$(builtin history -n -r 1 | eval $command)
+options=${ZENO_ENABLE_FZF_TMUX:+${ZENO_FZF_TMUX_OPTIONS}}
+options+=" --no-sort --exact --query=\"\$LBUFFER\" --prompt='History> '"
+history=$(builtin history -n -r 1 | eval "${ZENO_FZF_COMMAND} $options")
 
 if [[ -n $history ]]; then
   BUFFER=$history
