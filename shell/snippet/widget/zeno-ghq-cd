@@ -27,9 +27,5 @@ zle accept-line
 if [[ -n $TMUX ]]; then
   repository=${dir:t}
   session=${repository//./-}
-
-  current_session=$(tmux list-sessions | grep 'attached' | cut -d":" -f1)
-  if [[ $session -eq $current_session ]]; then
-    tmux rename-session "${session}"
-  fi
+  tmux rename-session "${session}"
 fi
