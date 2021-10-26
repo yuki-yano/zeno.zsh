@@ -17,8 +17,8 @@ path+=${ZENO_ROOT}/bin
   local f
 
   fpath+=("${(@)autoload_dirs}")
-  for f in "${(@)autoload_dirs}"/*(N-.); autoload -Uz -- "${f:t}"
-  for f in "${(@)widget_dirs}"/*(N-.); zle -N -- "${f:t}"
+  for f in "${(@)^autoload_dirs}"/*(N-.); autoload -Uz -- "${f:t}"
+  for f in "${(@)^widget_dirs}"/*(N-.); zle -N -- "${f:t}"
 }
 
 if [[ -z $ZENO_ENABLE_FZF_TMUX ]]; then
