@@ -1,7 +1,5 @@
 #autoload
 
-autoload -Uz add-zsh-hook
-
 export ZENO_ENABLE_SOCK=1
 export ZENO_PID=
 
@@ -55,6 +53,7 @@ function zeno-set-pid() {
   fi
 }
 
+autoload -Uz add-zsh-hook
 add-zsh-hook precmd zeno-set-pid
 add-zsh-hook chpwd zeno-onchpwd
 add-zsh-hook zshexit zeno-stop-server
