@@ -1,3 +1,3 @@
-import { exec } from "./app.ts";
+import { execCli } from "./app.ts";
 
-exec({ zenoMode: "cli" });
+execCli({ args: Deno.args });

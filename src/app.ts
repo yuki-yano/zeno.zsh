@@ -6,18 +6,28 @@ import { fzfOptionsToString } from "./fzf/option/convert.ts";
 import { completion } from "./completion/completion.ts";
 import { nextPlaceholder } from "./snippet/next-placeholder.ts";
 import { ZENO_SOCK } from "./settings.ts";
-import { readFromStdin } from "./util/io.ts";
+
+type ClientCall = {
+  args?: Array<string>;
+};
 
 type Args = {
   _: Array<string | number>;
-  "zeno-mode": string;
+  "zeno-mode"?: string;
+  input?: string;
 };
 
 const argsParseOption = {
-  string: ["zeno-mode"],
+  string: [
+    "zeno-mode",
+    "input",
+  ],
+};
+
+const commandParseOption = {
   configuration: {
     "unknown-options-as-args": true,
-    "populate--": true,
+    "parse-positional-numbers": false,
   },
 };
 
@@ -152,42 +162,56 @@ const execCommand = async (
   }
 };
 
-export const exec = async ({ zenoMode }: { zenoMode: "cli" | "server" }) => {
-  if (zenoMode === "server" && ZENO_SOCK != null) {
-    const listener = Deno.listen({
-      transport: "unix",
-      path: ZENO_SOCK,
-    });
+const parseArgs = ({ args }: { args: Array<string> }) => {
+  const parsedArgs = argsParser(args, argsParseOption) as Args;
+  const mode = parsedArgs["zeno-mode"] ?? '';
+  const command = "-- " + (parsedArgs.input ?? '').replace(/\n$/, '');
+  const parsedCommand = argsParser(command, commandParseOption);
+  const input = parsedCommand._.join(" ") + (/\s$/.exec(command) ? " " : "");
+  return { mode, input };
+};
 
-    for await (const conn of listener) {
-      for await (const r of iter(conn)) {
+export const execServer = async ({ socketPath }: { socketPath: string }) => {
+  const listener = Deno.listen({
+    transport: "unix",
+    path: socketPath,
+  });
+
+  for await (const conn of listener) {
+    for await (const r of iter(conn)) {
+      try {
         setConn(conn);
-        textDecoder = textDecoder ?? new TextDecoder();
 
-        const command = textDecoder.decode(r);
-        const args = command.split(/ +/);
-        const parsedArgs = argsParser(args, argsParseOption);
-        const mode = parsedArgs["zeno-mode"];
-        const input = `${parsedArgs._.join(" ")}${
-          parsedArgs["--"] != null ? ` -- ${parsedArgs["--"].join(" ")}` : ""
-        }`;
+        textDecoder = textDecoder ?? new TextDecoder();
+        const json = textDecoder.decode(r);
+        const clientCall = JSON.parse(json) as ClientCall;
+        const args = clientCall.args ?? [];
+        const { mode, input } = parseArgs({ args });
 
         await execCommand({ mode, input });
-
+      } catch (ex) {
+        await write({ format: "%s\n", text: "failure" });
+        await write({ format: "%s\n", text: `${ex}` });
+      } finally {
         conn.closeWrite();
         clearConn();
       }
     }
-  } else {
-    const command = readFromStdin();
-    const mode = (argsParser(Deno.args) as Args)["zeno-mode"];
-    const args = command.split(/ +/);
-    const parsedArgs = argsParser(args, argsParseOption);
-    const input = `${parsedArgs._.join(" ")}${
-      parsedArgs["--"] != null ? ` -- ${parsedArgs["--"].join(" ")}` : ""
-    }`;
+  }
+};
+
+export const execCli = async ({ args }: { args: Array<string> }) => {
+  let res = 0;
+
+  try {
+    const { mode, input } = parseArgs({ args });
 
     await execCommand({ mode, input });
-    Deno.exit(0);
+  } catch (ex) {
+    await write({ format: "%s\n", text: "failure" });
+    await write({ format: "%s\n", text: `${ex}` });
+    res = 1;
   }
+
+  Deno.exit(res);
 };
