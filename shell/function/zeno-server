@@ -2,4 +2,4 @@
 
 command deno run --unstable --no-check \
   --allow-env --allow-read --allow-run --allow-write \
-  "$ZENO_ROOT/src/server.ts" "$@"
+  -- "$ZENO_ROOT/src/server.ts" "$@"
