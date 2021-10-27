@@ -17,6 +17,7 @@ const argsParseOption = {
   string: ["zeno-mode"],
   configuration: {
     "unknown-options-as-args": true,
+    "populate--": true,
   },
 };
 
@@ -180,7 +181,9 @@ export const exec = async ({ zenoMode }: { zenoMode: "cli" | "server" }) => {
     const mode = (argsParser(Deno.args) as Args)["zeno-mode"];
     const args = command.split(/ +/);
     const parsedArgs = argsParser(args, argsParseOption);
-    const input = parsedArgs._.join(" ");
+    const input = `${parsedArgs._.join(" ")} ${
+      parsedArgs["--"] != null ? `-- ${parsedArgs["--"]?.join(" ")}` : ""
+    }`;
 
     await execCommand({ mode, input });
     Deno.exit(0);
