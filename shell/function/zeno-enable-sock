@@ -15,15 +15,16 @@ export ZENO_SOCK="${ZENO_SOCK_DIR}/zeno-${$}.sock"
 function zeno-client() {
   local REPLY
   local -i isok fd
+  local -a args
   zmodload zsh/net/socket
   zsocket ${ZENO_SOCK} >/dev/null 2>&1
   isok=$?
-  if (( isok == 0 )); then
-    fd=$REPLY
-    print -nu $fd "${@//-/\\-}"
-    cat <&$fd
-    exec {fd}>&-
-  fi
+  (( isok == 0 )) || return 1
+  fd=$REPLY
+  args=('"'${^@//\"/\\\"}'"')
+  printf '{"args":[%s]}' "${(j:,:)args}" >&$fd
+  cat <&$fd
+  exec {fd}>&-
 }
 
 function zeno-start-server() {

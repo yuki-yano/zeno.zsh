@@ -1,4 +1,4 @@
-import { exec } from "./app.ts";
+import { execServer } from "./app.ts";
 import { existsSync } from "./deps.ts";
 import { ZENO_SOCK } from "./settings.ts";
 
@@ -27,4 +27,4 @@ if (existsSync(socketPath)) {
   Deno.exit();
 }
 
-exec({ zenoMode: "server" });
+execServer({ socketPath });
