@@ -168,7 +168,9 @@ export const exec = async ({ zenoMode }: { zenoMode: "cli" | "server" }) => {
         const args = command.split(/ +/);
         const parsedArgs = argsParser(args, argsParseOption);
         const mode = parsedArgs["zeno-mode"];
-        const input = parsedArgs._.join(" ");
+        const input = `${parsedArgs._.join(" ")} ${
+          parsedArgs["--"] != null ? `-- ${parsedArgs["--"].join(" ")}` : ""
+        }`;
 
         await execCommand({ mode, input });
 
@@ -182,7 +184,7 @@ export const exec = async ({ zenoMode }: { zenoMode: "cli" | "server" }) => {
     const args = command.split(/ +/);
     const parsedArgs = argsParser(args, argsParseOption);
     const input = `${parsedArgs._.join(" ")} ${
-      parsedArgs["--"] != null ? `-- ${parsedArgs["--"]?.join(" ")}` : ""
+      parsedArgs["--"] != null ? `-- ${parsedArgs["--"].join(" ")}` : ""
     }`;
 
     await execCommand({ mode, input });
