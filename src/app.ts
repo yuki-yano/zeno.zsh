@@ -168,8 +168,8 @@ export const exec = async ({ zenoMode }: { zenoMode: "cli" | "server" }) => {
         const args = command.split(/ +/);
         const parsedArgs = argsParser(args, argsParseOption);
         const mode = parsedArgs["zeno-mode"];
-        const input = `${parsedArgs._.join(" ")} ${
-          parsedArgs["--"] != null ? `-- ${parsedArgs["--"].join(" ")}` : ""
+        const input = `${parsedArgs._.join(" ")}${
+          parsedArgs["--"] != null ? ` -- ${parsedArgs["--"].join(" ")}` : ""
         }`;
 
         await execCommand({ mode, input });
@@ -183,8 +183,8 @@ export const exec = async ({ zenoMode }: { zenoMode: "cli" | "server" }) => {
     const mode = (argsParser(Deno.args) as Args)["zeno-mode"];
     const args = command.split(/ +/);
     const parsedArgs = argsParser(args, argsParseOption);
-    const input = `${parsedArgs._.join(" ")} ${
-      parsedArgs["--"] != null ? `-- ${parsedArgs["--"].join(" ")}` : ""
+    const input = `${parsedArgs._.join(" ")}${
+      parsedArgs["--"] != null ? ` -- ${parsedArgs["--"].join(" ")}` : ""
     }`;
 
     await execCommand({ mode, input });
