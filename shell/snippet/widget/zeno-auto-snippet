@@ -6,7 +6,7 @@ local input
 local -a out
 
 input=$(printf '%s\n%s' "$LBUFFER" "$RBUFFER")
-out=( "${(f)$(zeno-call-client-and-fallback "auto-snippet" "$input")}" )
+out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=auto-snippet --input="$input")}" )
 
 if [[ $out[1] != success ]]; then
   LBUFFER+=" "
