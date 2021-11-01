@@ -4,13 +4,9 @@ export ZENO_ENABLE_SOCK=1
 export ZENO_PID=
 
 : ${ZENO_SOCK_DIR:="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}/zeno-${UID}"}
+: ${ZENO_SOCK::="${ZENO_SOCK_DIR}/zeno-${$}.sock"}
 export ZENO_SOCK_DIR
-
-if [[ ! -d $ZENO_SOCK_DIR ]]; then
-  mkdir -p "$ZENO_SOCK_DIR"
-fi
-
-export ZENO_SOCK="${ZENO_SOCK_DIR}/zeno-${$}.sock"
+export ZENO_SOCK
 
 function zeno-client() {
   local REPLY
@@ -33,6 +29,9 @@ function zeno-client() {
 }
 
 function zeno-start-server() {
+  if [[ ! -d ${ZENO_SOCK:h} ]]; then
+    mkdir -p "${ZENO_SOCK:h}"
+  fi
   nohup "${ZENO_SERVER_BIN:-${ZENO_ROOT}/bin/zeno-server}" >/dev/null 2>&1 &!
 }
 
@@ -42,6 +41,7 @@ function zeno-restart-server() {
 }
 
 function zeno-stop-server() {
+  zeno-set-pid
   if [[ -n $ZENO_PID ]]; then
     kill "$ZENO_PID" >/dev/null 2>&1
     ZENO_PID=
