@@ -6,19 +6,12 @@
   local out=$(zeno-call-client-and-fallback "snippet-list")
 
   local options=$(echo "$out" | head -1)
-  if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
-    local command="zeno-client --zeno-mode=snippet-list | tail +2 | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} ${options}"
-  else
-    local command="zeno --zeno-mode=snippet-list | tail +2 | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} ${options}"
-  fi
 
-  local selected_snippet=$(eval $command)
+  local command="tail +2 | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} ${options}"
+  local selected_snippet=$(zeno-call-client-and-fallback "snippet-list" | eval $command)
 
-  if [[ ! -z $ZENO_ENABLE_SOCK ]]; then
-    local out=$(zeno-client "--zeno-mode=insert-snippet $selected_snippet\n$LBUFFER\n$RBUFFER")
-  else
-    local out=$(echo -n "$selected_snippet\n$LBUFFER\n$RBUFFER" | zeno --zeno-mode=insert-snippet)
-  fi
+  local input=$(printf '%s\n%s\n%s' "$selected_snippet" "$LBUFFER" "$RBUFFER")
+  local out=$(zeno-call-client-and-fallback "insert-snippet" "$input")
 
   if [[ $(echo "$out" | head -1) != "success" ]]; then
     zle reset-prompt

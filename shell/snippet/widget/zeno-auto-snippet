@@ -3,7 +3,8 @@
 () {
   emulate -L zsh
 
-  local out=$(zeno-call-client-and-fallback "auto-snippet" "${LBUFFER}\n${RBUFFER}")
+  local input=$(printf '%s\n%s' "$LBUFFER" "$RBUFFER")
+  local out=$(zeno-call-client-and-fallback "auto-snippet" "$input")
 
   if [[ $(echo "$out" | head -1) != "success" ]]; then
     LBUFFER+=" "
