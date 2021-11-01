@@ -4,6 +4,7 @@ local mode=$1
 local input=$2
 
 if [[ -n $ZENO_ENABLE_SOCK ]]; then
+  (( $+functions[zeno-client] )) || zeno-enable-sock
   if [[ -S $ZENO_SOCK ]]; then
     zeno-client --zeno-mode=${mode} --input="${input}"
     return
