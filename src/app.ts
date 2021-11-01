@@ -165,9 +165,12 @@ const execCommand = async (
 const parseArgs = ({ args }: { args: Array<string> }) => {
   const parsedArgs = argsParser(args, argsParseOption) as Args;
   const mode = parsedArgs["zeno-mode"] ?? '';
-  const command = "-- " + (parsedArgs.input ?? '').replace(/\n$/, '');
-  const parsedCommand = argsParser(command, commandParseOption);
-  const input = parsedCommand._.join(" ") + (/\s$/.exec(command) ? " " : "");
+  const input = (parsedArgs.input ?? '').split("\n").map(line => {
+    const hasTrailingSpace = /\s$/.exec(line);
+    const command = `-- ${line}`;
+    const parsedCommand = argsParser(command, commandParseOption);
+    return parsedCommand._.join(" ") + (hasTrailingSpace ? " " : "");
+  }).join("\n");
   return { mode, input };
 };
 
