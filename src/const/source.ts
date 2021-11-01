@@ -1,9 +1,10 @@
 export const GIT_STATUS_SOURCE = "git -c color.status=always status --short";
 export const GIT_STATUS_CALLBACK =
-  "awk '{ p = index($0, \"\\\"\"); if (p > 0) { $0 = substr($0, p) } else { $0 = $NF }; print }'";
+  "perl -nle '($x, $_) = split(/.*? (?=\")|.* /, $_, 2); print'";
 
 export const GIT_LS_FILES_SOURCE = "git ls-files";
-export const GIT_LS_FILES_CALLBACK = "awk '{ if (/ / && /^[^\"]/) { $0 = \"\\\"\" $0 \"\\\"\" }; print }'";
+export const GIT_LS_FILES_CALLBACK =
+  "perl -nle 'if (/ / && /^[^\"]/) $_ = \"\\\"$_\\\"\"; print'";
 
 export const GIT_LOG_SOURCE =
   "git log --decorate --color=always --format='%C(green)[commit]  %Creset%C(magenta)%h%Creset %C(yellow)%cr %x09%Creset [%C(blue)%an%Creset] %x09%C(auto)%s %d'";
