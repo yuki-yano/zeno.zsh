@@ -5,9 +5,9 @@ local input=$2
 
 if [[ -n $ZENO_ENABLE_SOCK ]]; then
   if [[ -S $ZENO_SOCK ]]; then
-    zeno-client "--zeno-mode=${mode} ${input}"
+    zeno-client --zeno-mode=${mode} --input="${input}"
     return
   fi
   zeno-start-server
 fi
-echo "${input}" | zeno --zeno-mode=${mode}
+zeno --zeno-mode=${mode} --input="${input}"
