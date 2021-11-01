@@ -8,7 +8,7 @@ local -a out tokens
 tokens=( ${(z)LBUFFER} )
 
 if [[ $#tokens == 1 ]]; then
-  input="${LBUFFER}\n${RBUFFER}"
+  input=$(printf '%s\n%s' "$LBUFFER" "$RBUFFER")
   out=( "${(f)$(zeno-call-client-and-fallback 'auto-snippet' "$input")}" )
 
   if [[ $out[1] == success && -n $out[2] ]]; then
