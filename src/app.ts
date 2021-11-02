@@ -1,4 +1,4 @@
-import { argsParser, iter, printf, sprintf } from "./deps.ts";
+import { argsParser, iterateReader, printf, sprintf } from "./deps.ts";
 import { autoSnippet } from "./snippet/auto-snippet.ts";
 import { insertSnippet } from "./snippet/insert-snippet.ts";
 import { snippetList, snippetListOptions } from "./snippet/snippet-list.ts";
@@ -164,8 +164,8 @@ const execCommand = async (
 
 const parseArgs = ({ args }: { args: Array<string> }) => {
   const parsedArgs = argsParser(args, argsParseOption) as Args;
-  const mode = parsedArgs["zeno-mode"] ?? '';
-  const input = (parsedArgs.input ?? '').split("\n").map(line => {
+  const mode = parsedArgs["zeno-mode"] ?? "";
+  const input = (parsedArgs.input ?? "").split("\n").map((line) => {
     const hasTrailingSpace = /\s$/.exec(line);
     const command = `-- ${line}`;
     const parsedCommand = argsParser(command, commandParseOption);
@@ -181,7 +181,7 @@ export const execServer = async ({ socketPath }: { socketPath: string }) => {
   });
 
   for await (const conn of listener) {
-    for await (const r of iter(conn)) {
+    for await (const r of iterateReader(conn)) {
       try {
         setConn(conn);
 
