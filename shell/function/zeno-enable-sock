@@ -21,8 +21,13 @@ function zeno-client() {
   isok=$?
   (( isok == 0 )) || return 1
   fd=$REPLY
-  args=('"'${^@//\"/\\\"}'"')
+  # send as JSON
+  args=( "${@//\\/\\\\}" )         # escape backslash
+  args=( "${(@)args//$'\n'/\\n}" ) # escape new-line
+  args=( "${(@)args//\"/\\\"}" )   # escape quote
+  args=( "\"${(@)^args}\"" )       # quote
   printf '{"args":[%s]}' "${(j:,:)args}" >&$fd
+  # receive result
   cat <&$fd
   exec {fd}>&-
 }

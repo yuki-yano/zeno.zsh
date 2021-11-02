@@ -1,28 +1,31 @@
 #autoload
 
-() {
-  emulate -L zsh
+emulate -L zsh
 
-  local project dir repository session current_session
-  dir=$(ghq list -p | sed -e "s|${HOME}|~|" | ${ZENO_FZF_COMMAND} ${ZENO_FZF_TMUX_OPTIONS} --prompt='Project >' --preview "cat \$(eval echo {})/README.md" --bind ctrl-d:preview-page-down,ctrl-u:preview-page-up)
+local current_session dir options repository session
+local -a out
 
-  if [[ $dir == "" ]]; then
-    return 1
-  fi
+out=( "${(f)^$(ghq list -p)}"(N-/) )
+[[ -n $HOME ]] && out=( "${(@)out//#$HOME/~}" )
 
-  if [[ ! -z ${TMUX} ]]; then
-    repository=${dir##*/}
-    session=${repository//./-}
+if [[ $#out == 0 ]]; then
+  return 1
+fi
 
-    BUFFER="cd ${dir}"
-    zle accept-line
+options=${ZENO_ENABLE_FZF_TMUX:+${ZENO_FZF_TMUX_OPTIONS}}
+options+=" --prompt='Project >' --preview 'cat \$(eval echo {})/README.md'"
+options+=" --bind ctrl-d:preview-page-down,ctrl-u:preview-page-up"
+dir=$(echo "${(F)out}" | eval "${ZENO_FZF_COMMAND} $options")
 
-    current_session=$(tmux list-sessions | grep 'attached' | cut -d":" -f1)
-    if [[ $session -eq $current_session ]]; then
-      tmux rename-session "${session}"
-    fi
-  else
-    BUFFER="cd ${dir}"
-    zle accept-line
-  fi
-}
+if [[ -z $dir ]]; then
+  return 1
+fi
+
+BUFFER="cd ${dir// /\\ }"
+zle accept-line
+
+if [[ -n $TMUX ]]; then
+  repository=${dir:t}
+  session=${repository//./-}
+  tmux rename-session "${session}"
+fi

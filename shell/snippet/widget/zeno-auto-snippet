@@ -1,23 +1,21 @@
 #autoload
 
-() {
-  emulate -L zsh
+emulate -L zsh
 
-  local input=$(printf '%s\n%s' "$LBUFFER" "$RBUFFER")
-  local out=$(zeno-call-client-and-fallback "auto-snippet" "$input")
+local input
+local -a out
 
-  if [[ $(echo "$out" | head -1) != "success" ]]; then
-    LBUFFER+=" "
-    return
-  fi
+input=$(printf '%s\n%s' "$LBUFFER" "$RBUFFER")
+out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=auto-snippet --input="$input")}" )
 
-  local buffer=$(echo "$out" | head -2 | tail -1)
-  local cursor=$(echo "$out" | head -3 | tail -1)
+if [[ $out[1] != success ]]; then
+  LBUFFER+=" "
+  return
+fi
 
-  if [[ $buffer != "" ]]; then
-    BUFFER=$buffer
-    CURSOR=$cursor
-  fi
+if [[ -n $out[2] ]]; then
+  BUFFER=$out[2]
+  CURSOR=$out[3]
+fi
 
-  zle reset-prompt
-}
+zle reset-prompt
