@@ -1,5 +1,6 @@
 import { loadSnippets } from "./settings.ts";
 import { exec, OutputMode } from "../deps.ts";
+import { normalizeCommand, parseCommand } from "../command.ts"
 
 type AutoSnippetData = {
   status: "success";
@@ -29,24 +30,23 @@ const matchContext = (buffer: string, context: string): boolean => {
   return true;
 };
 
-export const autoSnippet = async (input: string): Promise<AutoSnippetData> => {
-  const buffer = input.split("\n").join(" ");
-  const [lbuffer, ..._rbuffer] = input.split("\n");
-  const tokens = lbuffer.split(" ");
+export const autoSnippet = async (
+  input: Record<string, string | undefined>,
+): Promise<AutoSnippetData> => {
+  const {
+    args: tokens,
+    normalized: lbuffer,
+  } = parseCommand(input.lbuffer ?? "", { keepTrailingSpace: true });
+  const rbuffer = normalizeCommand(input.rbuffer ?? '',
+                                   { keepLeadingSpace: true });
+  const buffer = `${lbuffer}${rbuffer}`
 
-  let lbufferWithoutLastWord: string | undefined;
-  if (tokens.length === 1) {
-    lbufferWithoutLastWord = undefined;
-  } else {
-    lbufferWithoutLastWord = `${tokens.slice(0, -1).join(" ")} `;
-  }
-
-  const lastWord = lbuffer.trim().split(" ").at(-1);
-  const rbuffer = _rbuffer.join("\n");
-
-  if (/(^$|^\s)/.exec(rbuffer) == null) {
+  if (tokens.length === 0 || /(^$|^\s)/.test(rbuffer) === false) {
     return { status: "failure" };
   }
+
+  const lastWord = tokens[tokens.length - 1];
+  const lbufferWithoutLastWord = tokens.slice(0, -1).join(" ");
 
   const placeholderRegex = /\{\{\S*\}\}/;
 
@@ -83,10 +83,10 @@ export const autoSnippet = async (input: string): Promise<AutoSnippetData> => {
 
       let cursor: number;
       if (placeholderMatch == null) {
-        cursor = (lbufferWithoutLastWord?.length ?? 0) + snippet.length + 1;
+        cursor = lbufferWithoutLastWord.length + snippet.length + 1;
       } else {
         snippet = snippet.replace(placeholderRegex, "");
-        cursor = (lbufferWithoutLastWord?.length ?? 0) + placeholderMatch.index;
+        cursor = lbufferWithoutLastWord.length + placeholderMatch.index;
       }
 
       const snipText = evaluate === true
@@ -95,7 +95,7 @@ export const autoSnippet = async (input: string): Promise<AutoSnippetData> => {
 
       return {
         status: "success",
-        buffer: `${lbufferWithoutLastWord ?? ""}${snipText}${rbuffer}`.trim(),
+        buffer: `${lbufferWithoutLastWord}${snipText}${rbuffer}`.trim(),
         cursor,
       };
     }

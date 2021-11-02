@@ -5,7 +5,10 @@ emulate -L zsh
 local callback key options source_command
 local -a out
 
-out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=completion --input="$LBUFFER")}" )
+out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=completion \
+  --input.lbuffer="$LBUFFER" \
+  --input.rbuffer="$RBUFFER" \
+  )}" )
 
 if [[ $out[1] != success ]]; then
   if whence fzf-completion > /dev/null; then

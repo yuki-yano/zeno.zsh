@@ -4,7 +4,10 @@ emulate -L zsh
 
 local -a out
 
-out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=next-placeholder --input="$BUFFER")}" )
+out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=next-placeholder \
+  --input.lbuffer="$LBUFFER" \
+  --input.rbuffer="$RBUFFER" \
+  )}" )
 
 if [[ $out[1] == success && -n $out[2] ]]; then
   BUFFER=$out[2]
