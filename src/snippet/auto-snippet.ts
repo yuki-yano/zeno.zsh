@@ -12,22 +12,9 @@ type AutoSnippetData = {
   cursor?: undefined;
 };
 
-const isStartLine = (lbuffer: string, keyword: string) => {
-  const regexp = new RegExp(`^${keyword}\s*$`);
-  if (regexp.exec(lbuffer) == null) {
-    return false;
-  }
-
-  return true;
-};
-
 const matchContext = (buffer: string, context: string): boolean => {
   const bufferRegex = new RegExp(context);
-  if (bufferRegex.exec(buffer) == null) {
-    return false;
-  }
-
-  return true;
+  return bufferRegex.test(buffer);
 };
 
 export const autoSnippet = async (
@@ -45,6 +32,7 @@ export const autoSnippet = async (
     return { status: "failure" };
   }
 
+  const firstWord = tokens[0];
   const lastWord = tokens[tokens.length - 1];
   const lbufferWithoutLastWord = tokens.slice(0, -1).join(" ");
 
@@ -52,12 +40,12 @@ export const autoSnippet = async (
 
   const snippets = loadSnippets();
   for (let { snippet, keyword, context, evaluate } of snippets) {
-    if (keyword == null) {
+    if (keyword !== lastWord) {
       continue;
     }
 
     if (context == null) {
-      if (!isStartLine(lbuffer, keyword)) {
+      if (keyword !== firstWord) {
         continue;
       }
     } else if (context != null && context.global !== true) {
@@ -78,27 +66,25 @@ export const autoSnippet = async (
       }
     }
 
-    if (keyword === lastWord) {
-      const placeholderMatch = placeholderRegex.exec(snippet);
+    const placeholderMatch = placeholderRegex.exec(snippet);
 
-      let cursor: number;
-      if (placeholderMatch == null) {
-        cursor = lbufferWithoutLastWord.length + snippet.length + 1;
-      } else {
-        snippet = snippet.replace(placeholderRegex, "");
-        cursor = lbufferWithoutLastWord.length + placeholderMatch.index;
-      }
-
-      const snipText = evaluate === true
-        ? (await exec(snippet, { output: OutputMode.Capture })).output.trimEnd()
-        : snippet;
-
-      return {
-        status: "success",
-        buffer: `${lbufferWithoutLastWord}${snipText}${rbuffer}`.trim(),
-        cursor,
-      };
+    let cursor: number;
+    if (placeholderMatch == null) {
+      cursor = lbufferWithoutLastWord.length + snippet.length + 1;
+    } else {
+      snippet = snippet.replace(placeholderRegex, "");
+      cursor = lbufferWithoutLastWord.length + placeholderMatch.index;
     }
+
+    const snipText = evaluate === true
+      ? (await exec(snippet, { output: OutputMode.Capture })).output.trimEnd()
+      : snippet;
+
+    return {
+      status: "success",
+      buffer: `${lbufferWithoutLastWord}${snipText}${rbuffer}`.trim(),
+      cursor,
+    };
   }
 
   return { status: "failure" };
