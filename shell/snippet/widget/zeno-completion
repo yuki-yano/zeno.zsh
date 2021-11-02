@@ -8,11 +8,7 @@ local -a out
 out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=completion --input="$LBUFFER")}" )
 
 if [[ $out[1] != success ]]; then
-  if whence fzf-completion > /dev/null; then
-    zle fzf-completion
-  else
-    zle expand-or-complete
-  fi
+  zle ${ZENO_COMPLETION_FALLBACK:-${${functions[fzf-completion]+fzf-completion}:-expand-or-complete}}
   return
 fi
 
