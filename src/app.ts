@@ -13,20 +13,21 @@ type ClientCall = {
 
 type Args = {
   _: Array<string | number>;
-  "zeno-mode"?: string;
-  input?: string;
+  "zeno-mode": string;
+  input: Record<string, unknown>;
 };
 
 const argsParseOption = {
   string: [
     "zeno-mode",
-    "input",
   ],
-};
-
-const commandParseOption = {
+  default: {
+    "zeno-mode": "",
+    "input": {},
+  },
   configuration: {
-    "unknown-options-as-args": true,
+    "camel-case-expansion": false,
+    "parse-numbers": false,
     "parse-positional-numbers": false,
   },
 };
@@ -63,9 +64,13 @@ const write = async (
   }
 };
 
-const execCommand = async (
-  { mode, input }: { mode: string; input: string },
-) => {
+const execCommand = async ({
+  mode,
+  input,
+}: {
+  mode: string;
+  input: Record<string, string | undefined>;
+}) => {
   switch (mode) {
     case "snippet-list": {
       const snippets = snippetList();
@@ -110,8 +115,7 @@ const execCommand = async (
     }
 
     case "next-placeholder": {
-      const buffer = input.replace(/\n$/, "");
-      const result = nextPlaceholder(buffer);
+      const result = nextPlaceholder(input);
 
       if (result?.index != null) {
         const { nextBuffer, index } = result;
@@ -127,8 +131,7 @@ const execCommand = async (
     }
 
     case "completion": {
-      const buffer = input.replace(/\n$/, "");
-      const source = completion(buffer);
+      const source = completion(input);
 
       if (source != null) {
         await write({ format: "%s\n", text: "success" });
@@ -151,7 +154,10 @@ const execCommand = async (
     }
 
     case "chdir": {
-      Deno.chdir(input);
+      if (input.dir === undefined) {
+        throw new Error("option required: --input.dir=<path>");
+      }
+      Deno.chdir(input.dir);
       break;
     }
 
@@ -165,13 +171,11 @@ const execCommand = async (
 const parseArgs = ({ args }: { args: Array<string> }) => {
   const parsedArgs = argsParser(args, argsParseOption) as Args;
   const mode = parsedArgs["zeno-mode"] ?? "";
-  const input = (parsedArgs.input ?? "").split("\n").map((line) => {
-    const hasTrailingSpace = /\s$/.exec(line);
-    const command = `-- ${line}`;
-    const parsedCommand = argsParser(command, commandParseOption);
-    return parsedCommand._.join(" ") + (hasTrailingSpace ? " " : "");
-  }).join("\n");
-  return { mode, input };
+  const input = parsedArgs.input ?? {};
+  const filteredInput = Object.fromEntries(Object.entries(input).map(
+    ([key, value]) => [key, value === undefined ? undefined : `${value}`]
+  ));
+  return { mode, input: filteredInput };
 };
 
 export const execServer = async ({ socketPath }: { socketPath: string }) => {

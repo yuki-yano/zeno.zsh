@@ -2,14 +2,15 @@
 
 emulate -L zsh
 
-local input
 local -a out tokens
 
 tokens=( ${(z)LBUFFER} )
 
 if [[ $#tokens == 1 ]]; then
-  input=$(printf '%s\n%s' "$LBUFFER" "$RBUFFER")
-  out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=auto-snippet --input="$input")}" )
+  out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=auto-snippet \
+    --input.lbuffer="$LBUFFER" \
+    --input.rbuffer="$RBUFFER" \
+    )}" )
 
   if [[ $out[1] == success && -n $out[2] ]]; then
     BUFFER=$out[2]
