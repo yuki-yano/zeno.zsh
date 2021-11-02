@@ -1,6 +1,5 @@
 import { loadSnippets } from "./settings.ts";
 import { exec, OutputMode } from "../deps.ts";
-import { Snippet } from "../type/settings.ts";
 
 type AutoSnippetData = {
   status: "success";
