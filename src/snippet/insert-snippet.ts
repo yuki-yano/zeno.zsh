@@ -1,5 +1,6 @@
 import { exec, OutputMode } from "../deps.ts";
 import { loadSnippets } from "./settings.ts";
+import { normalizeCommand } from "../command.ts"
 
 type InsertSnippetData = {
   status: "success";
@@ -12,25 +13,18 @@ type InsertSnippetData = {
 };
 
 export const insertSnippet = async (
-  input: string,
+  input: Record<string, string | undefined>,
 ): Promise<InsertSnippetData> => {
-  const content = input.split("\n");
-
-  if (content.length > 4) {
-    console.error("Unsupported multi line");
-    return { status: "failure" };
-  }
-
-  let [snippetLine, lbuffer, rbuffer] = content;
-  lbuffer = lbuffer ?? "";
-  rbuffer = rbuffer ?? "";
-
-  const [snippetName] = snippetLine.split(":");
+  const lbuffer = normalizeCommand(input.lbuffer ?? '',
+                                   { keepTrailingSpace: true });
+  const rbuffer = normalizeCommand(input.rbuffer ?? '',
+                                   { keepLeadingSpace: true });
+  const snippetName = (input.snippet ?? '').trim();
 
   const snippets = loadSnippets();
 
   for (const { snippet, name, evaluate } of snippets) {
-    if (name == null || snippetName.trim() !== name.trim()) {
+    if (name == null || snippetName !== name.trim()) {
       continue;
     }
 

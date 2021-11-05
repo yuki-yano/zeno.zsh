@@ -50,7 +50,7 @@ function zeno-stop-server() {
 }
 
 function zeno-onchpwd() {
-  zeno-client --zeno-mode=chdir --input="$PWD"
+  zeno-client --zeno-mode=chdir --input.dir="$PWD"
 }
 
 function zeno-set-pid() {
