@@ -9,7 +9,7 @@ input=$(printf '%s\n%s' "$LBUFFER" "$RBUFFER")
 out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=auto-snippet --input="$input")}" )
 
 if [[ $out[1] != success ]]; then
-  LBUFFER+=" "
+  zle ${ZENO_AUTO_SNIPPET_FALLBACK:-self-insert}
   return
 fi
 
