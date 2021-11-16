@@ -19,7 +19,7 @@ export const parseCommand = (
 ) => {
   const { keepLeadingSpace, keepTrailingSpace } = opts ?? {};
   const parsed = argsParser(`-- ${command}`, commandParseOption);
-  const args = (parsed._ as Array<string>).map(arg => {
+  const args = (parsed._ as Array<string>).map((arg) => {
     // remove unnecessary quotes
     const match = /^(["'])([a-z0-9.,:/_=+-]*)\1$/.exec(arg);
     return match ? match[2] : arg;
@@ -37,7 +37,7 @@ export const parseCommand = (
     args,
     hasLeadingSpace,
     hasTrailingSpace,
-  }
+  };
 };
 
 export const normalizeCommand = (
