@@ -9,17 +9,17 @@ if (socketPath == null) {
   Deno.exit(1);
 }
 
-Deno.signal("SIGINT").then(() => {
+Deno.addSignalListener("SIGINT", () => {
   Deno.removeSync(socketPath);
   Deno.exit();
 });
 
-Deno.signal("SIGTERM").then(() => {
+Deno.addSignalListener("SIGTERM", () => {
   Deno.removeSync(socketPath);
   Deno.exit();
 });
 
-Deno.signal("SIGHUP").then(() => {
+Deno.addSignalListener("SIGHUP", () => {
   Deno.removeSync(socketPath);
   Deno.exit();
 });
