@@ -172,9 +172,11 @@ const parseArgs = ({ args }: { args: Array<string> }) => {
   const parsedArgs = argsParser(args, argsParseOption) as Args;
   const mode = parsedArgs["zeno-mode"] ?? "";
   const input = parsedArgs.input ?? {};
-  const filteredInput = Object.fromEntries(Object.entries(input).map(
-    ([key, value]) => [key, value === undefined ? undefined : `${value}`]
-  ));
+  const filteredInput = Object.fromEntries(
+    Object.entries(input).map(
+      ([key, value]) => [key, value === undefined ? undefined : `${value}`],
+    ),
+  );
   return { mode, input: filteredInput };
 };
 

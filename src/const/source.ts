@@ -4,7 +4,7 @@ export const GIT_STATUS_CALLBACK =
 
 export const GIT_LS_FILES_SOURCE = "git ls-files";
 export const GIT_LS_FILES_CALLBACK =
-  "perl -nle 'if (/ / && /^[^\"]/) $_ = \"\\\"$_\\\"\"; print'";
+  'perl -nle \'if (/ / && /^[^"]/) $_ = "\\"$_\\""; print\'';
 
 export const GIT_LOG_SOURCE =
   "git log --decorate --color=always --format='%C(green)[commit]  %Creset%C(magenta)%h%Creset %C(yellow)%cr %x09%Creset [%C(blue)%an%Creset] %x09%C(auto)%s %d'";

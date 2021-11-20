@@ -32,7 +32,12 @@ if [[ -z $ZENO_DISABLE_EXECUTE_CACHE_COMMAND ]]; then
 fi
 
 if [[ -n $ZENO_ENABLE_SOCK ]]; then
-  zeno-enable-sock
+  printf -v DENO_VERSION '%d%02d%02d' ${(s:.:)$(deno -V)[2]}
+  if (( DENO_VERSION >= 11600 )); then
+    zeno-enable-sock
+  else
+    export ZENO_ENABLE_SOCK=0
+  fi
 fi
 
 export ZENO_LOADED=1

@@ -1,6 +1,6 @@
 import { loadSnippets } from "./settings.ts";
 import { exec, OutputMode } from "../deps.ts";
-import { normalizeCommand, parseCommand } from "../command.ts"
+import { normalizeCommand, parseCommand } from "../command.ts";
 
 type AutoSnippetData = {
   status: "success";
@@ -24,9 +24,10 @@ export const autoSnippet = async (
     args: tokens,
     normalized: lbuffer,
   } = parseCommand(input.lbuffer ?? "", { keepTrailingSpace: true });
-  const rbuffer = normalizeCommand(input.rbuffer ?? '',
-                                   { keepLeadingSpace: true });
-  const buffer = `${lbuffer}${rbuffer}`
+  const rbuffer = normalizeCommand(input.rbuffer ?? "", {
+    keepLeadingSpace: true,
+  });
+  const buffer = `${lbuffer}${rbuffer}`;
 
   if (tokens.length === 0 || /(^$|^\s)/.test(rbuffer) === false) {
     return { status: "failure" };
