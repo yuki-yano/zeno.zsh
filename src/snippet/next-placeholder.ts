@@ -1,10 +1,10 @@
-import { normalizeCommand } from "../command.ts"
+import { normalizeCommand } from "../command.ts";
 
 export const nextPlaceholder = (
   input: Record<string, string | undefined>,
 ) => {
-  const lbuffer = input.lbuffer ?? '';
-  const rbuffer = input.rbuffer ?? '';
+  const lbuffer = input.lbuffer ?? "";
+  const rbuffer = input.rbuffer ?? "";
   const buffer = normalizeCommand(`${lbuffer}${rbuffer}`);
   const placeholder = /{{.+?}}/;
 
