@@ -1,46 +1,14 @@
 import { DEFAULT_OPTIONS } from "../const/option.ts";
-import { existsSync, yamlParse } from "../deps.ts";
-import { HOME, SETTING_FILE } from "../settings.ts";
+import { getSettings } from "../settings.ts";
 import type { CompletionSource } from "../type/fzf.ts";
-import type { Settings, Snippet } from "../type/settings.ts";
-
-const parseSettings = (): Settings => {
-  if (HOME == null) {
-    Deno.exit(1);
-  }
-
-  let file: string;
-  let settings: Settings = {
-    snippets: [],
-    completions: [],
-  };
-
-  if (existsSync(SETTING_FILE)) {
-    file = Deno.readTextFileSync(SETTING_FILE);
-  } else {
-    return settings;
-  }
-
-  try {
-    const parsedSettings = yamlParse(file) as Partial<Settings> | undefined;
-    settings = {
-      snippets: parsedSettings?.snippets ?? [],
-      completions: parsedSettings?.completions ?? [],
-    };
-  } catch (e: unknown) {
-    console.error("Setting parsed error");
-    throw (e);
-  }
-
-  return settings;
-};
+import type { Snippet } from "../type/settings.ts";
 
 export const loadSnippets = (): Array<Snippet> => {
-  return parseSettings().snippets;
+  return getSettings().snippets;
 };
 
 export const loadCompletions = (): Array<CompletionSource> => {
-  const userCompletions = parseSettings().completions;
+  const userCompletions = getSettings().completions;
 
   let completions: Array<CompletionSource> = [];
   for (const userCompletion of userCompletions) {
