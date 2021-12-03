@@ -1,6 +1,7 @@
 import { exec, OutputMode } from "../deps.ts";
 import { loadSnippets } from "./settings.ts";
 import { normalizeCommand } from "../command.ts";
+import type { Input } from "../type/shell.ts";
 
 type InsertSnippetData = {
   status: "success";
@@ -13,7 +14,7 @@ type InsertSnippetData = {
 };
 
 export const insertSnippet = async (
-  input: Record<string, string | undefined>,
+  input: Input,
 ): Promise<InsertSnippetData> => {
   const lbuffer = normalizeCommand(input.lbuffer ?? "", {
     keepTrailingSpace: true,

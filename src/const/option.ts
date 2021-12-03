@@ -1,4 +1,4 @@
-import { FzfOptionBinds, FzfOptions } from "../type/fzf.ts";
+import type { FzfOptionBinds, FzfOptions } from "../type/fzf.ts";
 import {
   GIT_BRANCH_SOURCE,
   GIT_LOG_SOURCE,

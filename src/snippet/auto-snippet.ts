@@ -1,6 +1,7 @@
 import { loadSnippets } from "./settings.ts";
 import { exec, OutputMode } from "../deps.ts";
 import { normalizeCommand, parseCommand } from "../command.ts";
+import type { Input } from "../type/shell.ts";
 
 type AutoSnippetData = {
   status: "success";
@@ -18,7 +19,7 @@ const matchContext = (buffer: string, context: string): boolean => {
 };
 
 export const autoSnippet = async (
-  input: Record<string, string | undefined>,
+  input: Input,
 ): Promise<AutoSnippetData> => {
   const {
     args: tokens,
