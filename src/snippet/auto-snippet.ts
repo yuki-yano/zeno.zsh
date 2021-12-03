@@ -35,7 +35,11 @@ export const autoSnippet = async (
 
   const firstWord = tokens[0];
   const lastWord = tokens[tokens.length - 1];
-  const lbufferWithoutLastWord = tokens.slice(0, -1).join(" ");
+
+  let lbufferWithoutLastWord = "";
+  if (tokens.length !== 1) {
+    lbufferWithoutLastWord = `${tokens.slice(0, -1).join(" ")} `;
+  }
 
   const placeholderRegex = /\{\{\S*\}\}/;
 
