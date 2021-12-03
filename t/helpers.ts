@@ -35,3 +35,10 @@ export class Helper {
     }
   }
 }
+
+export const parametrize = <T extends unknown>(
+  params: Array<T>,
+  test: (param: T, index: number) => void,
+) => {
+  params.forEach(test);
+};

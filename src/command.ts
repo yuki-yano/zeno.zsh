@@ -8,15 +8,23 @@ const commandParseOption = {
   },
 };
 
-type ParseCommandOptions = {
+export type ParseCommandOptions = {
   keepLeadingSpace?: boolean;
   keepTrailingSpace?: boolean;
-}
+};
+
+export type ParsedCommand = {
+  command: string;
+  normalized: string;
+  args: Array<string>;
+  hasLeadingSpace: boolean;
+  hasTrailingSpace: boolean;
+};
 
 export const parseCommand = (
   command: string,
   opts?: ParseCommandOptions,
-) => {
+): ParsedCommand => {
   const { keepLeadingSpace, keepTrailingSpace } = opts ?? {};
   const parsed = argsParser(`-- ${command}`, commandParseOption);
   const args = (parsed._ as Array<string>).map((arg) => {
