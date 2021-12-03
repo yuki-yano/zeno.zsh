@@ -42,7 +42,7 @@ export const autoSnippet = async (
     lbufferWithoutLastWord = `${tokens.slice(0, -1).join(" ")} `;
   }
 
-  const placeholderRegex = /\{\{\S*\}\}/;
+  const placeholderRegex = /\{\{[^{}\s]*\}\}/;
 
   const snippets = loadSnippets();
   for (const { snippet, keyword, context, evaluate } of snippets) {

@@ -31,7 +31,7 @@ export const insertSnippet = async (
       continue;
     }
 
-    const placeholderRegex = /\{\{\S*\}\}/;
+    const placeholderRegex = /\{\{[^{}\s]*\}\}/;
     const placeholderMatch = placeholderRegex.exec(snippet);
 
     let snipText = evaluate === true
