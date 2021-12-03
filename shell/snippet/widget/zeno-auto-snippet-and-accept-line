@@ -6,15 +6,13 @@ local -a out tokens
 
 tokens=( ${(z)LBUFFER} )
 
-if [[ $#tokens == 1 ]]; then
-  out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=auto-snippet \
-    --input.lbuffer="$LBUFFER" \
-    --input.rbuffer="$RBUFFER" \
-    )}" )
+out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=auto-snippet \
+  --input.lbuffer="$LBUFFER" \
+  --input.rbuffer="$RBUFFER" \
+  )}" )
 
-  if [[ $out[1] == success && -n $out[2] ]]; then
-    BUFFER=$out[2]
-  fi
+if [[ $out[1] == success && -n $out[2] ]]; then
+  BUFFER=$out[2]
 fi
 
 zle accept-line
