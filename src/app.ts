@@ -6,6 +6,7 @@ import { fzfOptionsToString } from "./fzf/option/convert.ts";
 import { completion } from "./completion/completion.ts";
 import { nextPlaceholder } from "./snippet/next-placeholder.ts";
 import { ZENO_SOCK } from "./settings.ts";
+import type { Input } from "./type/shell.ts";
 
 type ClientCall = {
   args?: Array<string>;
@@ -14,7 +15,7 @@ type ClientCall = {
 type Args = {
   _: Array<string | number>;
   "zeno-mode": string;
-  input: Record<string, unknown>;
+  input: Input;
 };
 
 const argsParseOption = {
@@ -69,7 +70,7 @@ const execCommand = async ({
   input,
 }: {
   mode: string;
-  input: Record<string, string | undefined>;
+  input: Input;
 }) => {
   switch (mode) {
     case "snippet-list": {
@@ -176,7 +177,7 @@ const parseArgs = ({ args }: { args: Array<string> }) => {
     Object.entries(input).map(
       ([key, value]) => [key, value === undefined ? undefined : `${value}`],
     ),
-  );
+  ) as Input;
   return { mode, input: filteredInput };
 };
 

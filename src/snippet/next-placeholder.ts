@@ -1,7 +1,8 @@
 import { normalizeCommand } from "../command.ts";
+import type { Input } from "../type/shell.ts";
 
 export const nextPlaceholder = (
-  input: Record<string, string | undefined>,
+  input: Input,
 ) => {
   const lbuffer = input.lbuffer ?? "";
   const rbuffer = input.rbuffer ?? "";

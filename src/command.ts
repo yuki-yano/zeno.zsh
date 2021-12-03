@@ -8,7 +8,7 @@ const commandParseOption = {
   },
 };
 
-interface ParseCommandOptions {
+type ParseCommandOptions = {
   keepLeadingSpace?: boolean;
   keepTrailingSpace?: boolean;
 }

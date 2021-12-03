@@ -1,8 +1,9 @@
 import { completionSources } from "./source/index.ts";
 import { normalizeCommand } from "../command.ts";
+import type { Input } from "../type/shell.ts";
 
 export const completion = (
-  input: Record<string, string | undefined>,
+  input: Input,
 ) => {
   const lbuffer = normalizeCommand(input.lbuffer ?? "", {
     keepTrailingSpace: true,
