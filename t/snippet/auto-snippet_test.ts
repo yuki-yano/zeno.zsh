@@ -37,6 +37,12 @@ describe("snippet/auto-snippet", () => {
             rbuffer: "\\S",
           },
         },
+        {
+          name: "toto",
+          keyword: "toto",
+          snippet: `perl -e "$x='HOHO'; print $x;"`,
+          evaluate: true,
+        },
       ],
       completions: [],
     });
@@ -124,6 +130,17 @@ describe("snippet/auto-snippet", () => {
         },
         {
           status: "failure",
+        },
+      ],
+      [
+        {
+          lbuffer: "toto",
+          rbuffer: "",
+        },
+        {
+          status: "success",
+          buffer: "HOHO",
+          cursor: 5,
         },
       ],
     ], ([input, expected], index) => {
