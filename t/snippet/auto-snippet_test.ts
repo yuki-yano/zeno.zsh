@@ -38,10 +38,18 @@ describe("snippet/auto-snippet", () => {
           },
         },
         {
-          name: "toto",
+          name: "evaluate",
           keyword: "toto",
           snippet: `perl -e "$x='HOHO'; print $x;"`,
           evaluate: true,
+        },
+        {
+          name: "placeholder",
+          keyword: "S",
+          snippet: "| sed 's/{{MATCH}}/{{REPLACE}}/g'",
+          context: {
+            lbuffer: ".+\\s",
+          },
         },
       ],
       completions: [],
@@ -141,6 +149,17 @@ describe("snippet/auto-snippet", () => {
           status: "success",
           buffer: "HOHO",
           cursor: 5,
+        },
+      ],
+      [
+        {
+          lbuffer: "find . S",
+          rbuffer: "",
+        },
+        {
+          status: "success",
+          buffer: "find . | sed 's//{{REPLACE}}/g'",
+          cursor: 16,
         },
       ],
     ], ([input, expected], index) => {
