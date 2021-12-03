@@ -45,7 +45,7 @@ export const autoSnippet = async (
   const placeholderRegex = /\{\{\S*\}\}/;
 
   const snippets = loadSnippets();
-  for (let { snippet, keyword, context, evaluate } of snippets) {
+  for (const { snippet, keyword, context, evaluate } of snippets) {
     if (keyword !== lastWord) {
       continue;
     }
@@ -72,19 +72,21 @@ export const autoSnippet = async (
       }
     }
 
-    const placeholderMatch = placeholderRegex.exec(snippet);
-
-    let cursor: number;
-    if (placeholderMatch == null) {
-      cursor = lbufferWithoutLastWord.length + snippet.length + 1;
-    } else {
-      snippet = snippet.replace(placeholderRegex, "");
-      cursor = lbufferWithoutLastWord.length + placeholderMatch.index;
+    let snipText = snippet;
+    if (evaluate === true) {
+      const response = await exec(snippet, { output: OutputMode.Capture });
+      snipText = response.output.trimEnd();
     }
 
-    const snipText = evaluate === true
-      ? (await exec(snippet, { output: OutputMode.Capture })).output.trimEnd()
-      : snippet;
+    const placeholderMatch = placeholderRegex.exec(snipText);
+
+    let cursor = lbufferWithoutLastWord.length;
+    if (placeholderMatch == null) {
+      cursor += snipText.length + 1;
+    } else {
+      snipText = snipText.replace(placeholderRegex, "");
+      cursor += placeholderMatch.index;
+    }
 
     return {
       status: "success",
