@@ -3,7 +3,7 @@ import { exec, OutputMode } from "../deps.ts";
 import { normalizeCommand, parseCommand } from "../command.ts";
 import type { Input } from "../type/shell.ts";
 
-type AutoSnippetData = {
+export type AutoSnippetData = {
   status: "success";
   buffer: string;
   cursor: number;
