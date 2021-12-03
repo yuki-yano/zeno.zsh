@@ -2,9 +2,7 @@
 
 emulate -L zsh
 
-local -a out tokens
-
-tokens=( ${(z)LBUFFER} )
+local -a out
 
 out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=auto-snippet \
   --input.lbuffer="$LBUFFER" \
