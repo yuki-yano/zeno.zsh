@@ -37,7 +37,7 @@ export const autoSnippet = async (
   const lastWord = tokens[tokens.length - 1];
 
   let lbufferWithoutLastWord = "";
-  if (tokens.length !== 1) {
+  if (tokens.length > 1) {
     lbufferWithoutLastWord = `${tokens.slice(0, -1).join(" ")} `;
   }
 
