@@ -1,9 +1,4 @@
-import {
-  beforeAll,
-  describe,
-  it,
-} from "https://deno.land/x/test_suite@0.9.1/mod.ts";
-import { assertEquals } from "https://deno.land/std@0.113.0/testing/asserts.ts";
+import { assertEquals, beforeAll, describe, it } from "../deps.ts";
 
 import { autoSnippet } from "../../src/snippet/auto-snippet.ts";
 import type { AutoSnippetData } from "../../src/snippet/auto-snippet.ts";
