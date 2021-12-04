@@ -3,7 +3,7 @@ import { loadSnippets } from "./settings.ts";
 import { normalizeCommand } from "../command.ts";
 import type { Input } from "../type/shell.ts";
 
-type InsertSnippetData = {
+export type InsertSnippetData = {
   status: "success";
   buffer: string;
   cursor: number;
