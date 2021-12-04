@@ -1,11 +1,11 @@
 import {
   afterEach,
+  assertEquals,
   beforeEach,
   describe,
   it,
-} from "https://deno.land/x/test_suite@0.9.1/mod.ts";
-import { assertEquals } from "https://deno.land/std@0.113.0/testing/asserts.ts";
-import * as path from "https://deno.land/std@0.113.0/path/mod.ts";
+  path,
+} from "./deps.ts";
 
 import {
   clearCache,

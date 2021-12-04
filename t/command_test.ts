@@ -1,5 +1,4 @@
-import { describe, it } from "https://deno.land/x/test_suite@0.9.1/mod.ts";
-import { assertEquals } from "https://deno.land/std@0.113.0/testing/asserts.ts";
+import { assertEquals, describe, it } from "./deps.ts";
 
 import { normalizeCommand, parseCommand } from "../src/command.ts";
 import type { ParsedCommand } from "../src/command.ts";
