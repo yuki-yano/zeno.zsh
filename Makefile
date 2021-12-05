@@ -4,7 +4,7 @@
 
 SRCS := ./src ./t
 ALLOW := --allow-env --allow-read --allow-run --allow-write
-TEST_FLAG := --unstable
+TEST_FLAG := --unstable --import-map=./t/map.json
 
 ci: fmt-check lint type-check test
 

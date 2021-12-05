@@ -5,7 +5,8 @@ import {
   describe,
   it,
   path,
-} from "./deps.ts";
+} from "t/deps.ts";
+import { Helper } from "t/helpers.ts";
 
 import {
   clearCache,
@@ -13,9 +14,8 @@ import {
   getSettings,
   loadConfigFile,
   setSettings,
-} from "../src/settings.ts";
-import { Snippet, UserCompletionSource } from "../src/type/settings.ts";
-import { Helper } from "./helpers.ts";
+} from "src/settings.ts";
+import { Snippet, UserCompletionSource } from "src/type/settings.ts";
 
 describe("settings", () => {
   const context = new Helper();
