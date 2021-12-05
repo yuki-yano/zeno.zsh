@@ -1,10 +1,10 @@
-import { assertEquals, beforeAll, describe, it } from "../deps.ts";
+import { assertEquals, beforeAll, describe, it } from "t/deps.ts";
+import { parametrize } from "t/helpers.ts";
 
-import { insertSnippet } from "../../src/snippet/insert-snippet.ts";
-import type { InsertSnippetData } from "../../src/snippet/insert-snippet.ts";
-import { setSettings } from "../../src/settings.ts";
-import type { Input } from "../../src/type/shell.ts";
-import { parametrize } from "../helpers.ts";
+import { insertSnippet } from "src/snippet/insert-snippet.ts";
+import type { InsertSnippetData } from "src/snippet/insert-snippet.ts";
+import { setSettings } from "src/settings.ts";
+import type { Input } from "src/type/shell.ts";
 
 describe("snippet/insert-snippet", () => {
   beforeAll(() => {
