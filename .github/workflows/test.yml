@@ -1,0 +1,41 @@
+name: CI
+
+env:
+  DENO_DIR: ".deno"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**.ts"
+      - ".github/workflows/test.yml"
+      - "Makefile"
+  pull_request:
+    paths:
+      - "**.ts"
+      - ".github/workflows/test.yml"
+      - "Makefile"
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        runner:
+          - ubuntu-latest
+        version:
+          - "1.x"
+    runs-on: ${{ matrix.runner }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: denoland/setup-deno@v1
+      with:
+        deno-version: "${{ matrix.version }}"
+    - uses: actions/cache@v2
+      with:
+        path: ${{ env.DENO_DIR }}
+        key: ${{ runner.os }}-deno-${{ matrix.version }}-${{ hashFiles('**/*.ts') }}
+        restore-keys: |
+          ${{ runner.os }}-deno-${{ matrix.version }}-
+          ${{ runner.os }}-deno-
+    - run: make ci
