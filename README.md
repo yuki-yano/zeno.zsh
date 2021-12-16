@@ -87,6 +87,9 @@ Use zeno-ghq-cd zle
 ### Completion and abbrev snippet
 
 ```zsh
+# if defined load the configuration file from there
+# export ZENO_HOME=~/.config/zeno
+
 # if disable deno cache command when plugin loaded
 # export ZENO_DISABLE_EXECUTE_CACHE_COMMAND=1
 
@@ -159,7 +162,15 @@ fi
 
 See: https://github.com/yuki-yano/zeno.zsh/blob/main/src/completion/source/git.ts
 
-## User configuration file example
+## User configuration file
+
+The configuration file is searched from the following.
+
+- `$ZENO_HOME/config.yml`
+- `$XDG_CONFIG_HOME/zeno/config.yml` or `~/.config/zeno/config.yml`
+- Find `.../zeno/config.yml` from each in `$XDG_CONFIG_DIRS`
+
+### Example
 
 ```sh
 $ touch ~/.config/zeno/config.yml

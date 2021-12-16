@@ -125,7 +125,7 @@ const execCommand = async ({
         await write({ format: "%s\n", text: nextBuffer });
         await write({ format: "%s\n", text: index.toString() });
       } else {
-        await write({ format: "&s\n", text: "failure" });
+        await write({ format: "%s\n", text: "failure" });
       }
 
       break;

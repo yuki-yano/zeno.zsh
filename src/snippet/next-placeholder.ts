@@ -7,12 +7,15 @@ export const nextPlaceholder = (
   const lbuffer = input.lbuffer ?? "";
   const rbuffer = input.rbuffer ?? "";
   const buffer = normalizeCommand(`${lbuffer}${rbuffer}`);
-  const placeholder = /{{.+?}}/;
+  const placeholderRegex = /\{\{[^{}\s]*\}\}/;
 
-  const result = buffer.match(placeholder);
-  if (result == null) {
+  const placeholderMatch = placeholderRegex.exec(buffer);
+  if (placeholderMatch == null) {
     return null;
   }
 
-  return { nextBuffer: buffer.replace(placeholder, ""), index: result.index };
+  return {
+    nextBuffer: buffer.replace(placeholderRegex, ""),
+    index: placeholderMatch.index,
+  };
 };

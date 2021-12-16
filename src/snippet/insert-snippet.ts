@@ -3,7 +3,7 @@ import { loadSnippets } from "./settings.ts";
 import { normalizeCommand } from "../command.ts";
 import type { Input } from "../type/shell.ts";
 
-type InsertSnippetData = {
+export type InsertSnippetData = {
   status: "success";
   buffer: string;
   cursor: number;
@@ -24,19 +24,21 @@ export const insertSnippet = async (
   });
   const snippetName = (input.snippet ?? "").trim();
 
-  const snippets = loadSnippets();
+  const placeholderRegex = /\{\{[^{}\s]*\}\}/;
 
+  const snippets = loadSnippets();
   for (const { snippet, name, evaluate } of snippets) {
     if (name == null || snippetName !== name.trim()) {
       continue;
     }
 
-    const placeholderRegex = /\{\{\S*\}\}/;
-    const placeholderMatch = placeholderRegex.exec(snippet);
+    let snipText = snippet;
+    if (evaluate === true) {
+      const response = await exec(snippet, { output: OutputMode.Capture });
+      snipText = response.output.trimEnd();
+    }
 
-    let snipText = evaluate === true
-      ? (await exec(snippet, { output: OutputMode.Capture })).output.trimEnd()
-      : snippet;
+    const placeholderMatch = placeholderRegex.exec(snipText);
 
     let cursor = snipText.length + 1;
     if (placeholderMatch != null) {
