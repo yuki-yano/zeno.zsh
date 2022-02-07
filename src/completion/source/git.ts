@@ -7,6 +7,7 @@ import {
   GIT_LOG_PREVIEW,
   GIT_LS_FILES_PREVIEW,
   GIT_STATUS_PREVIEW,
+  GIT_STASH_PREVIEW,
 } from "../../const/preview.ts";
 import {
   GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK,
@@ -16,7 +17,9 @@ import {
   GIT_LS_FILES_SOURCE,
   GIT_STATUS_CALLBACK,
   GIT_STATUS_SOURCE,
+  GIT_STASH_SOURCE,
 } from "../../const/source.ts";
+import { ZENO_GIT_STASH_CUT } from "../../settings.ts";
 import type { CompletionSource } from "../../type/fzf.ts";
 
 export const gitSources: Array<CompletionSource> = [
@@ -254,5 +257,27 @@ export const gitSources: Array<CompletionSource> = [
       "--preview": GIT_BRANCH_LOG_TAG_REFLOG_PREVIEW,
     },
     callback: GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK,
+  },
+  {
+    name: "git stash pop",
+    patterns: [/git stash pop( ((-|--)\S+)*)? $/],
+    sourceCommand: GIT_STASH_SOURCE,
+    options: {
+      ...DEFAULT_OPTIONS,
+      "--prompt": "'Git Stash Pop> '",
+      "--preview": GIT_STASH_PREVIEW,
+    },
+    callback: ZENO_GIT_STASH_CUT,
+  },
+  {
+    name: "git stash drop",
+    patterns: [/git stash drop( ((-|--)\S+)*)? $/],
+    sourceCommand: GIT_STASH_SOURCE,
+    options: {
+      ...DEFAULT_OPTIONS,
+      "--prompt": "'Git Stash Drop> '",
+      "--preview": GIT_STASH_PREVIEW,
+    },
+    callback: ZENO_GIT_STASH_CUT,
   },
 ];
