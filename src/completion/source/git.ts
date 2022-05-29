@@ -259,23 +259,12 @@ export const gitSources: Array<CompletionSource> = [
     callback: GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK,
   },
   {
-    name: "git stash pop",
-    patterns: [/git stash pop( ((-|--)\S+)*)? $/],
+    name: "git stash apply/drop/pop",
+    patterns: [/git stash apply|drop|pop|( ((-|--)\S+)*)? $/],
     sourceCommand: GIT_STASH_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Stash Pop> '",
-      "--preview": GIT_STASH_PREVIEW,
-    },
-    callback: ZENO_GIT_STASH_CUT,
-  },
-  {
-    name: "git stash drop",
-    patterns: [/git stash drop( ((-|--)\S+)*)? $/],
-    sourceCommand: GIT_STASH_SOURCE,
-    options: {
-      ...DEFAULT_OPTIONS,
-      "--prompt": "'Git Stash Drop> '",
       "--preview": GIT_STASH_PREVIEW,
     },
     callback: ZENO_GIT_STASH_CUT,
