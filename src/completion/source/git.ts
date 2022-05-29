@@ -260,7 +260,7 @@ export const gitSources: Array<CompletionSource> = [
   },
   {
     name: "git stash apply/drop/pop",
-    patterns: [/git stash apply|drop|pop|( ((-|--)\S+)*)? $/],
+    patterns: [/git stash (apply|drop|pop)( ((-|--)\S+)*)?$/],
     sourceCommand: GIT_STASH_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
