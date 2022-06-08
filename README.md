@@ -1,4 +1,4 @@
-# zeno.zsh
+# ![logo](https://user-images.githubusercontent.com/5423775/172536289-50471330-59ca-49ad-96e5-cd87eb5c3adb.png)
 
 zsh fuzzy completion and utility plugin with [Deno](https://deno.land/).
 
