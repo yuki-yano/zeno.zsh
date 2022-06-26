@@ -1,8 +1,8 @@
-import { assertEquals, describe, it } from "t/deps.ts";
-import { parametrize } from "t/helpers.ts";
+import { assertEquals, describe, it } from "./deps.ts";
+import { parametrize } from "./helpers.ts";
 
-import { normalizeCommand, parseCommand } from "src/command.ts";
-import type { ParsedCommand } from "src/command.ts";
+import { normalizeCommand, parseCommand } from "../src/command.ts";
+import type { ParsedCommand } from "../src/command.ts";
 
 describe("command", () => {
   describe("parseCommand()", () => {
