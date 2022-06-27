@@ -19,3 +19,5 @@ export const GIT_REFLOG_SOURCE =
   "git reflog --decorate --color=always --format='%C(green)[reflog]  %Creset%C(magenta)%h%Creset %C(yellow)%cr %x09%Creset [%C(blue)%an%Creset] %x09%C(auto)%s %d' 2> /dev/null";
 
 export const GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK = "awk '{ print $2 }'";
+
+export const GIT_STASH_SOURCE = "git stash list";

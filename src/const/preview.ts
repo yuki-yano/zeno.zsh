@@ -9,3 +9,5 @@ export const GIT_LOG_PREVIEW = "git show --color=always {2}";
 
 export const GIT_BRANCH_LOG_TAG_REFLOG_PREVIEW =
   "[[ '{1}' == '[branch]' ]] && git log {2} --decorate --pretty='format:%C(yellow)%h %C(green)%cd %C(reset)%s %C(red)%d %C(cyan)[%an]' --date=iso --graph --color=always || [[ '{1}' == '[tag]' ]] && git log {2} --pretty='format:%C(yellow)%h %C(green)%cd %C(reset)%s %C(red)%d %C(cyan)[%an]' --date=iso --graph --color=always  || [[ '{1}' == '[commit]' ]] && git show --color=always {2} || [[ '{1}' == '[reflog]' ]] && git show --color=always {2}";
+
+export const GIT_STASH_PREVIEW = "git show --color=always {1}";
