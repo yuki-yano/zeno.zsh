@@ -196,7 +196,7 @@ snippets:
     # auto expand condition
     # If not defined, it is only valid at the beginning of a line.
     context:
-      # buffer: '' 
+      # buffer: ''
       lbuffer: '.+\s'
       # rbuffer: ''
 
@@ -209,10 +209,22 @@ snippets:
 
 
 completions:
-  - name: kill
-    patterns: 
-      - "^kill( -9)? $"
-    sourceCommand: "ps -ef | sed 1d"
+  # simple sourceCommand, no callback
+  - name: kill signal
+    patterns:
+      - "^kill -s $"
+    sourceCommand: "kill -l | tr ' ' '\\n'"
+    options:
+      --prompt: "'Kill Signal> '"
+
+  # use excludePatterns and callback
+  - name: kill pid
+    patterns:
+      - "^kill( .*)? $"
+    excludePatterns:
+      # -l, -n or -s is followed by SIGNAL instead of PID
+      - " -[lns] $"
+    sourceCommand: "LANG=C ps -ef | sed 1d"
     options:
       --multi: true
       --prompt: "'Kill Process> '"

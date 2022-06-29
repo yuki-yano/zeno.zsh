@@ -15,6 +15,7 @@ export type FzfOptionBinds = Array<{
 export type CompletionSource = {
   name: string;
   patterns: Array<RegExp>;
+  excludePatterns?: Array<RegExp>;
   sourceCommand: string;
   options: FzfOptions;
   callback?: string;

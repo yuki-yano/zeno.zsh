@@ -21,6 +21,7 @@ export type Snippet = {
 export type UserCompletionSource = {
   name: string;
   patterns: Array<string>;
+  excludePatterns: Array<string>;
   sourceCommand: string;
   preview: string;
   options: FzfOptions;
