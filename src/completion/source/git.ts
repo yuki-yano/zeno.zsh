@@ -13,13 +13,12 @@ import {
   GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK,
   GIT_BRANCH_SOURCE,
   GIT_LOG_SOURCE,
-  GIT_LS_FILES_CALLBACK,
-  GIT_LS_FILES_SOURCE,
-  GIT_STASH_SOURCE,
-  GIT_STATUS_CALLBACK,
-  GIT_STATUS_SOURCE,
+  GIT_LS_FILES_SOURCE_0,
+  GIT_STASH_CALLBACK_0,
+  GIT_STASH_SOURCE_0,
+  GIT_STATUS_CALLBACK_0,
+  GIT_STATUS_SOURCE_0,
 } from "../../const/source.ts";
-import { ZENO_GIT_STASH_CUT } from "../../settings.ts";
 import type { CompletionSource } from "../../type/fzf.ts";
 
 export const gitSources: Array<CompletionSource> = [
@@ -29,27 +28,31 @@ export const gitSources: Array<CompletionSource> = [
       /^git add $/,
       /^git add( -p| --patch) $/,
     ],
-    sourceCommand: GIT_STATUS_SOURCE,
+    sourceCommand: GIT_STATUS_SOURCE_0,
     options: {
       ...DEFAULT_OPTIONS,
       "--multi": true,
       "--prompt": "'Git Add Files> '",
       "--preview": GIT_STATUS_PREVIEW,
+      "--read0": true,
     },
-    callback: GIT_STATUS_CALLBACK,
+    callback: GIT_STATUS_CALLBACK_0,
+    callbackZero: true,
   },
   {
     name: "git diff file",
     patterns: [
       /^git diff( ((-|--)\S+)*)? -- $/,
     ],
-    sourceCommand: GIT_STATUS_SOURCE,
+    sourceCommand: GIT_STATUS_SOURCE_0,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Diff File> '",
       "--preview": GIT_STATUS_PREVIEW,
+      "--read0": true,
     },
-    callback: GIT_STATUS_CALLBACK,
+    callback: GIT_STATUS_CALLBACK_0,
+    callbackZero: true,
   },
   {
     name: "git diff branch file",
@@ -57,13 +60,13 @@ export const gitSources: Array<CompletionSource> = [
       /^git diff( ((-|--)\S+)*)?( \S+) -- $/,
       /^git diff( ((-|--)\S+)*)?( \S+)( \S+) -- $/,
     ],
-    sourceCommand: GIT_LS_FILES_SOURCE,
+    sourceCommand: GIT_LS_FILES_SOURCE_0,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Diff Branch File> '",
       "--preview": GIT_LS_FILES_PREVIEW,
+      "--read0": true,
     },
-    callback: GIT_LS_FILES_CALLBACK,
   },
   {
     name: "git diff",
@@ -110,29 +113,31 @@ export const gitSources: Array<CompletionSource> = [
     patterns: [
       /^git checkout -- $/,
     ],
-    sourceCommand: GIT_STATUS_SOURCE,
+    sourceCommand: GIT_STATUS_SOURCE_0,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Checkout Files> '",
       "--multi": true,
       "--no-sort": true,
       "--preview": GIT_STATUS_PREVIEW,
+      "--read0": true,
     },
-    callback: GIT_STATUS_CALLBACK,
+    callback: GIT_STATUS_CALLBACK_0,
+    callbackZero: true,
   },
   {
     name: "git checkout branch files",
     patterns: [
       /^git checkout( \S+) -- $/,
     ],
-    sourceCommand: GIT_LS_FILES_SOURCE,
+    sourceCommand: GIT_LS_FILES_SOURCE_0,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Checkout Branch Files> '",
       "--multi": true,
       "--preview": GIT_LS_FILES_PREVIEW,
+      "--read0": true,
     },
-    callback: GIT_LS_FILES_CALLBACK,
   },
   {
     name: "git reset",
@@ -152,29 +157,31 @@ export const gitSources: Array<CompletionSource> = [
     patterns: [
       /^git reset -- $/,
     ],
-    sourceCommand: GIT_STATUS_SOURCE,
+    sourceCommand: GIT_STATUS_SOURCE_0,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Reset Files> '",
       "--multi": true,
       "--no-sort": true,
       "--preview": GIT_STATUS_PREVIEW,
+      "--read0": true,
     },
-    callback: GIT_STATUS_CALLBACK,
+    callback: GIT_STATUS_CALLBACK_0,
+    callbackZero: true,
   },
   {
     name: "git reset branch files",
     patterns: [
       /^git reset( \S+) -- $/,
     ],
-    sourceCommand: GIT_LS_FILES_SOURCE,
+    sourceCommand: GIT_LS_FILES_SOURCE_0,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Reset Branch Files> '",
       "--multi": true,
       "--preview": GIT_LS_FILES_PREVIEW,
+      "--read0": true,
     },
-    callback: GIT_LS_FILES_CALLBACK,
   },
   {
     name: "git switch",
@@ -195,15 +202,17 @@ export const gitSources: Array<CompletionSource> = [
     patterns: [
       /^git restore $/,
     ],
-    sourceCommand: GIT_STATUS_SOURCE,
+    sourceCommand: GIT_STATUS_SOURCE_0,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Restore> '",
       "--multi": true,
       "--no-sort": true,
       "--preview": GIT_STATUS_PREVIEW,
+      "--read0": true,
     },
-    callback: GIT_STATUS_CALLBACK,
+    callback: GIT_STATUS_CALLBACK_0,
+    callbackZero: true,
   },
   {
     name: "git restore target commit",
@@ -223,14 +232,14 @@ export const gitSources: Array<CompletionSource> = [
     patterns: [
       /^git restore( -s| --source) \S+ $/,
     ],
-    sourceCommand: GIT_LS_FILES_SOURCE,
+    sourceCommand: GIT_LS_FILES_SOURCE_0,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Restore Files> '",
       "--multi": true,
       "--preview": GIT_LS_FILES_PREVIEW,
+      "--read0": true,
     },
-    callback: GIT_LS_FILES_CALLBACK,
   },
   {
     name: "git rebase",
@@ -261,13 +270,14 @@ export const gitSources: Array<CompletionSource> = [
   {
     name: "git stash apply/drop/pop",
     patterns: [/git stash (apply|drop|pop)( ((-|--)\S+)*)?$/],
-    sourceCommand: GIT_STASH_SOURCE,
+    sourceCommand: GIT_STASH_SOURCE_0,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Stash> '",
       "--preview": GIT_STASH_PREVIEW,
-      "--delimiter": ":",
+      "--read0": true,
     },
-    callback: ZENO_GIT_STASH_CUT,
+    callback: GIT_STASH_CALLBACK_0,
+    callbackZero: true,
   },
 ];
