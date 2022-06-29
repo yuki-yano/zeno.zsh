@@ -141,7 +141,11 @@ const execCommand = async ({
           format: "%s\n",
           text: fzfOptionsToString(source.options),
         });
-        await write({ format: "%s\n", text: source.callback });
+        await write({ format: "%s\n", text: source.callback ?? "" });
+        await write({
+          format: "%s\n",
+          text: source.callbackZero ? "zero" : "",
+        });
       } else {
         await write({ format: "%s\n", text: "failure" });
       }
