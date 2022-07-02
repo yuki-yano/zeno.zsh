@@ -17,5 +17,6 @@ export type CompletionSource = {
   patterns: Array<RegExp>;
   sourceCommand: string;
   options: FzfOptions;
-  callback: string;
+  callback?: string;
+  callbackZero?: boolean;
 };

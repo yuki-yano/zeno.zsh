@@ -184,10 +184,12 @@ snippets:
   - name: git status
     keyword: gs
     snippet: git status --short --branch
+
   # snippet with placeholder
   - name: git commit message
     keyword: gcim
     snippet: git commit -m '{{commit_message}}'
+
   - name: "null"
     keyword: "null"
     snippet: ">/dev/null 2>&1"
@@ -197,12 +199,14 @@ snippets:
       # buffer: '' 
       lbuffer: '.+\s'
       # rbuffer: ''
+
   - name: branch
     keyword: B
     snippet: git symbolic-ref --short HEAD
     context:
       lbuffer: '^git\s+checkout\s+'
     evaluate: true # eval snippet
+
 
 completions:
   - name: kill
@@ -213,6 +217,19 @@ completions:
       --multi: true
       --prompt: "'Kill Process> '"
     callback: "awk '{print $2}'"
+
+  # Use null (\0) termination Input / Output
+  - name: chdir
+    patterns:
+      - "^cd $"
+    sourceCommand: "find . -path '*/.git' -prune -o -maxdepth 5 -type d -print0"
+    options:
+      # Added --read0 if null termination is used in `sourceCommand` output.
+      --read0: true
+      --prompt: "'Chdir> '"
+      --preview: "cd {} && ls -a | sed '/^[.]*$/d'"
+    callback: "cut -z -c 3-"
+    callbackZero: true  # null termination is used in `callback` I/O
 ```
 
 ## Related project

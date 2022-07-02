@@ -24,5 +24,6 @@ export type UserCompletionSource = {
   sourceCommand: string;
   preview: string;
   options: FzfOptions;
-  callback: string;
+  callback?: string;
+  callbackZero?: boolean;
 };
