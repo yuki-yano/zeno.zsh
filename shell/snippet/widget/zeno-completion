@@ -2,9 +2,10 @@
 
 emulate -L zsh
 
-local callback key options source_command
+local callback callback_zero cmdline expect_key options source_command
 local -a out
 
+# ${(f)...} : split by new-line (\n)
 out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=completion \
   --input.lbuffer="$LBUFFER" \
   --input.rbuffer="$RBUFFER" \
@@ -18,20 +19,40 @@ fi
 source_command=$out[2]
 options=$out[3]
 callback=$out[4]
+callback_zero=$out[5]
 
 options="${ZENO_ENABLE_FZF_TMUX:+${ZENO_FZF_TMUX_OPTIONS}} $options"
-out=(
-  "${(f)$(eval "${source_command} | ${ZENO_FZF_COMMAND} ${options}")}"
-)
+cmdline="${source_command} | ${ZENO_FZF_COMMAND} ${options}"
 
-key=$out[1]
+# ${(0)...} : split by null (\0)
+out=( "${(0)$(eval $cmdline)}" )
+
+expect_key=$out[1]
 shift out
 
-if [[ -n $callback ]]; then
-  out=( "${(f)$(echo "${(F)out}" | eval $callback)}" )
+# remove empty items
+out=( ${(@)out:#} )
+
+# filter output with callback
+if [[ $callback && $out ]]; then
+  if [[ $callback_zero ]]; then
+    # divide input and output by null (\0)
+    out=( "${(0)$(printf '%s\0' ${(@)out} | eval $callback)}" )
+  else
+    # divide input and output by new-line (\n)
+    out=( "${(f)$(printf '%s\n' ${(@)out} | eval $callback)}" )
+  fi
+
+  # remove empty items
+  out=( ${(@)out:#} )
 fi
 
-LBUFFER+=$out
+# update buffer if result is not empty
+if [[ $out ]]; then
+  # ${(@q)...} : quote each items
+  LBUFFER+=${(@q)out}
 
-zle zeno-snippet-next-placeholder
+  zle zeno-snippet-next-placeholder
+fi
+
 zle reset-prompt

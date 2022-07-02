@@ -42,18 +42,21 @@ const GIT_BRANCH_LOG_TAG_REFLOG_BIND: FzfOptionBinds = [
   },
 ];
 
-export const DEFAULT_OPTIONS: FzfOptions = {
+export const COMMON_OPTIONS: FzfOptions = {
   "--ansi": true,
-  "--bind": DEFAULT_BIND,
   "--expect": ["alt-enter"],
   "--height": "'80%'",
+  "--print0": true,
+};
+
+export const DEFAULT_OPTIONS: FzfOptions = {
+  ...COMMON_OPTIONS,
+  "--bind": DEFAULT_BIND,
 };
 
 export const GIT_BRANCH_LOG_TAG_REFLOG_OPTIONS: FzfOptions = {
-  "--ansi": true,
+  ...COMMON_OPTIONS,
   "--bind": GIT_BRANCH_LOG_TAG_REFLOG_BIND,
-  "--expect": ["alt-enter"],
-  "--height": "'80%'",
   "--header": "'C-b: branch, C-c: commit, C-t: tag, C-r: reflog'",
   "--preview-window": "'down'",
 };
