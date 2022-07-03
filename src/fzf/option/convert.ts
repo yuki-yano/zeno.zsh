@@ -28,24 +28,27 @@ const definedOptionsToArray = (options: FzfOptions) => {
   return arrayOptions;
 };
 
-const optionsToArray = (options: FzfOptions) => {
-  const arrayOptions = definedOptionsToArray(options);
-
-  Object.entries(options)
+const generalOptionsToArray = (options: FzfOptions) => {
+  return Object.entries(options)
     .filter(([key]) =>
       !(CONVERT_IMPLEMENTED_OPTION as ReadonlyArray<string>).includes(
         key,
       )
     )
-    .forEach(([key, value]) => {
-      if (typeof value !== "string") {
-        arrayOptions.push(`${key}`);
+    .map(([key, value]) => {
+      if (typeof value === "string") {
+        return `${key}=${value}`;
       } else {
-        arrayOptions.push(`${key}=${value}`);
+        return key;
       }
     });
+};
 
-  return arrayOptions;
+const optionsToArray = (options: FzfOptions) => {
+  return [
+    ...definedOptionsToArray(options),
+    ...generalOptionsToArray(options),
+  ];
 };
 
 export const fzfOptionsToString = (options: FzfOptions) => {
