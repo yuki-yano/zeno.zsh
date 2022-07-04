@@ -10,16 +10,21 @@ export const loadSnippets = (): Array<Snippet> => {
 export const loadCompletions = (): Array<CompletionSource> => {
   const userCompletions = getSettings().completions;
 
-  let completions: Array<CompletionSource> = [];
-  for (const userCompletion of userCompletions) {
+  const completions = userCompletions.map((userCompletion) => {
     const bind = [
       ...DEFAULT_OPTIONS["--bind"] ?? [],
       ...userCompletion.options["--bind"] ?? [],
     ];
 
+    const [patterns, excludePatterns] = [
+      userCompletion.patterns,
+      userCompletion.excludePatterns,
+    ].map((patterns) => patterns?.map((pattern) => new RegExp(pattern)) ?? []);
+
     const completion: CompletionSource = {
       ...userCompletion,
-      patterns: userCompletion.patterns.map((pattern) => new RegExp(pattern)),
+      patterns,
+      excludePatterns,
       options: {
         ...DEFAULT_OPTIONS,
         ...userCompletion.options ?? {},
@@ -27,11 +32,8 @@ export const loadCompletions = (): Array<CompletionSource> => {
       },
     };
 
-    completions = [
-      ...completions,
-      completion,
-    ];
-  }
+    return completion;
+  });
 
   return completions;
 };
