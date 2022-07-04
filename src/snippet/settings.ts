@@ -3,11 +3,11 @@ import { getSettings } from "../settings.ts";
 import type { CompletionSource } from "../type/fzf.ts";
 import type { Snippet } from "../type/settings.ts";
 
-export const loadSnippets = (): Array<Snippet> => {
+export const loadSnippets = (): readonly Snippet[] => {
   return getSettings().snippets;
 };
 
-export const loadCompletions = (): Array<CompletionSource> => {
+export const loadCompletions = (): readonly CompletionSource[] => {
   const userCompletions = getSettings().completions;
 
   const completions = userCompletions.map((userCompletion) => {

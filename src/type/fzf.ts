@@ -1,23 +1,23 @@
-export type FzfOptions = {
+export type FzfOptions = Readonly<{
   "--ansi"?: true;
   "--multi"?: true;
-  "--bind"?: FzfOptionBinds;
-  "--expect"?: Array<string>;
+  "--bind"?: readonly FzfOptionBind[];
+  "--expect"?: string[];
   "--preview"?: string;
   [otherProperty: string]: unknown;
-};
+}>;
 
-export type FzfOptionBinds = Array<{
+export type FzfOptionBind = Readonly<{
   key: string;
   action: string;
 }>;
 
-export type CompletionSource = {
+export type CompletionSource = Readonly<{
   name: string;
-  patterns: Array<RegExp>;
-  excludePatterns?: Array<RegExp>;
+  patterns: readonly RegExp[];
+  excludePatterns?: readonly RegExp[];
   sourceCommand: string;
   options: FzfOptions;
   callback?: string;
   callbackZero?: boolean;
-};
+}>;
