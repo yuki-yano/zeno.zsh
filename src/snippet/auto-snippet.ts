@@ -24,6 +24,7 @@ export const autoSnippet = async (
   const {
     args: tokens,
     normalized: lbuffer,
+    hasLeadingSpace,
   } = parseCommand(input.lbuffer ?? "", { keepTrailingSpace: true });
   const rbuffer = normalizeCommand(input.rbuffer ?? "", {
     keepLeadingSpace: true,
@@ -37,9 +38,9 @@ export const autoSnippet = async (
   const firstWord = tokens[0];
   const lastWord = tokens[tokens.length - 1];
 
-  let lbufferWithoutLastWord = "";
+  let lbufferWithoutLastWord = hasLeadingSpace ? " " : "";
   if (tokens.length > 1) {
-    lbufferWithoutLastWord = `${tokens.slice(0, -1).join(" ")} `;
+    lbufferWithoutLastWord += `${tokens.slice(0, -1).join(" ")} `;
   }
 
   const placeholderRegex = /\{\{[^{}\s]*\}\}/;
@@ -88,11 +89,12 @@ export const autoSnippet = async (
       cursor += placeholderMatch.index;
     }
 
-    return {
-      status: "success",
-      buffer: `${lbufferWithoutLastWord}${snipText}${rbuffer}`.trim(),
-      cursor,
-    };
+    let newBuffer = `${lbufferWithoutLastWord}${snipText}${rbuffer}`;
+    if (newBuffer.length < cursor) {
+      newBuffer += " ";
+    }
+
+    return { status: "success", buffer: newBuffer, cursor };
   }
 
   return { status: "failure" };
