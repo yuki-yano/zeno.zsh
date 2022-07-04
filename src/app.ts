@@ -1,11 +1,11 @@
-import { argsParser, iterateReader, printf, sprintf } from "./deps.ts";
+import { argsParser, iterateReader } from "./deps.ts";
 import { autoSnippet } from "./snippet/auto-snippet.ts";
 import { insertSnippet } from "./snippet/insert-snippet.ts";
 import { snippetList, snippetListOptions } from "./snippet/snippet-list.ts";
 import { fzfOptionsToString } from "./fzf/option/convert.ts";
 import { completion } from "./completion/completion.ts";
 import { nextPlaceholder } from "./snippet/next-placeholder.ts";
-import { ZENO_SOCK } from "./settings.ts";
+import { clearConn, setConn, write } from "./text-writer.ts";
 import type { Input } from "./type/shell.ts";
 import type { ArgParserArguments, ArgParserOptions } from "./deps.ts";
 
@@ -33,37 +33,7 @@ const argsParseOption: Readonly<Partial<ArgParserOptions>> = {
   },
 };
 
-let textEncoder: TextEncoder;
 let textDecoder: TextDecoder;
-let conn: Deno.Conn | undefined;
-
-const setConn = (newConn: Deno.Conn): void => {
-  conn = newConn;
-};
-
-const getConn = (): Deno.Conn => {
-  if (conn == null) {
-    throw new Error("Conn is not set");
-  }
-
-  return conn;
-};
-
-const clearConn = (): void => {
-  conn = undefined;
-};
-
-const write = async (
-  { format, text }: { format: string; text: string },
-): Promise<void> => {
-  if (ZENO_SOCK != null && conn != null) {
-    const conn = getConn();
-    textEncoder = textEncoder ?? new TextEncoder();
-    await conn.write(textEncoder.encode(sprintf(format, text)));
-  } else {
-    printf(format, text);
-  }
-};
 
 const execCommand = async ({
   mode,
