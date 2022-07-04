@@ -7,18 +7,18 @@ import { completion } from "./completion/completion.ts";
 import { nextPlaceholder } from "./snippet/next-placeholder.ts";
 import { ZENO_SOCK } from "./settings.ts";
 import type { Input } from "./type/shell.ts";
+import type { ArgParserArguments, ArgParserOptions } from "./deps.ts";
 
-type ClientCall = {
-  args?: Array<string>;
-};
+type ClientCall = Readonly<{
+  args?: readonly string[];
+}>;
 
-type Args = {
-  _: Array<string | number>;
+interface Args extends ArgParserArguments {
   "zeno-mode": string;
   input: Input;
-};
+}
 
-const argsParseOption = {
+const argsParseOption: Readonly<Partial<ArgParserOptions>> = {
   string: [
     "zeno-mode",
   ],
@@ -173,8 +173,8 @@ const execCommand = async ({
   }
 };
 
-const parseArgs = ({ args }: { args: Array<string> }) => {
-  const parsedArgs = argsParser(args, argsParseOption) as Args;
+const parseArgs = ({ args }: { args: readonly string[] }) => {
+  const parsedArgs = argsParser([...args], argsParseOption) as Readonly<Args>;
   const mode = parsedArgs["zeno-mode"] ?? "";
   const input = parsedArgs.input ?? {};
   const filteredInput = Object.fromEntries(

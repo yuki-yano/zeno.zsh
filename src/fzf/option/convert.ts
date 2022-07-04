@@ -1,22 +1,22 @@
-import { CONVERT_IMPLEMENTED_OPTION } from "../../const/option.ts";
+import { CONVERT_IMPLEMENTED_OPTIONS } from "../../const/option.ts";
 import type { FzfOptions } from "../../type/fzf.ts";
 
 const joinBind = (
-  bind: Array<{
+  bind: readonly Readonly<{
     key: string;
     action: string;
-  }>,
+  }>[],
 ) => {
   return bind.map(({ key, action }) => `${key}:${action}`).join(",");
 };
 
 const definedOptionsToArray = (options: FzfOptions) => {
-  const arrayOptions: Array<string> = [];
+  const arrayOptions = [] as string[];
 
-  if (options["--bind"] != null && Array.isArray(options["--bind"])) {
+  if (Array.isArray(options["--bind"])) {
     arrayOptions.push(`--bind="${joinBind(options["--bind"])}"`);
   }
-  if (options["--expect"] != null) {
+  if (Array.isArray(options["--expect"])) {
     arrayOptions.push(`--expect="${options["--expect"].join(",")}"`);
   } else {
     arrayOptions.push(`--expect="alt-enter"`);
@@ -31,9 +31,7 @@ const definedOptionsToArray = (options: FzfOptions) => {
 const generalOptionsToArray = (options: FzfOptions) => {
   return Object.entries(options)
     .filter(([key]) =>
-      !(CONVERT_IMPLEMENTED_OPTION as ReadonlyArray<string>).includes(
-        key,
-      )
+      !(CONVERT_IMPLEMENTED_OPTIONS as readonly string[]).includes(key)
     )
     .map(([key, value]) => {
       if (typeof value === "string") {
