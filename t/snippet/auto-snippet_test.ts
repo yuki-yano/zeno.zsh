@@ -71,8 +71,8 @@ describe("snippet/auto-snippet", () => {
         },
         {
           status: "success",
-          buffer: "git status --short --branch",
-          cursor: 28,
+          buffer: " git status --short --branch",
+          cursor: 29,
         },
       ],
       [
