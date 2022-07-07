@@ -60,7 +60,7 @@ describe("snippet/auto-snippet", () => {
         },
         {
           status: "success",
-          buffer: "git status --short --branch",
+          buffer: "git status --short --branch ",
           cursor: 28,
         },
       ],
@@ -71,8 +71,8 @@ describe("snippet/auto-snippet", () => {
         },
         {
           status: "success",
-          buffer: "git status --short --branch",
-          cursor: 28,
+          buffer: " git status --short --branch ",
+          cursor: 29,
         },
       ],
       [
@@ -102,7 +102,7 @@ describe("snippet/auto-snippet", () => {
         },
         {
           status: "success",
-          buffer: "ls -al >/dev/null 2>&1",
+          buffer: "ls -al >/dev/null 2>&1 ",
           cursor: 23,
         },
       ],
@@ -142,7 +142,7 @@ describe("snippet/auto-snippet", () => {
         },
         {
           status: "success",
-          buffer: "HOHO",
+          buffer: "HOHO ",
           cursor: 5,
         },
       ],
