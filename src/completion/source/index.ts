@@ -5,7 +5,7 @@ import { ZENO_DISABLE_BUILTIN_COMPLETION } from "../../settings.ts";
 
 const userCompletions = loadCompletions();
 
-export const completionSources: Array<CompletionSource> = [
+export const completionSources: readonly CompletionSource[] = [
   ...userCompletions,
   ...(ZENO_DISABLE_BUILTIN_COMPLETION ? [] : gitSources),
 ];

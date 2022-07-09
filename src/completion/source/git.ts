@@ -21,7 +21,7 @@ import {
 } from "../../const/source.ts";
 import type { CompletionSource } from "../../type/fzf.ts";
 
-export const gitSources: Array<CompletionSource> = [
+export const gitSources: readonly CompletionSource[] = [
   {
     name: "git add",
     patterns: [

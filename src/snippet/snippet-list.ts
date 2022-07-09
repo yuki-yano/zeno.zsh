@@ -12,35 +12,22 @@ export const snippetListOptions = () => {
 };
 
 export const snippetList = () => {
-  const snippets = loadSnippets();
+  const loadedSnippets = loadSnippets();
 
-  let nameWidth = 0;
-  for (const { name } of snippets) {
-    if (name == null) {
-      continue;
-    }
-
-    if (name.length > nameWidth) {
-      nameWidth = name.length + 1;
-    }
+  const snippets = loadedSnippets.filter(({ snippet }) =>
+    !snippet.includes("\n")
+  );
+  if (snippets.length !== loadedSnippets.length) {
+    console.error("Snippet must be single line");
   }
 
-  let nameAndSnippet: Array<string> = [];
-  for (const { snippet, name } of snippets) {
-    if (snippet.split("\n").length > 2) {
-      console.error("Snippet must be single line");
-      break;
-    }
+  const nameWidths = snippets.map(({ name }) => name?.length ?? 0);
+  const nameWidth = Math.max(...nameWidths) + 1;
+  const lineFormat = `%-${nameWidth}s  %s`;
 
-    nameAndSnippet = [
-      ...nameAndSnippet,
-      sprintf(
-        `%-${nameWidth + 1}s %s`,
-        name != null ? `${name}:` : "",
-        snippet,
-      ),
-    ];
-  }
+  const nameAndSnippet = snippets.map(({ snippet, name }) =>
+    sprintf(lineFormat, name?.length ? `${name}:` : "", snippet)
+  );
 
   return nameAndSnippet;
 };
