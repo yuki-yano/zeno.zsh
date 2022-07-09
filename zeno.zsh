@@ -36,7 +36,7 @@ if [[ -n $ZENO_ENABLE_SOCK ]]; then
   if (( DENO_VERSION >= 11600 )); then
     zeno-enable-sock
   else
-    export ZENO_ENABLE_SOCK=0
+    unset ZENO_ENABLE_SOCK
   fi
 fi
 
