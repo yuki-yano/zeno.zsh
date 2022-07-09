@@ -28,7 +28,7 @@ else
 fi
 
 if [[ -z $ZENO_DISABLE_EXECUTE_CACHE_COMMAND ]]; then
-  command deno cache --no-check "${ZENO_ROOT}/src/cli.ts"
+  command deno cache --unstable --no-check -- "${ZENO_ROOT}/src/cli.ts"
 fi
 
 if [[ -n $ZENO_ENABLE_SOCK ]]; then
