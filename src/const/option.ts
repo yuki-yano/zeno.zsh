@@ -1,4 +1,4 @@
-import type { FzfOptionBinds, FzfOptions } from "../type/fzf.ts";
+import type { FzfOptionBind, FzfOptions } from "../type/fzf.ts";
 import {
   GIT_BRANCH_SOURCE,
   GIT_LOG_SOURCE,
@@ -6,9 +6,13 @@ import {
   GIT_TAG_SOURCE,
 } from "./source.ts";
 
-export const CONVERT_IMPLEMENTED_OPTION = ["--bind", "--expect", "--preview"];
+export const CONVERT_IMPLEMENTED_OPTIONS = [
+  "--bind",
+  "--expect",
+  "--preview",
+] as const;
 
-export const DEFAULT_BIND: FzfOptionBinds = [
+export const DEFAULT_BIND: readonly FzfOptionBind[] = [
   {
     key: "ctrl-d",
     action: "preview-half-page-down",
@@ -23,7 +27,7 @@ export const DEFAULT_BIND: FzfOptionBinds = [
   },
 ];
 
-const GIT_BRANCH_LOG_TAG_REFLOG_BIND: FzfOptionBinds = [
+const GIT_BRANCH_LOG_TAG_REFLOG_BIND: readonly FzfOptionBind[] = [
   {
     key: "ctrl-b",
     action: `reload(${GIT_BRANCH_SOURCE})`,
