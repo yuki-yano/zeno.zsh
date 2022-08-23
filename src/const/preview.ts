@@ -1,7 +1,7 @@
 import { ZENO_GIT_CAT, ZENO_GIT_TREE } from "../settings.ts";
 
 const git_log_pretty_format =
-  "format:%C(yellow)%h %C(green)%cd %C(reset)%s %C(red)%d %C(cyan)[%an]";
+  "format:%C(yellow)%h %C(green)%cd %C(reset)%s%C(red)%d %C(cyan)[%an]";
 
 export const GIT_STATUS_PREVIEW = `
   ! git diff --exit-code --color=always -- {-1}
