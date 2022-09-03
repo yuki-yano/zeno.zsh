@@ -2,8 +2,6 @@
 
 zsh fuzzy completion and utility plugin with [Deno](https://deno.land/).
 
-**WARNING**: This project is in beta stage and WIP README.
-
 ## Features
 
 - Insert snippet and abbrev snippet
@@ -243,6 +241,12 @@ completions:
     callback: "cut -z -c 3-"
     callbackZero: true  # null termination is used in `callback` I/O
 ```
+
+## FAQ
+
+Q: [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) does not work well.
+
+A: Use [fast-syntax-highlighting](https://github.com/zdharma-continuum/fast-syntax-highlighting) instead.
 
 ## Related project
 
