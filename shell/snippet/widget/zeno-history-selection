@@ -5,12 +5,26 @@ emulate -L zsh
 local history options
 
 options=${ZENO_ENABLE_FZF_TMUX:+${ZENO_FZF_TMUX_OPTIONS}}
-options+=" --no-sort --exact --query=\"\$LBUFFER\" --prompt='History> '"
-history=$(builtin history -n -r 1 | eval "${ZENO_FZF_COMMAND} $options")
+options+=" "
+options+="--no-sort --exact --query=\"\$LBUFFER\" --prompt='History> ' "
+options+="--with-nth=2.. "
+
+if whence -p bat > /dev/null; then
+options+=$(cat <<"EOF"
+--preview '
+  echo {} \
+  | perl -pe "s/^[\s\t]*[0-9]*[\s\t]*//" \
+  | bat --color=always --language=sh --style=plain \
+' \
+--preview-window=down
+EOF
+)
+fi
+
+history=$(builtin history -r 1 | eval "${ZENO_FZF_COMMAND} $options" | perl -alne 'print $F[0]')
 
 if [[ -n $history ]]; then
-  BUFFER=$history
-  CURSOR=$#BUFFER
+  zle vi-fetch-history -n $history
 fi
 
 zle reset-prompt
