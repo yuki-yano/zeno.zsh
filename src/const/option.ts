@@ -56,6 +56,7 @@ export const COMMON_OPTIONS: FzfOptions = {
 export const DEFAULT_OPTIONS: FzfOptions = {
   ...COMMON_OPTIONS,
   "--bind": DEFAULT_BIND,
+  "--no-separator": true,
 };
 
 export const GIT_BRANCH_LOG_TAG_REFLOG_OPTIONS: FzfOptions = {

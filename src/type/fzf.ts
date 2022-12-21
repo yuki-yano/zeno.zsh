@@ -4,6 +4,7 @@ export type FzfOptions = Readonly<{
   "--bind"?: readonly FzfOptionBind[];
   "--expect"?: string[];
   "--preview"?: string;
+  "--no-separator"?: true;
   [otherProperty: string]: unknown;
 }>;
 
