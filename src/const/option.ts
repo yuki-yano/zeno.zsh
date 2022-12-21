@@ -51,12 +51,12 @@ export const COMMON_OPTIONS: FzfOptions = {
   "--expect": ["alt-enter"],
   "--height": "'80%'",
   "--print0": true,
+  "--no-separator": true,
 };
 
 export const DEFAULT_OPTIONS: FzfOptions = {
   ...COMMON_OPTIONS,
   "--bind": DEFAULT_BIND,
-  "--no-separator": true,
 };
 
 export const GIT_BRANCH_LOG_TAG_REFLOG_OPTIONS: FzfOptions = {
