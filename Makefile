@@ -2,10 +2,10 @@
 
 .DEFAULT_GOAL := help
 
-SRCS := ./src ./t
+SRCS := ./src ./test
 ALLOW := --allow-env --allow-read --allow-run --allow-write
 FLAG := --unstable
-TEST_FLAG := ${FLAG} --import-map=./t/map.json
+TEST_FLAG := ${FLAG}
 
 ci: fmt-check lint type-check test
 
