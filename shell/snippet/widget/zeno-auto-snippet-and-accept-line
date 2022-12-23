@@ -9,7 +9,7 @@ out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=auto-snippet \
   --input.rbuffer="$RBUFFER" \
   )}" )
 
-if [[ $out[1] == success && -n $out[2] ]]; then
+if [[ $ZENO_ENABLE -eq 1 && $out[1] == success && -n $out[2] ]]; then
   BUFFER=$out[2]
 fi
 
