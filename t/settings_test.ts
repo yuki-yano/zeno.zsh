@@ -226,8 +226,8 @@ describe("settings", () => {
       const settings = getSettings();
 
       assertEquals(settings, {
-        snippets: [{ name: "git status" }],
-        completions: [{ name: "kill" }],
+        snippets: [{ name: "git status" } as unknown as Snippet],
+        completions: [{ name: "kill" } as unknown as UserCompletionSource],
       });
     });
 
@@ -241,8 +241,8 @@ describe("settings", () => {
       const settingsSecond = getSettings();
 
       assertEquals(settingsSecond, {
-        snippets: [{ name: "git status" }],
-        completions: [{ name: "kill" }],
+        snippets: [{ name: "git status" } as unknown as Snippet],
+        completions: [{ name: "kill" } as unknown as UserCompletionSource],
       });
     });
   });
@@ -256,8 +256,8 @@ describe("settings", () => {
 
       const settings = getSettings();
       assertEquals(settings, {
-        snippets: [{ name: "foo bar" }],
-        completions: [{ name: "baz" }],
+        snippets: [{ name: "foo bar" } as unknown as Snippet],
+        completions: [{ name: "baz" } as unknown as UserCompletionSource],
       });
     });
   });

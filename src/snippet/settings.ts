@@ -11,9 +11,11 @@ export const loadCompletions = (): readonly CompletionSource[] => {
   const userCompletions = getSettings().completions;
 
   const completions = userCompletions.map((userCompletion) => {
+    const userOptions = userCompletion.options ?? {};
+
     const bind = [
       ...DEFAULT_OPTIONS["--bind"] ?? [],
-      ...userCompletion.options["--bind"] ?? [],
+      ...userOptions["--bind"] ?? [],
     ];
 
     const [patterns, excludePatterns] = [

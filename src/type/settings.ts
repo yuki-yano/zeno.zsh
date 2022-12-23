@@ -21,10 +21,10 @@ export type Snippet = Readonly<{
 export type UserCompletionSource = Readonly<{
   name: string;
   patterns: readonly string[];
-  excludePatterns: readonly string[];
+  excludePatterns?: readonly string[];
   sourceCommand: string;
-  preview: string;
-  options: FzfOptions;
-  callback?: string;
+  preview?: string;
+  options?: FzfOptions;
+  callback: string;
   callbackZero?: boolean;
 }>;
