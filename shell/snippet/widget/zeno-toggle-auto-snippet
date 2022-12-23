@@ -1,0 +1,9 @@
+#autoload
+
+emulate -L zsh
+
+if [[ $ZENO_ENABLE -eq 1 ]]; then
+  export ZENO_ENABLE=0
+else
+  export ZENO_ENABLE=1
+fi

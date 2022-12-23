@@ -40,4 +40,5 @@ if [[ -n $ZENO_ENABLE_SOCK ]]; then
   fi
 fi
 
+export ZENO_ENABLE=1
 export ZENO_LOADED=1

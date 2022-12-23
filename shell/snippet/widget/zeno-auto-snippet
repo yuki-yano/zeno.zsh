@@ -9,7 +9,7 @@ out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=auto-snippet \
   --input.rbuffer="$RBUFFER" \
   )}" )
 
-if [[ $out[1] != success ]]; then
+if [[ $ZENO_ENABLE -eq 0 || $out[1] != success ]]; then
   zle ${ZENO_AUTO_SNIPPET_FALLBACK:-self-insert}
   return
 fi
