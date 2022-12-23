@@ -25,7 +25,7 @@ lint: ## Lint code
 precommit: fmt
 
 test: ## Test
-	deno test --no-check ${TEST_FLAG} ${ALLOW} --jobs
+	deno test --no-check ${TEST_FLAG} ${ALLOW} --parallel
 
 type-check: ## Type check
 	deno test --no-run ${TEST_FLAG} \

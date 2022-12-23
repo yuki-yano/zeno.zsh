@@ -6,4 +6,4 @@ export {
   beforeEach,
   describe,
   it,
-} from "https://deno.land/x/test_suite@0.16.1/mod.ts";
+} from "https://deno.land/std@0.170.0/testing/bdd.ts";
