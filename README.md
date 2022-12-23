@@ -126,6 +126,10 @@ if [[ -n $ZENO_LOADED ]]; then
 
   bindkey '^i' zeno-completion
 
+  bindkey '^x '  zeno-insert-space
+  bindkey '^x^m' accept-line
+  bindkey '^x^z' zeno-toggle-auto-snippet
+
   # fallback if completion not matched
   # (default: fzf-completion if exists; otherwise expand-or-complete)
   # export ZENO_COMPLETION_FALLBACK=expand-or-complete
