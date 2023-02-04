@@ -524,4 +524,18 @@ export const gitSources: readonly CompletionSource[] = [
     },
     callback: GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK,
   },
+  {
+    name: "git revert",
+    patterns: [
+      /^git revert(?: .*)? $/,
+    ],
+    sourceCommand: GIT_LOG_SOURCE,
+    options: {
+      ...DEFAULT_OPTIONS,
+      "--prompt": "'Git Revert> '",
+      "--no-sort": true,
+      "--preview": GIT_LOG_PREVIEW,
+    },
+    callback: GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK,
+  },
 ];
