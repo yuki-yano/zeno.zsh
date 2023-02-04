@@ -31,7 +31,8 @@ if [[ -z $ZENO_DISABLE_EXECUTE_CACHE_COMMAND ]]; then
   command deno cache --unstable --no-check -- "${ZENO_ROOT}/src/cli.ts"
 fi
 
-if [[ -n $ZENO_ENABLE_SOCK ]]; then
+export ZENO_ENABLE_SOCK="${ZENO_ENABLE_SOCK:-1}"
+if [[ $ZENO_ENABLE_SOCK == "1" ]]; then
   printf -v DENO_VERSION '%d%02d%02d' ${(s:.:)$(deno -V)[2]}
   if (( DENO_VERSION >= 11600 )); then
     zeno-enable-sock
