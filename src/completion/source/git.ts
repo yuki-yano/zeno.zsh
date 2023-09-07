@@ -185,6 +185,20 @@ export const gitSources: readonly CompletionSource[] = [
     callbackZero: true,
   },
   {
+    name: "git delete branch",
+    patterns: [
+      /^git branch (?:-d|-D)(?: .*)? $/,
+    ],
+    sourceCommand: GIT_BRANCH_SOURCE,
+    options: {
+      ...DEFAULT_OPTIONS,
+      "--prompt": "'Git Delete Branch> '",
+      "--multi": true,
+      "--preview": GIT_BRANCH_LOG_TAG_REFLOG_PREVIEW,
+    },
+    callback: GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK,
+  },
+  {
     name: "git reset branch files",
     patterns: [
       /^git reset(?=.*(?<! --pathspec-from-file) [^-]) .* $/,
