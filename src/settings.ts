@@ -43,7 +43,7 @@ export const loadConfigFile = (configFile: string): Settings => {
     parsedSettings = yamlParse(file) as Partial<Settings> | undefined;
   } catch (e: unknown) {
     console.error("Setting parsed error");
-    throw (e);
+    throw e;
   }
 
   const settings = getDefaultSettings();

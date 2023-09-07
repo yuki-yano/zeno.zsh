@@ -64,7 +64,7 @@ const execCommand = async ({
       if (result.status === "success") {
         await write({ format: "%s\n", text: result.status });
         await write({ format: "%s\n", text: result.buffer });
-        await write({ format: "%s\n", text: (result.cursor).toString() });
+        await write({ format: "%s\n", text: result.cursor.toString() });
       }
 
       break;
