@@ -1,5 +1,5 @@
 export { existsSync } from "https://deno.land/std@0.201.0/fs/exists.ts";
-export { parse as yamlParse } from "https://deno.land/std@0.201.0/encoding/yaml.ts";
+export { parse as yamlParse } from "https://deno.land/std@0.201.0/yaml/mod.ts";
 export { printf, sprintf } from "https://deno.land/std@0.201.0/fmt/printf.ts";
 export { iterateReader } from "https://deno.land/std@0.201.0/streams/iterate_reader.ts";
 export * as path from "https://deno.land/std@0.201.0/path/mod.ts";
