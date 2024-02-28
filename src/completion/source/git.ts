@@ -383,7 +383,7 @@ export const gitSources: readonly CompletionSource[] = [
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Stash> '",
       "--preview": GIT_STASH_PREVIEW,
-      "--read0": true,
+      "--read0": false,
     },
     callback: GIT_STASH_CALLBACK,
   },
