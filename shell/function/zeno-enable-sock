@@ -1,6 +1,5 @@
 #autoload
 
-export ZENO_ENABLE_SOCK=1
 export ZENO_PID=
 
 : ${ZENO_SOCK_DIR:="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}/zeno-${UID}"}
