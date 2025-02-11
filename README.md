@@ -111,7 +111,7 @@ export ZENO_GIT_CAT="cat"
 # default
 export ZENO_GIT_TREE="tree"
 # git folder preview with color
-# export ZENO_GIT_TREE="exa --tree"
+# export ZENO_GIT_TREE="eza --tree"
 
 if [[ -n $ZENO_LOADED ]]; then
   bindkey ' '  zeno-auto-snippet
