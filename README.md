@@ -47,11 +47,13 @@ zeno now has experimental support for [Fish shell](https://fishshell.com/).
 
 ### Installation for Fish
 
-#### Using Fisher
+#### Using Fisher (Recommended)
 
 ```fish
 fisher install yuki-yano/zeno.zsh
 ```
+
+Fisher will automatically clone the full repository to `~/.local/share/zeno.zsh` and set up the necessary paths.
 
 #### Manual installation
 
