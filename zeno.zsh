@@ -8,10 +8,10 @@ path+=${ZENO_ROOT}/bin
 
 () {
   local widget_dirs=(
-    "${ZENO_ROOT}/shell/snippet/widget"
+    "${ZENO_ROOT}/shells/zsh/widgets"
   )
   local autoload_dirs=(
-    "${ZENO_ROOT}/shell/function"
+    "${ZENO_ROOT}/shells/zsh/functions"
     "${(@)widget_dirs}"
   )
   local f
