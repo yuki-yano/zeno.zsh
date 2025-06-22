@@ -1,0 +1,42 @@
+# Example key bindings for zeno.fish
+# Copy this file to ~/.config/fish/conf.d/zeno-keybindings.fish to enable
+
+# Only set up bindings if zeno is loaded
+if test "$ZENO_LOADED" = "1"
+    # Abbrev snippet expansion
+    bind ' ' zeno-auto-snippet
+    
+    # Fallback if snippet not matched (default: insert space)
+    # set -gx ZENO_AUTO_SNIPPET_FALLBACK 'commandline -i " "'
+    
+    # Auto snippet and accept line (Enter key)
+    bind \r zeno-auto-snippet-and-accept-line
+    bind \n zeno-auto-snippet-and-accept-line
+    
+    # Fuzzy completion with fzf
+    bind \t zeno-completion
+    
+    # Insert literal space (Ctrl-x Space)
+    bind \cx\x20 zeno-insert-space
+    
+    # Accept line without snippet expansion (Ctrl-x Enter)
+    bind \cx\r execute
+    bind \cx\n execute
+    
+    # TODO: Toggle auto snippet (needs implementation)
+    # bind \cx\cz zeno-toggle-auto-snippet
+    
+    # Additional widgets (need implementation)
+    # History selection
+    # bind \cr zeno-history-selection
+    
+    # Insert snippet from list
+    # bind \cx\cs zeno-insert-snippet
+    
+    # Change to ghq managed repository
+    # bind \cx\cf zeno-ghq-cd
+    
+    # Set fallback for completion if not matched
+    # Default is to use Fish's built-in completion
+    # set -gx ZENO_COMPLETION_FALLBACK 'commandline -f complete'
+end
