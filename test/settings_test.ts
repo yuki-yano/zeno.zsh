@@ -52,7 +52,7 @@ describe("settings", () => {
         existConfigDir,
         path.join(tempDir, "baz"), // no exists
       ];
-      Deno.env.set("XDG_CONFIG_DIRS", xdgConfigDirs.join(path.delimiter));
+      Deno.env.set("XDG_CONFIG_DIRS", xdgConfigDirs.join(path.DELIMITER));
 
       const configFile = findConfigFile();
 
@@ -76,7 +76,7 @@ describe("settings", () => {
         path.join(tempDir, "bar"), // no exists
         path.join(tempDir, "baz"), // no exists
       ];
-      Deno.env.set("XDG_CONFIG_DIRS", xdgConfigDirs.join(path.delimiter));
+      Deno.env.set("XDG_CONFIG_DIRS", xdgConfigDirs.join(path.DELIMITER));
 
       const configFile = findConfigFile();
 
@@ -104,7 +104,7 @@ describe("settings", () => {
       ];
       Deno.mkdirSync(existZenoDir, { recursive: true });
       Deno.writeTextFileSync(expectedPath, "foobar:");
-      Deno.env.set("XDG_CONFIG_DIRS", xdgConfigDirs.join(path.delimiter));
+      Deno.env.set("XDG_CONFIG_DIRS", xdgConfigDirs.join(path.DELIMITER));
 
       const configFile = findConfigFile();
 

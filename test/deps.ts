@@ -1,9 +1,9 @@
-export * as path from "https://deno.land/std@0.201.0/path/mod.ts";
-export { assertEquals } from "https://deno.land/std@0.201.0/testing/asserts.ts";
+export * as path from "jsr:@std/path@1.0.2";
+export { assertEquals } from "jsr:@std/assert@1.0.0";
 export {
   afterEach,
   beforeAll,
   beforeEach,
   describe,
   it,
-} from "https://deno.land/std@0.201.0/testing/bdd.ts";
+} from "jsr:@std/testing@1.0.0/bdd";

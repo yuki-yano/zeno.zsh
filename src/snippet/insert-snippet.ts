@@ -1,6 +1,6 @@
-import { exec, OutputMode } from "../deps.ts";
 import { loadSnippets } from "./settings.ts";
 import { normalizeCommand } from "../command.ts";
+import { executeCommand } from "../util/exec.ts";
 import type { Input } from "../type/shell.ts";
 
 export type InsertSnippetData = {
@@ -34,8 +34,7 @@ export const insertSnippet = async (
 
     let snipText = snippet;
     if (evaluate === true) {
-      const response = await exec(snippet, { output: OutputMode.Capture });
-      snipText = response.output.trimEnd();
+      snipText = await executeCommand(snippet);
     }
 
     const placeholderMatch = placeholderRegex.exec(snipText);
