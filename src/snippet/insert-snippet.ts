@@ -26,7 +26,7 @@ export const insertSnippet = async (
 
   const placeholderRegex = /\{\{[^{}\s]*\}\}/;
 
-  const snippets = loadSnippets();
+  const snippets = await loadSnippets();
   for (const { snippet, name, evaluate } of snippets) {
     if (name == null || snippetName !== name.trim()) {
       continue;

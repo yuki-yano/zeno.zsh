@@ -1,4 +1,4 @@
-import { existsSync, path, xdg, yamlParse } from "./deps.ts";
+import { exists, path, xdg, yamlParse } from "./deps.ts";
 import type { Settings } from "./type/settings.ts";
 
 export const ZENO_DEFAULT_FZF_OPTIONS =
@@ -21,7 +21,7 @@ export const getDefaultSettings = (): Settings => ({
   completions: [],
 });
 
-export const findConfigFile = (): string => {
+export const findConfigFile = async (): Promise<string> => {
   const configFile = "config.yml";
   const zenoHome = Deno.env.get("ZENO_HOME");
   if (zenoHome) {
@@ -31,12 +31,18 @@ export const findConfigFile = (): string => {
   const configPaths = xdg.configDirs().map((baseDir) =>
     path.join(baseDir, appDir, configFile)
   );
-  return configPaths.find((configPath) => existsSync(configPath)) ??
-    configPaths[0];
+
+  for (const configPath of configPaths) {
+    if (await exists(configPath)) {
+      return configPath;
+    }
+  }
+
+  return configPaths[0];
 };
 
-export const loadConfigFile = (configFile: string): Settings => {
-  const file = Deno.readTextFileSync(configFile);
+export const loadConfigFile = async (configFile: string): Promise<Settings> => {
+  const file = await Deno.readTextFile(configFile);
 
   let parsedSettings: Partial<Settings> | undefined;
   try {
@@ -53,11 +59,11 @@ export const loadConfigFile = (configFile: string): Settings => {
   };
 };
 
-export const getSettings = (): Settings => {
+export const getSettings = async (): Promise<Settings> => {
   if (!cache.settings) {
-    const configFile = findConfigFile();
-    if (existsSync(configFile)) {
-      cache.settings = loadConfigFile(configFile);
+    const configFile = await findConfigFile();
+    if (await exists(configFile)) {
+      cache.settings = await loadConfigFile(configFile);
     } else {
       cache.settings = getDefaultSettings();
     }
