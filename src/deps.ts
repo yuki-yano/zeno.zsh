@@ -1,10 +1,10 @@
-export { existsSync } from "https://deno.land/std@0.201.0/fs/exists.ts";
-export { parse as yamlParse } from "https://deno.land/std@0.201.0/yaml/mod.ts";
-export { printf, sprintf } from "https://deno.land/std@0.201.0/fmt/printf.ts";
-export { iterateReader } from "https://deno.land/std@0.201.0/streams/iterate_reader.ts";
-export * as path from "https://deno.land/std@0.201.0/path/mod.ts";
+export { existsSync } from "jsr:@std/fs@0.229.3/exists";
+export { parse as yamlParse } from "jsr:@std/yaml@0.224.3";
+export { printf, sprintf } from "jsr:@std/fmt@0.225.6/printf";
+export { iterateReader } from "jsr:@std/io@0.224.5/iterate-reader";
+export * as path from "jsr:@std/path@1.0.2";
 
-// TODO: Use Deno.run https://deno.land/manual@v1.13.2/examples/subprocess
+// TODO: Replace with Deno.Command API (exec is deprecated)
 export { exec, OutputMode } from "https://deno.land/x/exec@0.0.5/mod.ts";
 
 import argsParser from "https://deno.land/x/yargs_parser@yargs-parser-v21.1.1-deno/deno.ts";
