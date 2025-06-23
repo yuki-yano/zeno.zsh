@@ -11,7 +11,7 @@ if (socketPath == null) {
 
 const signalHandler = () => {
   Deno.removeSync(socketPath);
-  Deno.exit();
+  Deno.exit(0);
 };
 
 Deno.addSignalListener("SIGINT", signalHandler);
@@ -19,8 +19,8 @@ Deno.addSignalListener("SIGTERM", signalHandler);
 Deno.addSignalListener("SIGHUP", signalHandler);
 
 if (existsSync(socketPath)) {
-  printf("env:ZENO_SOCK is already exists: %s\n", socketPath);
-  Deno.exit();
+  printf("env:ZENO_SOCK already exists: %s\n", socketPath);
+  Deno.exit(1);
 }
 
 execServer({ socketPath });
