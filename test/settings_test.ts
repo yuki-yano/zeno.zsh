@@ -29,7 +29,7 @@ describe("settings", () => {
   });
 
   describe("findConfigFile()", () => {
-    it("returns path in $ZENO_HOME, even if the path does not exist", () => {
+    it("returns path in $ZENO_HOME, even if the path does not exist", async () => {
       const tempDir = context.getTempDir();
 
       // Set no exists path to ZENO_HOME
@@ -54,12 +54,12 @@ describe("settings", () => {
       ];
       Deno.env.set("XDG_CONFIG_DIRS", xdgConfigDirs.join(path.DELIMITER));
 
-      const configFile = findConfigFile();
+      const configFile = await findConfigFile();
 
       assertEquals(configFile, expectedPath);
     });
 
-    it("returns path in $XDG_CONFIG_HOME, even if the path does not exist", () => {
+    it("returns path in $XDG_CONFIG_HOME, even if the path does not exist", async () => {
       const tempDir = context.getTempDir();
 
       // delete ZENO_HOME
@@ -78,12 +78,12 @@ describe("settings", () => {
       ];
       Deno.env.set("XDG_CONFIG_DIRS", xdgConfigDirs.join(path.DELIMITER));
 
-      const configFile = findConfigFile();
+      const configFile = await findConfigFile();
 
       assertEquals(configFile, expectedPath);
     });
 
-    it("returns first exist path in $XDG_CONFIG_DIRS", () => {
+    it("returns first exist path in $XDG_CONFIG_DIRS", async () => {
       const tempDir = context.getTempDir();
 
       // delete ZENO_HOME
@@ -102,24 +102,24 @@ describe("settings", () => {
         existConfigDir,
         path.join(tempDir, "baz"), // no exists
       ];
-      Deno.mkdirSync(existZenoDir, { recursive: true });
-      Deno.writeTextFileSync(expectedPath, "foobar:");
       Deno.env.set("XDG_CONFIG_DIRS", xdgConfigDirs.join(path.DELIMITER));
 
-      const configFile = findConfigFile();
+      Deno.mkdirSync(existZenoDir, { recursive: true });
+      Deno.writeTextFileSync(expectedPath, "foobar:");
+
+      const configFile = await findConfigFile();
 
       assertEquals(configFile, expectedPath);
     });
   });
 
   describe("loadConfigFile()", () => {
-    it("returns default Settings, if the file is empty", () => {
-      // Generate config file
+    it("returns default Settings, if the file is empty", async () => {
       const tempDir = context.getTempDir();
-      const configFile = path.join(tempDir, "config.yml");
-      Deno.writeTextFileSync(configFile, "");
+      const existConfigFile = path.join(tempDir, "empty.yml");
+      Deno.writeTextFileSync(existConfigFile, "");
 
-      const settings = loadConfigFile(configFile);
+      const settings = await loadConfigFile(existConfigFile);
 
       assertEquals(settings, {
         snippets: [],
@@ -127,92 +127,78 @@ describe("settings", () => {
       });
     });
 
-    it("returns parsed Settings", () => {
-      // Generate config file
+    it("returns parsed Settings", async () => {
       const tempDir = context.getTempDir();
-      const configFile = path.join(tempDir, "config.yml");
-      Deno.writeTextFileSync(
-        configFile,
-        [
-          `# zeno config`,
-          `snippets:`,
-          `  # snippet and keyword abbrev`,
-          `  - name: git status`,
-          `    keyword: gs`,
-          `    snippet: git status --short --branch`,
-          `completions:`,
-          `  - name: kill`,
-          `    patterns:`,
-          `      - "^kill( -9)? $"`,
-          `    sourceCommand: "ps -ef | sed 1d"`,
-          `    options:`,
-          `      --multi: true`,
-          `      --prompt: "'Kill Process> '"`,
-          `    callback: "awk '{print $2}'"`,
-        ].join("\n"),
-      );
+      const expectedSnippets: Snippet[] = [
+        {
+          keyword: "gs",
+          snippet: "git status",
+        },
+        {
+          name: "list files",
+          keyword: "ls",
+          snippet: "ls -al",
+        },
+      ];
+      const expectedCompletions: UserCompletionSource[] = [
+        {
+          name: "git add",
+          patterns: ["^git add "],
+          sourceCommand: "git diff --name-only",
+          options: {
+            "--multi": true,
+          },
+          callback: "git add {{}}",
+        },
+      ];
+      const configContent = `
+snippets:
+  - keyword: gs
+    snippet: git status
+  - name: list files
+    keyword: ls
+    snippet: ls -al
 
-      const settings = loadConfigFile(configFile);
+completions:
+  - name: git add
+    patterns:
+      - "^git add "
+    sourceCommand: "git diff --name-only"
+    options:
+      --multi: true
+    callback: "git add {{}}"
+`;
+      const existConfigFile = path.join(tempDir, "exist.yml");
+      Deno.writeTextFileSync(existConfigFile, configContent);
+
+      const settings = await loadConfigFile(existConfigFile);
 
       assertEquals(settings, {
-        snippets: [
-          {
-            keyword: "gs",
-            name: "git status",
-            snippet: "git status --short --branch",
-          },
-        ],
-        completions: [
-          {
-            callback: "awk '{print $2}'",
-            name: "kill",
-            options: {
-              "--multi": true,
-              "--prompt": "'Kill Process> '",
-            },
-            patterns: [
-              "^kill( -9)? $",
-            ],
-            sourceCommand: "ps -ef | sed 1d",
-          },
-        ],
+        snippets: expectedSnippets,
+        completions: expectedCompletions,
       });
     });
   });
 
   describe("getSettings()", () => {
-    const setupConfigFileNotExist = () => {
-      // Set no exists path to ZENO_HOME
+    it("returns default Settings, if can not detected config file", async () => {
       const tempDir = context.getTempDir();
-      const notExistDir = path.join(tempDir, "not_exist_dir");
-      Deno.env.set("ZENO_HOME", notExistDir);
-    };
 
-    const setupConfigFile = () => {
-      // Set config file path to ZENO_HOME
-      const tempDir = context.getTempDir();
-      const configDir = path.join(tempDir, "exist_dir");
-      const configFile = path.join(configDir, "config.yml");
-      Deno.env.set("ZENO_HOME", configDir);
+      // delete ZENO_HOME
+      Deno.env.delete("ZENO_HOME");
 
-      // Generate config file
-      Deno.mkdirSync(configDir, { recursive: true });
-      Deno.writeTextFileSync(
-        configFile,
-        [
-          `# zeno config`,
-          `snippets:`,
-          `  - name: git status`,
-          `completions:`,
-          `  - name: kill`,
-        ].join("\n"),
-      );
-    };
+      // Set no exists path to XDG_CONFIG_HOME
+      Deno.env.set("XDG_CONFIG_HOME", path.join(tempDir, "not_exist_dir"));
 
-    it("returns default Settings, if can not detected config file", () => {
-      setupConfigFileNotExist();
+      // Set no exist paths to XDG_CONFIG_DIRS
+      const xdgConfigDirs = [
+        path.join(tempDir, "foo"), // no exists
+        path.join(tempDir, "bar"), // no exists
+        path.join(tempDir, "baz"), // no exists
+      ];
+      Deno.env.set("XDG_CONFIG_DIRS", xdgConfigDirs.join(path.DELIMITER));
 
-      const settings = getSettings();
+      const settings = await getSettings();
 
       assertEquals(settings, {
         snippets: [],
@@ -220,58 +206,126 @@ describe("settings", () => {
       });
     });
 
-    it("returns Settings from detected config file", () => {
-      setupConfigFile();
+    it("returns Settings from detected config file", async () => {
+      const tempDir = context.getTempDir();
 
-      const settings = getSettings();
+      // delete ZENO_HOME
+      Deno.env.delete("ZENO_HOME");
+
+      // Set the exist path to XDG_CONFIG_HOME
+      const existConfigDir = path.join(tempDir, "exist_dir");
+      const existZenoDir = path.join(existConfigDir, "zeno");
+      const existConfigFile = path.join(existZenoDir, "config.yml");
+      Deno.mkdirSync(existZenoDir, { recursive: true });
+      const expectedSnippets: Snippet[] = [
+        {
+          keyword: "gs",
+          snippet: "git status",
+        },
+      ];
+      const configContent = `
+snippets:
+  - keyword: gs
+    snippet: git status
+`;
+      Deno.writeTextFileSync(existConfigFile, configContent);
+      Deno.env.set("XDG_CONFIG_HOME", existConfigDir);
+
+      const settings = await getSettings();
 
       assertEquals(settings, {
-        snippets: [{ name: "git status" } as unknown as Snippet],
-        completions: [{ name: "kill" } as unknown as UserCompletionSource],
+        snippets: expectedSnippets,
+        completions: [],
       });
     });
 
-    it("returns Settings from cache", () => {
-      setupConfigFile();
+    it("returns Settings from cache", async () => {
+      const tempDir = context.getTempDir();
 
-      const _settingsFirst = getSettings();
+      // delete ZENO_HOME
+      Deno.env.delete("ZENO_HOME");
 
-      setupConfigFileNotExist();
+      // Set no exists path to XDG_CONFIG_HOME
+      Deno.env.set("XDG_CONFIG_HOME", path.join(tempDir, "not_exist_dir"));
 
-      const settingsSecond = getSettings();
+      // Call getSettings to generate cache.
+      const settings = await getSettings();
+      assertEquals(settings, {
+        snippets: [],
+        completions: [],
+      });
 
-      assertEquals(settingsSecond, {
-        snippets: [{ name: "git status" } as unknown as Snippet],
-        completions: [{ name: "kill" } as unknown as UserCompletionSource],
+      // Update cache.
+      const expectedSnippets: Snippet[] = [
+        {
+          keyword: "gs",
+          snippet: "git status",
+        },
+      ];
+      setSettings({
+        snippets: expectedSnippets,
+        completions: [],
+      });
+
+      // Call getSettings again
+      const cachedSettings = await getSettings();
+
+      assertEquals(cachedSettings, {
+        snippets: expectedSnippets,
+        completions: [],
       });
     });
   });
 
   describe("setSettings()", () => {
-    it("set a Settings", () => {
-      setSettings({
-        snippets: [{ name: "foo bar" } as unknown as Snippet],
-        completions: [{ name: "baz" } as unknown as UserCompletionSource],
-      });
+    it("set a Settings", async () => {
+      const expectedSnippets: Snippet[] = [
+        {
+          keyword: "gs",
+          snippet: "git status",
+        },
+      ];
+      const expectedSettings = {
+        snippets: expectedSnippets,
+        completions: [],
+      };
 
-      const settings = getSettings();
-      assertEquals(settings, {
-        snippets: [{ name: "foo bar" } as unknown as Snippet],
-        completions: [{ name: "baz" } as unknown as UserCompletionSource],
-      });
+      setSettings(expectedSettings);
+      const settings = await getSettings();
+
+      assertEquals(settings, expectedSettings);
     });
   });
 
   describe("clearCache()", () => {
-    it("clear cached Settings", () => {
+    it("clear cached Settings", async () => {
+      const tempDir = context.getTempDir();
+
+      // delete ZENO_HOME
+      Deno.env.delete("ZENO_HOME");
+
+      // Set no exists path to XDG_CONFIG_HOME
+      Deno.env.set("XDG_CONFIG_HOME", path.join(tempDir, "not_exist_dir"));
+
+      // Set cache
+      const expectedSnippets: Snippet[] = [
+        {
+          keyword: "gs",
+          snippet: "git status",
+        },
+      ];
       setSettings({
-        snippets: [{ name: "foo bar" } as unknown as Snippet],
-        completions: [{ name: "baz" } as unknown as UserCompletionSource],
+        snippets: expectedSnippets,
+        completions: [],
       });
 
+      // Clear cache
       clearCache();
 
-      const settings = getSettings();
+      // Call getSettings again
+      const settings = await getSettings();
+
+      // It should not return the cached value
       assertEquals(settings, {
         snippets: [],
         completions: [],
