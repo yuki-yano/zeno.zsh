@@ -25,12 +25,16 @@ export const clearConn = (): void => {
 export const write = async (
   { format, text }: { format: string; text: string },
 ): Promise<void> => {
-  textEncoder ??= new TextEncoder();
-  const data = textEncoder.encode(sprintf(format, text));
-  if (hasConn()) {
-    const conn = getConn();
-    await conn.write(data);
-  } else {
-    await Deno.stdout.write(data);
+  try {
+    textEncoder ??= new TextEncoder();
+    const data = textEncoder.encode(sprintf(format, text));
+    if (hasConn()) {
+      const conn = getConn();
+      await conn.write(data);
+    } else {
+      await Deno.stdout.write(data);
+    }
+  } catch (error) {
+    throw new Error(`Failed to write output: ${error}`);
   }
 };
