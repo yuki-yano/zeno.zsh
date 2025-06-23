@@ -52,7 +52,7 @@ const execCommand = async ({
 }) => {
   switch (mode) {
     case "snippet-list": {
-      const snippets = snippetList();
+      const snippets = await snippetList();
 
       await writer.write({ format: "%s\n", text: snippetListOptions() });
       for (const snippet of snippets) {
@@ -91,7 +91,7 @@ const execCommand = async ({
     }
 
     case "completion": {
-      const source = completion(input);
+      const source = await completion(input);
       await handleNullableResult(writer.write.bind(writer), source, (s) => [
         s.sourceCommand,
         fzfOptionsToString(s.options),

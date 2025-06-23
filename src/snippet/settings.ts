@@ -3,12 +3,16 @@ import { getSettings } from "../settings.ts";
 import type { CompletionSource } from "../type/fzf.ts";
 import type { Snippet } from "../type/settings.ts";
 
-export const loadSnippets = (): readonly Snippet[] => {
-  return getSettings().snippets;
+export const loadSnippets = async (): Promise<readonly Snippet[]> => {
+  const settings = await getSettings();
+  return settings.snippets;
 };
 
-export const loadCompletions = (): readonly CompletionSource[] => {
-  const userCompletions = getSettings().completions;
+export const loadCompletions = async (): Promise<
+  readonly CompletionSource[]
+> => {
+  const settings = await getSettings();
+  const userCompletions = settings.completions;
 
   const completions = userCompletions.map((userCompletion) => {
     const userOptions = userCompletion.options ?? {};
