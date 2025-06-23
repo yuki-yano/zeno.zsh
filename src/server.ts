@@ -1,5 +1,5 @@
 import { execServer } from "./app.ts";
-import { existsSync, printf } from "./deps.ts";
+import { exists, printf } from "./deps.ts";
 import { ZENO_SOCK } from "./settings.ts";
 
 const socketPath = ZENO_SOCK;
@@ -18,7 +18,7 @@ Deno.addSignalListener("SIGINT", signalHandler);
 Deno.addSignalListener("SIGTERM", signalHandler);
 Deno.addSignalListener("SIGHUP", signalHandler);
 
-if (existsSync(socketPath)) {
+if (await exists(socketPath)) {
   printf("env:ZENO_SOCK already exists: %s\n", socketPath);
   Deno.exit(1);
 }
