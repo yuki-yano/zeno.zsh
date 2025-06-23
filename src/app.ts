@@ -6,6 +6,7 @@ import { fzfOptionsToString } from "./fzf/option/convert.ts";
 import { completion } from "./completion/completion.ts";
 import { nextPlaceholder } from "./snippet/next-placeholder.ts";
 import { clearConn, setConn, write } from "./text-writer.ts";
+import { getErrorMessage } from "./utils/error.ts";
 import type { Input } from "./type/shell.ts";
 import type { ArgParserArguments, ArgParserOptions } from "./deps.ts";
 
@@ -146,13 +147,23 @@ const execCommand = async ({
 const parseArgs = ({ args }: { args: readonly string[] }) => {
   const parsedArgs = argsParser([...args], argsParseOption) as Readonly<Args>;
   const mode = parsedArgs["zeno-mode"] ?? "";
-  const input = parsedArgs.input ?? {};
-  const filteredInput = Object.fromEntries(
-    Object.entries(input).map(
-      ([key, value]) => [key, value === undefined ? undefined : `${value}`],
-    ),
-  ) as Input;
-  return { mode, input: filteredInput };
+  const rawInput = parsedArgs.input ?? {};
+
+  // Validate and convert input fields
+  const input: Input = {
+    lbuffer: typeof rawInput.lbuffer === "string"
+      ? rawInput.lbuffer
+      : undefined,
+    rbuffer: typeof rawInput.rbuffer === "string"
+      ? rawInput.rbuffer
+      : undefined,
+    snippet: typeof rawInput.snippet === "string"
+      ? rawInput.snippet
+      : undefined,
+    dir: typeof rawInput.dir === "string" ? rawInput.dir : undefined,
+  };
+
+  return { mode, input };
 };
 
 export const execServer = async ({ socketPath }: { socketPath: string }) => {
@@ -173,9 +184,9 @@ export const execServer = async ({ socketPath }: { socketPath: string }) => {
         const { mode, input } = parseArgs({ args });
 
         await execCommand({ mode, input });
-      } catch (ex) {
+      } catch (error) {
         await write({ format: "%s\n", text: "failure" });
-        await write({ format: "%s\n", text: `${ex}` });
+        await write({ format: "%s\n", text: getErrorMessage(error) });
       } finally {
         conn.closeWrite();
         clearConn();
@@ -191,9 +202,9 @@ export const execCli = async ({ args }: { args: Array<string> }) => {
     const { mode, input } = parseArgs({ args });
 
     await execCommand({ mode, input });
-  } catch (ex) {
+  } catch (error) {
     await write({ format: "%s\n", text: "failure" });
-    await write({ format: "%s\n", text: `${ex}` });
+    await write({ format: "%s\n", text: getErrorMessage(error) });
     res = 1;
   }
 
