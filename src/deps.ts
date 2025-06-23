@@ -1,3 +1,5 @@
+export { exists } from "jsr:@std/fs@0.229.3/exists";
+// TODO: Remove after migrating settings.ts to async
 export { existsSync } from "jsr:@std/fs@0.229.3/exists";
 export { parse as yamlParse } from "jsr:@std/yaml@0.224.3";
 export { printf, sprintf } from "jsr:@std/fmt@0.225.6/printf";
