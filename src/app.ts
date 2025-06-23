@@ -7,6 +7,11 @@ import { completion } from "./completion/completion.ts";
 import { nextPlaceholder } from "./snippet/next-placeholder.ts";
 import { TextWriter, write } from "./text-writer.ts";
 import { getErrorMessage } from "./utils/error.ts";
+import {
+  handleNullableResult,
+  handleStatusResult,
+  writeResult,
+} from "./app-helpers.ts";
 import type { Input } from "./type/shell.ts";
 import type { ArgParserArguments, ArgParserOptions } from "./deps.ts";
 
@@ -59,70 +64,40 @@ const execCommand = async ({
 
     case "auto-snippet": {
       const result = await autoSnippet(input);
-
-      if (result.status === "failure") {
-        await writer.write({ format: "%s\n", text: result.status });
-      }
-
-      if (result.status === "success") {
-        await writer.write({ format: "%s\n", text: result.status });
-        await writer.write({ format: "%s\n", text: result.buffer });
-        await writer.write({ format: "%s\n", text: result.cursor.toString() });
-      }
-
+      await handleStatusResult(writer.write.bind(writer), result, (r) => [
+        r.buffer,
+        r.cursor.toString(),
+      ]);
       break;
     }
 
     case "insert-snippet": {
       const result = await insertSnippet(input);
-      if (result.status === "failure") {
-        await writer.write({ format: "%s\n", text: result.status });
-      }
-
-      if (result.status === "success") {
-        await writer.write({ format: "%s\n", text: result.status });
-        await writer.write({ format: "%s\n", text: result.buffer });
-        await writer.write({ format: "%s\n", text: result.cursor.toString() });
-      }
-
+      await handleStatusResult(writer.write.bind(writer), result, (r) => [
+        r.buffer,
+        r.cursor.toString(),
+      ]);
       break;
     }
 
     case "next-placeholder": {
       const result = nextPlaceholder(input);
-
-      if (result?.index != null) {
-        const { nextBuffer, index } = result;
-
-        await writer.write({ format: "%s\n", text: "success" });
-        await writer.write({ format: "%s\n", text: nextBuffer });
-        await writer.write({ format: "%s\n", text: index.toString() });
-      } else {
-        await writer.write({ format: "%s\n", text: "failure" });
-      }
-
+      await handleNullableResult(
+        writer.write.bind(writer),
+        result?.index != null ? result : null,
+        (r) => [r.nextBuffer, r.index.toString()],
+      );
       break;
     }
 
     case "completion": {
       const source = completion(input);
-
-      if (source != null) {
-        await writer.write({ format: "%s\n", text: "success" });
-        await writer.write({ format: "%s\n", text: source.sourceCommand });
-        await writer.write({
-          format: "%s\n",
-          text: fzfOptionsToString(source.options),
-        });
-        await writer.write({ format: "%s\n", text: source.callback ?? "" });
-        await writer.write({
-          format: "%s\n",
-          text: source.callbackZero ? "zero" : "",
-        });
-      } else {
-        await writer.write({ format: "%s\n", text: "failure" });
-      }
-
+      await handleNullableResult(writer.write.bind(writer), source, (s) => [
+        s.sourceCommand,
+        fzfOptionsToString(s.options),
+        s.callback ?? "",
+        s.callbackZero ? "zero" : "",
+      ]);
       break;
     }
 
@@ -140,7 +115,7 @@ const execCommand = async ({
     }
 
     default: {
-      await writer.write({ format: "%s\n", text: "failure" });
+      await writeResult(writer.write.bind(writer), "failure");
       await writer.write({ format: "%s mode is not exist\n", text: mode });
     }
   }
