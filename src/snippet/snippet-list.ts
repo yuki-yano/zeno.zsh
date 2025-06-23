@@ -11,8 +11,8 @@ export const snippetListOptions = () => {
   return `${DEFAULT_SNIPPET_LIST_OPTION.join(" ")}`;
 };
 
-export const snippetList = () => {
-  const loadedSnippets = loadSnippets();
+export const snippetList = async () => {
+  const loadedSnippets = await loadSnippets();
 
   const snippets = loadedSnippets.filter(({ snippet }) =>
     !snippet.includes("\n")

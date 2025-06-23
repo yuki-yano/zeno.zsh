@@ -45,7 +45,7 @@ export const autoSnippet = async (
 
   const placeholderRegex = /\{\{[^{}\s]*\}\}/;
 
-  const snippets = loadSnippets();
+  const snippets = await loadSnippets();
   for (const { snippet, keyword, context, evaluate } of snippets) {
     if (keyword !== lastWord) {
       continue;
