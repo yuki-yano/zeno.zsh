@@ -1,19 +1,11 @@
 import { argsParser, iterateReader } from "./deps.ts";
-import { autoSnippet } from "./snippet/auto-snippet.ts";
-import { insertSnippet } from "./snippet/insert-snippet.ts";
-import { snippetList, snippetListOptions } from "./snippet/snippet-list.ts";
-import { fzfOptionsToString } from "./fzf/option/convert.ts";
-import { completion } from "./completion/completion.ts";
-import { nextPlaceholder } from "./snippet/next-placeholder.ts";
 import { TextWriter, write } from "./text-writer.ts";
 import { getErrorMessage } from "./utils/error.ts";
-import {
-  handleNullableResult,
-  handleStatusResult,
-  writeResult,
-} from "./app-helpers.ts";
+import { writeResult } from "./app-helpers.ts";
+import { createCommandRegistry } from "./command/commands/index.ts";
 import type { Input } from "./type/shell.ts";
 import type { ArgParserArguments, ArgParserOptions } from "./deps.ts";
+import type { CommandContext } from "./command/types.ts";
 
 type ClientCall = Readonly<{
   args?: readonly string[];
@@ -41,83 +33,21 @@ const argsParseOption: Readonly<Partial<ArgParserOptions>> = {
 
 let textDecoder: TextDecoder;
 
-const execCommand = async ({
-  mode,
-  input,
-  writer = { write },
-}: {
-  mode: string;
-  input: Input;
-  writer?: { write: typeof write };
-}) => {
-  switch (mode) {
-    case "snippet-list": {
-      const snippets = await snippetList();
+// Create a singleton registry
+const commandRegistry = createCommandRegistry();
 
-      await writer.write({ format: "%s\n", text: snippetListOptions() });
-      for (const snippet of snippets) {
-        await writer.write({ format: "%s\n", text: snippet });
-      }
+const execCommand = async (context: CommandContext & { mode: string }) => {
+  const { mode } = context;
+  const command = commandRegistry.get(mode);
 
-      break;
-    }
-
-    case "auto-snippet": {
-      const result = await autoSnippet(input);
-      await handleStatusResult(writer.write.bind(writer), result, (r) => [
-        r.buffer,
-        r.cursor.toString(),
-      ]);
-      break;
-    }
-
-    case "insert-snippet": {
-      const result = await insertSnippet(input);
-      await handleStatusResult(writer.write.bind(writer), result, (r) => [
-        r.buffer,
-        r.cursor.toString(),
-      ]);
-      break;
-    }
-
-    case "next-placeholder": {
-      const result = nextPlaceholder(input);
-      await handleNullableResult(
-        writer.write.bind(writer),
-        result?.index != null ? result : null,
-        (r) => [r.nextBuffer, r.index.toString()],
-      );
-      break;
-    }
-
-    case "completion": {
-      const source = await completion(input);
-      await handleNullableResult(writer.write.bind(writer), source, (s) => [
-        s.sourceCommand,
-        fzfOptionsToString(s.options),
-        s.callback ?? "",
-        s.callbackZero ? "zero" : "",
-      ]);
-      break;
-    }
-
-    case "pid": {
-      await writer.write({ format: "%s\n", text: Deno.pid.toString() });
-      break;
-    }
-
-    case "chdir": {
-      if (input.dir === undefined) {
-        throw new Error("option required: --input.dir=<path>");
-      }
-      Deno.chdir(input.dir);
-      break;
-    }
-
-    default: {
-      await writeResult(writer.write.bind(writer), "failure");
-      await writer.write({ format: "%s mode is not exist\n", text: mode });
-    }
+  if (command) {
+    await command.execute(context);
+  } else {
+    await writeResult(context.writer.write.bind(context.writer), "failure");
+    await context.writer.write({
+      format: "%s mode is not exist\n",
+      text: mode,
+    });
   }
 };
 
@@ -178,7 +108,7 @@ export const execCli = async ({ args }: { args: Array<string> }) => {
   try {
     const { mode, input } = parseArgs({ args });
 
-    await execCommand({ mode, input });
+    await execCommand({ mode, input, writer: { write } });
   } catch (error) {
     await write({ format: "%s\n", text: "failure" });
     await write({ format: "%s\n", text: getErrorMessage(error) });
