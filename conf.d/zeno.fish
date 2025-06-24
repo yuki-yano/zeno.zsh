@@ -2,7 +2,7 @@
 # This file handles both Fisher installation and regular loading
 
 # Installation event handler
-function __zeno_install --on-event yuki-yano/zeno.zsh_install
+function __zeno_install --on-event zeno_install
     echo "Installing zeno.zsh..." >&2
     
     # Clone the full repository to a local directory
@@ -25,7 +25,7 @@ function __zeno_install --on-event yuki-yano/zeno.zsh_install
 end
 
 # Update event handler
-function __zeno_update --on-event yuki-yano/zeno.zsh_update
+function __zeno_update --on-event zeno_update
     if set -q ZENO_ROOT
         echo "Updating zeno.zsh..." >&2
         command git -C $ZENO_ROOT pull
@@ -34,7 +34,7 @@ function __zeno_update --on-event yuki-yano/zeno.zsh_update
 end
 
 # Uninstall event handler
-function __zeno_uninstall --on-event yuki-yano/zeno.zsh_uninstall
+function __zeno_uninstall --on-event zeno_uninstall
     echo "Uninstalling zeno.zsh..." >&2
     
     # Remove from fish_function_path
@@ -70,5 +70,7 @@ else
         if test -f $zeno_config
             source $zeno_config
         end
+    else
+        echo "zeno.zsh is not installed. Run '__zeno_install' to complete installation." >&2
     end
 end
