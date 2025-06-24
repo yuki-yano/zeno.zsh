@@ -1,8 +1,8 @@
-export { exists } from "jsr:@std/fs@0.229.3/exists";
-export { parse as yamlParse } from "jsr:@std/yaml@0.224.3";
-export { printf, sprintf } from "jsr:@std/fmt@0.225.6/printf";
-export { iterateReader } from "jsr:@std/io@0.224.5/iterate-reader";
-export * as path from "jsr:@std/path@1.0.2";
+export { exists } from "jsr:@std/fs@1.0.18/exists";
+export { parse as yamlParse } from "jsr:@std/yaml@1.0.8";
+export { printf, sprintf } from "jsr:@std/fmt@1.0.8/printf";
+export { iterateReader } from "jsr:@std/io@0.225.2/iterate-reader";
+export * as path from "jsr:@std/path@1.1.0";
 
 import argsParser from "https://deno.land/x/yargs_parser@yargs-parser-v21.1.1-deno/deno.ts";
 export { argsParser };
