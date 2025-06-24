@@ -1,4 +1,6 @@
-import { ZENO_GIT_CAT, ZENO_GIT_TREE } from "../settings.ts";
+import { getEnv } from "../config/env.ts";
+
+const env = getEnv();
 
 const git_log_pretty_format =
   "format:%C(yellow)%h %C(green)%cd %C(reset)%s%C(red)%d %C(cyan)[%an]";
@@ -6,11 +8,11 @@ const git_log_pretty_format =
 export const GIT_STATUS_PREVIEW = `
   ! git diff --exit-code --color=always -- {-1}
   || ! git diff --exit-code --cached --color=always -- {-1}
-  || ${ZENO_GIT_CAT} {-1} 2>/dev/null
-  || ${ZENO_GIT_TREE} {-1} 2>/dev/null
+  || ${env.GIT_CAT} {-1} 2>/dev/null
+  || ${env.GIT_TREE} {-1} 2>/dev/null
 `.trim().replaceAll(/\n\s*/g, "");
 
-export const GIT_LS_FILES_PREVIEW = `${ZENO_GIT_CAT} {}`;
+export const GIT_LS_FILES_PREVIEW = `${env.GIT_CAT} {}`;
 
 export const GIT_LOG_PREVIEW = "git show --color=always {2}";
 
