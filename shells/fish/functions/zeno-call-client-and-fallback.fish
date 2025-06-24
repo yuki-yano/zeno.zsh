@@ -1,5 +1,5 @@
 function zeno-call-client-and-fallback
-    if set -q ZENO_ENABLE_SOCK
+    if not set -q ZENO_DISABLE_SOCK; or test -z "$ZENO_DISABLE_SOCK"
         # Ensure zeno-enable-sock has been called
         if not functions -q zeno-client
             zeno-enable-sock
