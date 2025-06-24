@@ -1,13 +1,11 @@
 import { argsParser, iterateReader } from "./deps.ts";
-import { autoSnippet } from "./snippet/auto-snippet.ts";
-import { insertSnippet } from "./snippet/insert-snippet.ts";
-import { snippetList, snippetListOptions } from "./snippet/snippet-list.ts";
-import { fzfOptionsToString } from "./fzf/option/convert.ts";
-import { completion } from "./completion/completion.ts";
-import { nextPlaceholder } from "./snippet/next-placeholder.ts";
-import { clearConn, setConn, write } from "./text-writer.ts";
+import { TextWriter, write } from "./text-writer.ts";
+import { getErrorMessage } from "./utils/error.ts";
+import { writeResult } from "./app-helpers.ts";
+import { createCommandRegistry } from "./command/commands/index.ts";
 import type { Input } from "./type/shell.ts";
 import type { ArgParserArguments, ArgParserOptions } from "./deps.ts";
+import type { CommandContext } from "./command/types.ts";
 
 type ClientCall = Readonly<{
   args?: readonly string[];
@@ -35,124 +33,44 @@ const argsParseOption: Readonly<Partial<ArgParserOptions>> = {
 
 let textDecoder: TextDecoder;
 
-const execCommand = async ({
-  mode,
-  input,
-}: {
-  mode: string;
-  input: Input;
-}) => {
-  switch (mode) {
-    case "snippet-list": {
-      const snippets = snippetList();
+// Create a singleton registry
+const commandRegistry = createCommandRegistry();
 
-      await write({ format: "%s\n", text: snippetListOptions() });
-      for (const snippet of snippets) {
-        await write({ format: "%s\n", text: snippet });
-      }
+const execCommand = async (context: CommandContext & { mode: string }) => {
+  const { mode } = context;
+  const command = commandRegistry.get(mode);
 
-      break;
-    }
-
-    case "auto-snippet": {
-      const result = await autoSnippet(input);
-
-      if (result.status === "failure") {
-        await write({ format: "%s\n", text: result.status });
-      }
-
-      if (result.status === "success") {
-        await write({ format: "%s\n", text: result.status });
-        await write({ format: "%s\n", text: result.buffer });
-        await write({ format: "%s\n", text: (result.cursor).toString() });
-      }
-
-      break;
-    }
-
-    case "insert-snippet": {
-      const result = await insertSnippet(input);
-      if (result.status === "failure") {
-        await write({ format: "%s\n", text: result.status });
-      }
-
-      if (result.status === "success") {
-        await write({ format: "%s\n", text: result.status });
-        await write({ format: "%s\n", text: result.buffer });
-        await write({ format: "%s\n", text: result.cursor.toString() });
-      }
-
-      break;
-    }
-
-    case "next-placeholder": {
-      const result = nextPlaceholder(input);
-
-      if (result?.index != null) {
-        const { nextBuffer, index } = result;
-
-        await write({ format: "%s\n", text: "success" });
-        await write({ format: "%s\n", text: nextBuffer });
-        await write({ format: "%s\n", text: index.toString() });
-      } else {
-        await write({ format: "%s\n", text: "failure" });
-      }
-
-      break;
-    }
-
-    case "completion": {
-      const source = completion(input);
-
-      if (source != null) {
-        await write({ format: "%s\n", text: "success" });
-        await write({ format: "%s\n", text: source.sourceCommand });
-        await write({
-          format: "%s\n",
-          text: fzfOptionsToString(source.options),
-        });
-        await write({ format: "%s\n", text: source.callback ?? "" });
-        await write({
-          format: "%s\n",
-          text: source.callbackZero ? "zero" : "",
-        });
-      } else {
-        await write({ format: "%s\n", text: "failure" });
-      }
-
-      break;
-    }
-
-    case "pid": {
-      await write({ format: "%s\n", text: Deno.pid.toString() });
-      break;
-    }
-
-    case "chdir": {
-      if (input.dir === undefined) {
-        throw new Error("option required: --input.dir=<path>");
-      }
-      Deno.chdir(input.dir);
-      break;
-    }
-
-    default: {
-      await write({ format: "%s\n", text: "failure" });
-      await write({ format: "%s mode is not exist\n", text: mode });
-    }
+  if (command) {
+    await command.execute(context);
+  } else {
+    await writeResult(context.writer.write.bind(context.writer), "failure");
+    await context.writer.write({
+      format: "%s mode is not exist\n",
+      text: mode,
+    });
   }
 };
 
 const parseArgs = ({ args }: { args: readonly string[] }) => {
   const parsedArgs = argsParser([...args], argsParseOption) as Readonly<Args>;
   const mode = parsedArgs["zeno-mode"] ?? "";
-  const input = parsedArgs.input ?? {};
-  const filteredInput = Object.fromEntries(
-    Object.entries(input).map(
-      ([key, value]) => [key, value === undefined ? undefined : `${value}`],
-    ),
-  ) as Input;
-  return { mode, input: filteredInput };
+  const rawInput = parsedArgs.input ?? {};
+
+  // Validate and convert input fields
+  const input: Input = {
+    lbuffer: typeof rawInput.lbuffer === "string"
+      ? rawInput.lbuffer
+      : undefined,
+    rbuffer: typeof rawInput.rbuffer === "string"
+      ? rawInput.rbuffer
+      : undefined,
+    snippet: typeof rawInput.snippet === "string"
+      ? rawInput.snippet
+      : undefined,
+    dir: typeof rawInput.dir === "string" ? rawInput.dir : undefined,
+  };
+
+  return { mode, input };
 };
 
 export const execServer = async ({ socketPath }: { socketPath: string }) => {
@@ -163,22 +81,22 @@ export const execServer = async ({ socketPath }: { socketPath: string }) => {
 
   for await (const conn of listener) {
     for await (const r of iterateReader(conn)) {
-      try {
-        setConn(conn);
+      const writer = new TextWriter();
+      writer.setConn(conn);
 
+      try {
         textDecoder = textDecoder ?? new TextDecoder();
         const json = textDecoder.decode(r);
         const clientCall = JSON.parse(json) as ClientCall;
         const args = clientCall.args ?? [];
         const { mode, input } = parseArgs({ args });
 
-        await execCommand({ mode, input });
-      } catch (ex) {
-        await write({ format: "%s\n", text: "failure" });
-        await write({ format: "%s\n", text: `${ex}` });
+        await execCommand({ mode, input, writer });
+      } catch (error) {
+        await writer.write({ format: "%s\n", text: "failure" });
+        await writer.write({ format: "%s\n", text: getErrorMessage(error) });
       } finally {
         conn.closeWrite();
-        clearConn();
       }
     }
   }
@@ -190,10 +108,10 @@ export const execCli = async ({ args }: { args: Array<string> }) => {
   try {
     const { mode, input } = parseArgs({ args });
 
-    await execCommand({ mode, input });
-  } catch (ex) {
+    await execCommand({ mode, input, writer: { write } });
+  } catch (error) {
     await write({ format: "%s\n", text: "failure" });
-    await write({ format: "%s\n", text: `${ex}` });
+    await write({ format: "%s\n", text: getErrorMessage(error) });
     res = 1;
   }
 

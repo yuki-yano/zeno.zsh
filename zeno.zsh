@@ -8,10 +8,10 @@ path+=${ZENO_ROOT}/bin
 
 () {
   local widget_dirs=(
-    "${ZENO_ROOT}/shell/snippet/widget"
+    "${ZENO_ROOT}/shells/zsh/widgets"
   )
   local autoload_dirs=(
-    "${ZENO_ROOT}/shell/function"
+    "${ZENO_ROOT}/shells/zsh/functions"
     "${(@)widget_dirs}"
   )
   local f
@@ -28,7 +28,7 @@ else
 fi
 
 if [[ -z $ZENO_DISABLE_EXECUTE_CACHE_COMMAND ]]; then
-  command deno cache --unstable --no-check -- "${ZENO_ROOT}/src/cli.ts"
+  command deno cache --unstable-byonm --no-lock --no-check -- "${ZENO_ROOT}/src/cli.ts"
 fi
 
 export ZENO_ENABLE_SOCK="${ZENO_ENABLE_SOCK:-1}"

@@ -1,36 +1,57 @@
 import { sprintf } from "./deps.ts";
 
-let textEncoder: TextEncoder;
-let conn: Deno.Conn | undefined;
+export class TextWriter {
+  private textEncoder: TextEncoder;
+  private conn: Deno.Conn | undefined;
 
-export const setConn = (newConn: Deno.Conn): void => {
-  conn = newConn;
-};
-
-export const getConn = (): Deno.Conn => {
-  if (conn === undefined) {
-    throw new Error("Conn is not set");
+  constructor() {
+    this.textEncoder = new TextEncoder();
   }
-  return conn;
-};
 
-export const hasConn = (): boolean => {
-  return conn !== undefined;
-};
+  setConn(newConn: Deno.Conn): void {
+    this.conn = newConn;
+  }
 
-export const clearConn = (): void => {
-  conn = undefined;
-};
+  getConn(): Deno.Conn {
+    if (this.conn === undefined) {
+      throw new Error("Conn is not set");
+    }
+    return this.conn;
+  }
 
-export const write = async (
+  hasConn(): boolean {
+    return this.conn !== undefined;
+  }
+
+  clearConn(): void {
+    this.conn = undefined;
+  }
+
+  async write(
+    { format, text }: { format: string; text: string },
+  ): Promise<void> {
+    try {
+      const data = this.textEncoder.encode(sprintf(format, text));
+      if (this.hasConn()) {
+        await this.conn!.write(data);
+      } else {
+        await Deno.stdout.write(data);
+      }
+    } catch (error) {
+      throw new Error(`Failed to write output: ${error}`);
+    }
+  }
+}
+
+// Create a singleton instance for backward compatibility
+export const defaultWriter = new TextWriter();
+
+// Export functions for backward compatibility
+export const setConn = (newConn: Deno.Conn): void =>
+  defaultWriter.setConn(newConn);
+export const getConn = (): Deno.Conn => defaultWriter.getConn();
+export const hasConn = (): boolean => defaultWriter.hasConn();
+export const clearConn = (): void => defaultWriter.clearConn();
+export const write = (
   { format, text }: { format: string; text: string },
-): Promise<void> => {
-  textEncoder ??= new TextEncoder();
-  const data = textEncoder.encode(sprintf(format, text));
-  if (hasConn()) {
-    const conn = getConn();
-    await conn.write(data);
-  } else {
-    await Deno.stdout.write(data);
-  }
-};
+): Promise<void> => defaultWriter.write({ format, text });

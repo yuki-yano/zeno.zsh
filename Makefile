@@ -4,7 +4,7 @@
 
 SRCS := ./src ./test
 ALLOW := --allow-env --allow-read --allow-run --allow-write
-FLAG := --unstable
+FLAG := --unstable-byonm
 TEST_FLAG := ${FLAG}
 
 ci: fmt-check lint type-check test
@@ -28,5 +28,4 @@ test: ## Test
 	deno test --no-check ${TEST_FLAG} ${ALLOW} --parallel
 
 type-check: ## Type check
-	deno test --no-run ${TEST_FLAG} \
-	    -- $$(find ${SRCS} -name '*.ts' -not -name '.deno')
+	deno check ${FLAG} src/**/*.ts test/**/*.ts
