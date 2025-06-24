@@ -10,16 +10,27 @@ zeno.zsh is a multi-shell fuzzy completion and utility plugin built with Deno. O
 - Git completion support
 - Shell line editor utilities (ZLE for Zsh, commandline for Fish)
 
+## Recent Improvements (as of 2025-06-24)
+
+The following major improvements have been completed:
+- **Dependencies**: Migrated from deno.land to JSR (JavaScript Registry) - PR #82
+- **Async Operations**: Completely removed `existsSync` in favor of async file operations - PR #86, #87
+- **Error Handling**: Improved type safety and error handling across the codebase - PR #83
+- **Global State**: Removed global state from text-writer module - PR #84
+- **Code Quality**: Refactored duplicate result handling into helper functions - PR #85
+
 ## Development Commands
 
 ### Testing
 ```bash
-# Run all tests
-make test
+# Run all tests (IMPORTANT: Always run type-check before tests)
+make type-check && make test
 
 # Run a specific test file
 deno test --no-check --unstable-byonm --allow-env --allow-read --allow-run --allow-write test/command_test.ts
 ```
+
+**IMPORTANT PROJECT RULE**: Always run `make type-check` before running tests to catch import path errors and type issues that are skipped by the `--no-check` flag in test execution.
 
 ### Code Quality
 ```bash
@@ -77,6 +88,38 @@ make precommit  # Runs formatting
 - Supports both CLI mode and Unix socket server mode for performance
 - Configuration is loaded from YAML files in standard config directories
 - All text output uses a custom write function that supports formatting
+- Now uses async file operations throughout (no `existsSync`)
+- Error handling follows consistent patterns with proper error types
+
+## Technical Debt and Priorities
+
+### High Priority Issues (Module Coupling)
+The codebase has significant module coupling issues that need addressing:
+
+1. **Central Dependencies in app.ts**
+   - `app.ts` imports 7+ feature modules directly
+   - Switch statement with hardcoded command modes
+   - Should use Command Pattern or Strategy Pattern
+
+2. **Lack of Abstraction**
+   - Direct dependencies on concrete implementations
+   - No dependency injection
+   - I/O operations tightly coupled to Deno APIs
+
+3. **Mixed Responsibilities**
+   - `app.ts`: Command parsing, execution dispatch, error handling, server/CLI logic
+   - `settings.ts`: Environment reading, file loading, caching, defaults
+   - `text-writer.ts`: Both class-based and function-based APIs for backward compatibility
+
+### Medium Priority Issues
+- Fish shell implementation incomplete (see Fish Implementation Status below)
+- Socket mode needs error handling improvements
+- Memory leak potential in socket connection management
+
+### Low Priority Issues
+- Documentation (JSDoc comments needed)
+- Test coverage for Fish shell and socket mode
+- Performance monitoring
 
 ## Multi-Shell Support
 
@@ -98,8 +141,76 @@ The codebase now supports both Zsh and Fish shells:
 - **Array handling**: Different syntax and splitting mechanisms between shells
 - **Variable expansion**: Fish requires explicit command substitution and different quoting rules
 
-### Fish Implementation Status
-- **Implemented**: auto-snippet, completion, insert-space, snippet-next-placeholder
-- **Partial**: Socket mode server management functions (experimental)
-- **Not implemented**: history-selection, ghq-cd, insert-snippet widgets
-- **Limitations**: Socket mode (ZENO_ENABLE_SOCK) not fully functional in Fish
+### Fish Implementation Status (Experimental)
+
+#### Fully Implemented
+- `zeno-auto-snippet` - Automatic snippet expansion
+- `zeno-auto-snippet-and-accept-line` - Snippet expansion with command execution
+- `zeno-completion` - Fuzzy completion
+- `zeno-insert-space` - Space insertion with snippet handling
+- `zeno-snippet-next-placeholder` - Navigate snippet placeholders
+
+#### Partially Implemented
+- Socket mode (`ZENO_ENABLE_SOCK`) - Server starts but not fully functional
+- Server management commands (start/stop/restart) - Basic implementation exists
+
+#### Not Implemented
+- `zeno-history-selection` - Command history fuzzy search
+- `zeno-ghq-cd` - Repository navigation with ghq
+- `zeno-insert-snippet` - Interactive snippet selection
+- `zeno-toggle-auto-snippet` - Toggle automatic snippet expansion
+
+#### Known Limitations
+1. Socket mode reliability issues in Fish
+2. Function path may be added multiple times to configuration
+3. Error handling in server management needs improvement
+4. Process management (PID tracking) is rudimentary
+
+## Development Best Practices
+
+1. **Before Making Changes**
+   - Run `make ci` to ensure all checks pass
+   - Check both Zsh and Fish implementations if modifying shared functionality
+
+2. **Code Style**
+   - Use async/await instead of sync operations
+   - Handle errors with proper types (avoid `unknown` without type guards)
+   - Follow existing patterns for shell-specific implementations
+
+3. **Testing**
+   - Add tests for new functionality
+   - Test manually in both Zsh and Fish shells
+   - Check socket mode behavior when modifying server code
+
+4. **Commits**
+   - Run `make precommit` before committing
+   - Write clear commit messages following conventional commits
+
+## Important Notes
+
+- Fish support is experimental and may have unexpected behavior
+- Socket mode is more stable in Zsh than Fish
+- When debugging, check `ZENO_LOG_LEVEL` environment variable
+- Configuration files are in `$XDG_CONFIG_HOME/zeno` or `~/.config/zeno`
+
+## Configuration File Editing Rules
+
+**IMPORTANT**: When working on this repository, NEVER directly edit configuration files under `$HOME` or XDG directories. This includes:
+- `~/.config/zeno/config.yml`
+- `$XDG_CONFIG_HOME/zeno/*`
+- Any user-specific configuration files
+
+Instead:
+- Create example configuration files in the repository (e.g., `examples/config.yml`)
+- Document configuration options in README or documentation files
+- Use temporary files in `tmp/claude/` for testing configurations
+- Provide instructions for users to modify their own configuration files
+
+## Documentation and Temporary File Rules
+
+**IMPORTANT**: When creating documentation or temporary files during work:
+- All markdown files (*.md) created during analysis or planning should be placed in either:
+  - `tmp/claude/` - for temporary work files
+  - `log/claude/` - for logs and analysis reports
+- NEVER create documentation files in the project root or src directories unless explicitly requested
+- The only exception is when updating existing documentation files like README.md or CLAUDE.md
