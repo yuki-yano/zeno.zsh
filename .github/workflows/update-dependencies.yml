@@ -1,0 +1,43 @@
+name: update-deno-dependencies
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 6"
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: "2.x"
+      
+      - name: Install molt
+        run: deno install -Arf jsr:@molt/cli
+      
+      - name: Update dependencies
+        run: |
+          molt update src/deps.ts test/deps.ts --write
+      
+      - name: Format updated files
+        run: deno fmt src/deps.ts test/deps.ts
+      
+      - name: Run CI checks
+        run: make ci
+      
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore(deps): update deno dependencies"
+          title: Update Deno Dependencies
+          body: |
+            Automated dependency updates using [molt](https://github.com/molth/molt)
+            
+            This PR updates all dependencies in `src/deps.ts` and `test/deps.ts` to their latest versions.
+            
+            All CI checks have been run to ensure compatibility.
+          branch: update-deno-dependencies
+          author: GitHub <noreply@github.com>
+          delete-branch: true
