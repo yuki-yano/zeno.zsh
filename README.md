@@ -94,7 +94,7 @@ end
 
 ### Current limitations for Fish
 
-- Socket mode (ZENO_ENABLE_SOCK) is experimental
+- Socket mode is enabled by default (disable with ZENO_DISABLE_SOCK=1)
 - Some widgets are not yet ported:
   - `zeno-history-selection` (Ctrl-R history search)
   - `zeno-ghq-cd` (repository navigation)

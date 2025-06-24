@@ -62,7 +62,7 @@ make precommit  # Runs formatting
 1. **Main Entry Points**
    - `src/app.ts`: Core application logic implementing command modes (snippet-list, auto-snippet, insert-snippet, completion, etc.)
    - `src/cli.ts`: CLI entry point
-   - `src/server.ts`: Unix socket server implementation (when ZENO_ENABLE_SOCK=1)
+   - `src/server.ts`: Unix socket server implementation (enabled by default, disable with ZENO_DISABLE_SOCK=1)
 
 2. **Shell Integration**
    - `zeno.zsh`: Main plugin file for Zsh that sets up paths, autoloads functions and widgets
@@ -80,7 +80,7 @@ make precommit  # Runs formatting
 4. **Communication Flow**
    - Shell functions communicate with Deno process via command line arguments or Unix socket
    - Results are written back to stdout for shell consumption
-   - Socket mode (ZENO_ENABLE_SOCK=1) provides persistent server for better performance
+   - Socket mode provides persistent server for better performance (enabled by default)
 
 ## Key Implementation Details
 
@@ -151,7 +151,7 @@ The codebase now supports both Zsh and Fish shells:
 - `zeno-snippet-next-placeholder` - Navigate snippet placeholders
 
 #### Partially Implemented
-- Socket mode (`ZENO_ENABLE_SOCK`) - Server starts but not fully functional
+- Socket mode - Server starts but not fully functional (enabled by default, disable with ZENO_DISABLE_SOCK=1)
 - Server management commands (start/stop/restart) - Basic implementation exists
 
 #### Not Implemented

@@ -61,7 +61,7 @@ if set -q ZENO_ROOT; and not set -q ZENO_DISABLE_EXECUTE_CACHE_COMMAND
 end
 
 # Socket support
-if not set -q ZENO_DISABLE_SOCK
+if not set -q ZENO_DISABLE_SOCK; or test -z "$ZENO_DISABLE_SOCK"
     # Check Deno version
     set -l deno_version (deno -V | string match -r '\d+\.\d+\.\d+')
     set -l version_parts (string split . $deno_version)
