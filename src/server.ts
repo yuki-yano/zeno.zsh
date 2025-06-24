@@ -1,8 +1,9 @@
 import { execServer } from "./app.ts";
 import { exists, printf } from "./deps.ts";
-import { ZENO_SOCK } from "./settings.ts";
+import { getEnv } from "./config/env.ts";
 
-const socketPath = ZENO_SOCK;
+const env = getEnv();
+const socketPath = env.SOCK;
 
 if (socketPath == null) {
   printf("env:ZENO_SOCK is empty\n");
