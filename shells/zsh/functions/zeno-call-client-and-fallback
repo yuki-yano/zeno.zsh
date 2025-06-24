@@ -1,6 +1,6 @@
 #autoload
 
-if [[ -n $ZENO_ENABLE_SOCK ]]; then
+if [[ -z $ZENO_DISABLE_SOCK ]]; then
   (( $+functions[zeno-client] )) || zeno-enable-sock
   if [[ -S $ZENO_SOCK ]]; then
     zeno-client "$@"
