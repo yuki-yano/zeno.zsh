@@ -6,8 +6,8 @@ end
 # Set ZENO_ROOT if not already set
 # In Fish, we need to find the directory containing this file
 if not set -q ZENO_ROOT
-    # Get the path to this config file
-    set -l config_path (status --current-filename)
+    # Get the path to this config file (resolve symlinks)
+    set -l config_path (realpath (status --current-filename) 2>/dev/null; or status --current-filename)
     
     # Check if we're in a Fisher installation (config is in ~/.config/fish/conf.d/)
     if string match -q "*/.config/fish/conf.d/*" $config_path
@@ -28,14 +28,21 @@ if not set -q ZENO_ROOT
     end
 end
 
+# Check if ZENO_ROOT was successfully set
+if not set -q ZENO_ROOT
+    echo "Warning: ZENO_ROOT could not be determined. Please set it manually:" >&2
+    echo "  set -gx ZENO_ROOT /path/to/zeno.zsh" >&2
+    return 1
+end
+
 # Add bin to PATH
-if not contains $ZENO_ROOT/bin $PATH
+if set -q ZENO_ROOT; and not contains $ZENO_ROOT/bin $PATH
     set -gx PATH $ZENO_ROOT/bin $PATH
 end
 
 # Add functions to fish_function_path
 # This is needed for both manual and Fisher installations since functions are in shells/fish/
-if test -d $ZENO_ROOT/shells/fish/functions
+if set -q ZENO_ROOT; and test -d $ZENO_ROOT/shells/fish/functions
     if not contains $ZENO_ROOT/shells/fish/functions $fish_function_path
         set -gx fish_function_path $ZENO_ROOT/shells/fish/functions $fish_function_path
     end
@@ -49,7 +56,7 @@ else
 end
 
 # Cache Deno dependencies unless disabled
-if not set -q ZENO_DISABLE_EXECUTE_CACHE_COMMAND
+if set -q ZENO_ROOT; and not set -q ZENO_DISABLE_EXECUTE_CACHE_COMMAND
     command deno cache --unstable-byonm --no-lock --no-check -- "$ZENO_ROOT/src/cli.ts"
 end
 
@@ -85,12 +92,7 @@ end
 set -gx ZENO_ENABLE 1
 set -gx ZENO_LOADED 1
 
-# Add Fish functions directory to function path
-if not contains $ZENO_ROOT/shells/fish/functions $fish_function_path
+# Add Fish functions directory to function path (safety check)
+if set -q ZENO_ROOT; and not contains $ZENO_ROOT/shells/fish/functions $fish_function_path
     set -gx fish_function_path $ZENO_ROOT/shells/fish/functions $fish_function_path
-end
-
-# Force reload of zeno-enable-sock function before using it
-if test -f $ZENO_ROOT/shells/fish/functions/zeno-enable-sock.fish
-    source $ZENO_ROOT/shells/fish/functions/zeno-enable-sock.fish
 end
