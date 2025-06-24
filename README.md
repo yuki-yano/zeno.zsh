@@ -58,10 +58,12 @@ Fisher will automatically clone the full repository to `~/.local/share/zeno.zsh`
 #### Manual installation
 
 ```fish
-$ git clone https://github.com/yuki-yano/zeno.zsh.git
-$ echo "set -gx fish_function_path /path/to/zeno.zsh/shells/fish/functions \$fish_function_path" >> ~/.config/fish/config.fish
+$ git clone https://github.com/yuki-yano/zeno.zsh.git /path/to/zeno.zsh
+$ echo "set -gx ZENO_ROOT /path/to/zeno.zsh" >> ~/.config/fish/config.fish
 $ ln -s /path/to/zeno.zsh/shells/fish/conf.d/zeno.fish ~/.config/fish/conf.d/
 ```
+
+Note: Setting `ZENO_ROOT` explicitly is recommended for manual installations to avoid path resolution issues.
 
 ### Configuration for Fish
 
