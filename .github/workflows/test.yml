@@ -24,14 +24,14 @@ jobs:
         runner:
           - ubuntu-latest
         version:
-          - "1.x"
+          - "2.x"
     runs-on: ${{ matrix.runner }}
     steps:
-    - uses: actions/checkout@v3
-    - uses: denoland/setup-deno@v1
+    - uses: actions/checkout@v4
+    - uses: denoland/setup-deno@v2
       with:
         deno-version: "${{ matrix.version }}"
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       with:
         path: ${{ env.DENO_DIR }}
         key: ${{ runner.os }}-deno-${{ matrix.version }}-${{ hashFiles('**/*.ts') }}
