@@ -14,12 +14,9 @@ jobs:
         with:
           deno-version: "2.x"
       
-      - name: Install molt
-        run: deno install -Arf jsr:@molt/cli
-      
       - name: Update dependencies
         run: |
-          molt update src/deps.ts test/deps.ts --write
+          deno run --allow-env --allow-read --allow-write --allow-net --allow-run=git,deno jsr:@molt/cli update src/deps.ts test/deps.ts --write
       
       - name: Format updated files
         run: deno fmt src/deps.ts test/deps.ts
