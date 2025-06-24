@@ -158,9 +158,9 @@ Use zeno-ghq-cd zle
 # if setting fzf-tmux options
 # export ZENO_FZF_TMUX_OPTIONS="-p"
 
-# Recommended: Use UNIX Domain Socket
-# if disable
-# export ZENO_ENABLE_SOCK=0
+# by default a unix domain socket is used
+# if disable it
+# export ZENO_DISABLE_SOCK=1
 
 # if disable builtin completion
 # export ZENO_DISABLE_BUILTIN_COMPLETION=1

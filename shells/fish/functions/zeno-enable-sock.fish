@@ -1,5 +1,4 @@
 function zeno-enable-sock --description "Enable socket mode for zeno"
-    set -gx ZENO_ENABLE_SOCK 1
     set -gx ZENO_PID ""
     
     # Set socket directory and path
