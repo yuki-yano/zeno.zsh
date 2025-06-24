@@ -1,6 +1,6 @@
 # ![logo](https://user-images.githubusercontent.com/5423775/172536289-50471330-59ca-49ad-96e5-cd87eb5c3adb.png)
 
-zsh fuzzy completion and utility plugin with [Deno](https://deno.land/).
+Zsh/Fish fuzzy completion and utility plugin with [Deno](https://deno.land/).
 
 ## Features
 
@@ -40,6 +40,67 @@ zinit light yuki-yano/zeno.zsh
 $ git clone https://github.com/yuki-yano/zeno.zsh.git
 $ echo "source /path/to/dir/zeno.zsh" >> ~/.zshrc
 ```
+
+## Fish Shell Support (Experimental)
+
+zeno now has experimental support for [Fish shell](https://fishshell.com/).
+
+### Installation for Fish
+
+#### Using Fisher (Recommended)
+
+```fish
+fisher install yuki-yano/zeno.zsh
+```
+
+Fisher will automatically clone the full repository to `~/.local/share/zeno.zsh` and set up the necessary paths.
+
+#### Manual installation
+
+```fish
+$ git clone https://github.com/yuki-yano/zeno.zsh.git /path/to/zeno.zsh
+$ echo "set -gx ZENO_ROOT /path/to/zeno.zsh" >> ~/.config/fish/config.fish
+$ ln -s /path/to/zeno.zsh/shells/fish/conf.d/zeno.fish ~/.config/fish/conf.d/
+```
+
+Note: Setting `ZENO_ROOT` explicitly is recommended for manual installations to avoid path resolution issues.
+
+### Configuration for Fish
+
+Copy the example key bindings:
+
+```fish
+$ cp /path/to/zeno.zsh/shells/fish/conf.d/zeno-keybindings.fish.example ~/.config/fish/conf.d/zeno-keybindings.fish
+```
+
+Or manually set up key bindings in your `config.fish`:
+
+```fish
+if test "$ZENO_LOADED" = "1"
+    bind ' ' zeno-auto-snippet
+    bind \r zeno-auto-snippet-and-accept-line
+    bind \t zeno-completion
+    bind \cx\x20 zeno-insert-space
+end
+```
+
+### Available features for Fish
+
+- **Abbrev snippet expansion** - Expand abbreviations with Space key
+- **Auto snippet and accept line** - Expand and execute with Enter key
+- **Fuzzy completion** - Tab completion with fzf
+- **Insert literal space** - Insert space without expansion (Ctrl-X Space)
+- **Snippet placeholder navigation** - Navigate through snippet placeholders
+
+### Current limitations for Fish
+
+- Socket mode (ZENO_ENABLE_SOCK) is experimental
+- Some widgets are not yet ported:
+  - `zeno-history-selection` (Ctrl-R history search)
+  - `zeno-ghq-cd` (repository navigation)
+  - `zeno-insert-snippet` (snippet list selection)
+  - `zeno-toggle-auto-snippet` (toggle auto expansion)
+- Key binding syntax differs from Zsh
 
 ## Usage
 
@@ -112,7 +173,7 @@ export ZENO_GIT_CAT="cat"
 # default
 export ZENO_GIT_TREE="tree"
 # git folder preview with color
-# export ZENO_GIT_TREE="exa --tree"
+# export ZENO_GIT_TREE="eza --tree"
 
 if [[ -n $ZENO_LOADED ]]; then
   bindkey ' '  zeno-auto-snippet

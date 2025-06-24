@@ -1,6 +1,6 @@
 import { loadSnippets } from "./settings.ts";
-import { exec, OutputMode } from "../deps.ts";
 import { normalizeCommand, parseCommand } from "../command.ts";
+import { executeCommand } from "../util/exec.ts";
 import type { Input } from "../type/shell.ts";
 
 export type AutoSnippetData = {
@@ -45,7 +45,7 @@ export const autoSnippet = async (
 
   const placeholderRegex = /\{\{[^{}\s]*\}\}/;
 
-  const snippets = loadSnippets();
+  const snippets = await loadSnippets();
   for (const { snippet, keyword, context, evaluate } of snippets) {
     if (keyword !== lastWord) {
       continue;
@@ -75,8 +75,7 @@ export const autoSnippet = async (
 
     let snipText = snippet;
     if (evaluate === true) {
-      const response = await exec(snippet, { output: OutputMode.Capture });
-      snipText = response.output.trimEnd();
+      snipText = await executeCommand(snippet);
     }
 
     const placeholderMatch = placeholderRegex.exec(snipText);

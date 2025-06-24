@@ -6,7 +6,7 @@ export type Settings = Readonly<{
 }>;
 
 export type Snippet = Readonly<{
-  name: string;
+  name?: string;
   keyword?: string;
   snippet: string;
   context?: Readonly<{
