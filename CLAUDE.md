@@ -119,8 +119,9 @@ make precommit  # Runs formatting
    - ⏳ I/O operations still coupled to Deno APIs
 
 ### Medium Priority Issues
-- Fish shell implementation incomplete (see Fish Implementation Status below)
-- ⏳ Missing Fish widgets: ghq-cd, history-selection, insert-snippet, toggle-auto-snippet
+- Test coverage for Fish shell integration
+- Further improvements to socket mode error handling
+- Connection timeout and pooling enhancements
 
 ### Low Priority Issues
 - Documentation (JSDoc comments needed)
