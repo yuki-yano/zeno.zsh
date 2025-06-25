@@ -18,14 +18,35 @@ function zeno-start-server --description "Start zeno socket server in background
     end
     
     # Start the server in background with proper process management
+    # Use a more reliable method to capture PID
+    set -l pid_file "$ZENO_SOCK_DIR/zeno-server.pid"
+    
     # Use setsid if available to create a new session
     if command -q setsid
-        setsid $server_bin > /dev/null 2>&1 &
+        # Start server and write its PID to a file
+        fish -c "setsid $server_bin > /dev/null 2>&1 & echo \$last_pid > $pid_file" &
     else
         # Fallback to fish -c for older systems
-        fish -c "exec $server_bin > /dev/null 2>&1" &
+        fish -c "exec $server_bin > /dev/null 2>&1 & echo \$last_pid > $pid_file" &
     end
-    set -l server_pid $last_pid
+    
+    # Wait for PID file to be created
+    set -l pid_wait_count 0
+    while test $pid_wait_count -lt 10  # 1 second timeout for PID file
+        if test -f $pid_file
+            set -l server_pid (cat $pid_file)
+            rm -f $pid_file  # Clean up PID file
+            break
+        end
+        sleep 0.1
+        set pid_wait_count (math $pid_wait_count + 1)
+    end
+    
+    # If we couldn't get PID, fail
+    if not set -q server_pid
+        echo "zeno: Failed to get server PID" >&2
+        return 1
+    end
     
     # Wait for socket to be created (with timeout)
     set -l wait_count 0
