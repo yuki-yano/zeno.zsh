@@ -49,8 +49,6 @@ export const createSocketServer = (config: SocketServerConfig) => {
                   const args = clientCall.args ?? [];
 
                   await handler({ args, writer });
-                  // Send response delimiter to indicate end of response
-                  await conn.write(new TextEncoder().encode("\n"));
                 } catch (error) {
                   if (onError) {
                     await onError(error, writer);
@@ -61,8 +59,8 @@ export const createSocketServer = (config: SocketServerConfig) => {
                       text: getErrorMessage(error),
                     });
                   }
-                  // Send response delimiter even on error
-                  await conn.write(new TextEncoder().encode("\n"));
+                } finally {
+                  conn.closeWrite();
                 }
               }
             } catch (error) {
