@@ -10,7 +10,7 @@ zeno.zsh is a multi-shell fuzzy completion and utility plugin built with Deno. O
 - Git completion support
 - Shell line editor utilities (ZLE for Zsh, commandline for Fish)
 
-## Recent Improvements (as of 2025-06-24)
+## Recent Improvements (as of 2025-06-25)
 
 The following major improvements have been completed:
 - **Dependencies**: Migrated from deno.land to JSR (JavaScript Registry) - PR #82
@@ -18,6 +18,7 @@ The following major improvements have been completed:
 - **Error Handling**: Improved type safety and error handling across the codebase - PR #83
 - **Global State**: Removed global state from text-writer module - PR #84
 - **Code Quality**: Refactored duplicate result handling into helper functions - PR #85
+- **Fish Shell Support**: Completed implementation of all Fish shell widgets, achieving feature parity with Zsh
 
 ## Development Commands
 
@@ -149,16 +150,14 @@ The codebase now supports both Zsh and Fish shells:
 - `zeno-completion` - Fuzzy completion
 - `zeno-insert-space` - Space insertion with snippet handling
 - `zeno-snippet-next-placeholder` - Navigate snippet placeholders
-
-#### Partially Implemented
-- Socket mode - Server starts but not fully functional (enabled by default, disable with ZENO_DISABLE_SOCK=1)
-- Server management commands (start/stop/restart) - Basic implementation exists
-
-#### Not Implemented
 - `zeno-history-selection` - Command history fuzzy search
 - `zeno-ghq-cd` - Repository navigation with ghq
 - `zeno-insert-snippet` - Interactive snippet selection
 - `zeno-toggle-auto-snippet` - Toggle automatic snippet expansion
+
+#### Partially Implemented
+- Socket mode - Server starts but not fully functional (enabled by default, disable with ZENO_DISABLE_SOCK=1)
+- Server management commands (start/stop/restart) - Basic implementation exists
 
 #### Known Limitations
 1. Socket mode reliability issues in Fish
