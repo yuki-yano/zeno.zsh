@@ -10,18 +10,6 @@ zeno.zsh is a multi-shell fuzzy completion and utility plugin built with Deno. O
 - Git completion support
 - Shell line editor utilities (ZLE for Zsh, commandline for Fish)
 
-## Recent Improvements (as of 2025-06-25)
-
-The following major improvements have been completed:
-- **Dependencies**: Migrated from deno.land to JSR (JavaScript Registry) - PR #82
-- **Async Operations**: Completely removed `existsSync` in favor of async file operations - PR #86, #87
-- **Error Handling**: Improved type safety and error handling across the codebase - PR #83
-- **Global State**: Removed global state from text-writer module - PR #84
-- **Code Quality**: Refactored duplicate result handling into helper functions - PR #85
-- **Fish Shell Support**: Completed implementation of all Fish shell widgets, achieving feature parity with Zsh
-- **Fish Socket Mode**: Fixed reliability issues with PID tracking, socket cleanup, and error handling - PR #98
-- **Socket Server Extraction**: Extracted socket server logic from app.ts into dedicated modules - PR #99
-
 ## Development Commands
 
 ### Testing
@@ -101,22 +89,10 @@ make precommit  # Runs formatting
 
 ### High Priority Issues
 
-1. **✅ Fish Socket Mode Reliability** (PR #98 - Completed)
-   - Fixed PID tracking race conditions
-   - Improved socket cleanup and timeout handling
-   - Added error handling for socket operations
-
-2. **✅ Socket Server Module Extraction** (PR #99 - Completed)
-   - Extracted socket server logic from app.ts
-   - Implemented proper connection management with timeouts
-   - Fixed memory leaks in TextWriter and connection handling
-   - Added comprehensive test coverage
-
-3. **Module Coupling Issues** (Partially addressed)
-   - ✅ Command Pattern implemented with registry
-   - ✅ Socket server logic extracted to separate module
-   - ⏳ Still need full dependency injection implementation
-   - ⏳ I/O operations still coupled to Deno APIs
+1. **Module Coupling Issues**
+   - Need full dependency injection implementation
+   - I/O operations still coupled to Deno APIs
+   - Direct dependencies on concrete implementations in some modules
 
 ### Medium Priority Issues
 - Test coverage for Fish shell integration
@@ -162,11 +138,9 @@ The codebase now supports both Zsh and Fish shells:
 - `zeno-insert-snippet` - Interactive snippet selection
 - `zeno-toggle-auto-snippet` - Toggle automatic snippet expansion
 
-#### Known Limitations (Mostly Resolved)
-1. ✅ Socket mode reliability issues in Fish (PR #98 - Fixed)
-2. Function path may be added multiple times to configuration
-3. ✅ Error handling in server management (PR #98 - Improved)
-4. ✅ Process management (PID tracking) (PR #98 - Fixed)
+#### Known Limitations
+1. Function path may be added multiple times to configuration
+2. Socket mode performance differences between shells
 
 ## Development Best Practices
 
@@ -206,7 +180,7 @@ The codebase now supports both Zsh and Fish shells:
 
 ## Important Notes
 
-- Socket mode is more stable in Zsh than Fish (though Fish stability greatly improved in PR #98)
+- Socket mode is more stable in Zsh than Fish
 - When debugging, check `ZENO_LOG_LEVEL` environment variable
 - Configuration files are in `$XDG_CONFIG_HOME/zeno` or `~/.config/zeno`
 
