@@ -39,21 +39,6 @@ export const createConnectionManager = (config: ConnectionConfig = {}) => {
     }
 
     const id = state.connectionId++;
-
-    // Handle ID overflow to prevent issues with long-running servers
-    if (state.connectionId >= Number.MAX_SAFE_INTEGER) {
-      // Find the next available ID starting from 0
-      state.connectionId = 0;
-      while (state.connections.has(state.connectionId)) {
-        state.connectionId++;
-        if (state.connectionId >= state.maxConnections) {
-          // If we've cycled through all possible IDs up to maxConnections,
-          // we're at capacity (this should have been caught earlier)
-          throw new Error("Connection ID pool exhausted");
-        }
-      }
-    }
-
     state.connections.set(id, {
       conn,
       writer,
