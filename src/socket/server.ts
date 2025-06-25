@@ -10,14 +10,15 @@ import type { SocketServerConfig } from "./types.ts";
 export const createSocketServer = (config: SocketServerConfig) => {
   const { socketPath, handler, onError, connectionConfig } = config;
   const connectionManager = createConnectionManager(connectionConfig);
-
-  // Set up periodic cleanup of timed out connections
-  const cleanupInterval = setInterval(() => {
-    connectionManager.cleanupTimedOutConnections();
-  }, 10000); // Clean up every 10 seconds
+  let cleanupInterval: number | undefined;
 
   return {
     async start(): Promise<void> {
+      // Set up periodic cleanup of timed out connections
+      cleanupInterval = setInterval(() => {
+        connectionManager.cleanupTimedOutConnections();
+      }, 10000); // Clean up every 10 seconds
+
       const listener = Deno.listen({
         transport: "unix",
         path: socketPath,
@@ -95,7 +96,10 @@ export const createSocketServer = (config: SocketServerConfig) => {
     },
 
     stop(): void {
-      clearInterval(cleanupInterval);
+      if (cleanupInterval !== undefined) {
+        clearInterval(cleanupInterval);
+        cleanupInterval = undefined;
+      }
       connectionManager.closeAll();
     },
 

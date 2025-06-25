@@ -53,24 +53,32 @@ make precommit  # Format code before committing
 ## Technical Debt and Priorities
 
 ### High Priority Issues
-1. **Socket Server Logic in app.ts**
-   - Socket server implementation is directly in app.ts
-   - Should be extracted to separate module for better separation of concerns
-   - Memory leak potential in socket connection management (TextWriter cleanup missing)
+1. **✅ Fish Socket Mode Reliability** (PR #98 - Completed)
+   - Fixed PID tracking race conditions
+   - Improved socket cleanup and timeout handling
+   - Added error handling for socket operations
 
-2. **Fish Socket Mode Reliability**
-   - Process management issues (PID tracking)
-   - Error handling needs improvement
-   - Race conditions during server startup
+2. **✅ Socket Server Module Extraction** (PR #99 - Completed)
+   - Extracted socket server logic from app.ts
+   - Implemented proper connection management with timeouts
+   - Fixed memory leaks in TextWriter and connection handling
+   - Added comprehensive test coverage
+
+3. **Module Coupling Issues** (Partially addressed)
+   - ✅ Command Pattern implemented with registry
+   - ✅ Socket server logic extracted to separate module
+   - ⏳ Still need dependency injection for better abstraction
+   - ⏳ I/O operations still coupled to Deno APIs
 
 ### Medium Priority Issues
-- Test coverage for Fish shell and socket mode
-- Error handling improvements in socket mode
-- Connection timeout and pooling needed
+- Fish shell implementation incomplete (see Fish Implementation Status below)
+- ⏳ Missing Fish widgets: ghq-cd, history-selection, insert-snippet, toggle-auto-snippet
 
 ### Low Priority Issues
 - Documentation (JSDoc comments needed)
+- Test coverage for Fish shell integration tests
 - Performance monitoring
+- Integration tests for socket communication
 
 ## Multi-Shell Support
 
@@ -138,3 +146,26 @@ The codebase now supports both Zsh and Fish shells:
 1. **Configuration Files**: Never edit user config files (`~/.config/zeno/*`). Use `examples/` for samples.
 2. **Temporary Files**: Use `tmp/claude/` for temporary work, `log/claude/` for analysis/logs
 3. **Documentation**: Only update existing docs (README.md, CLAUDE.md) when explicitly requested
+
+### Fish Implementation Status (Experimental)
+
+#### Fully Implemented
+- `zeno-auto-snippet` - Automatic snippet expansion
+- `zeno-auto-snippet-and-accept-line` - Snippet expansion with command execution
+- `zeno-completion` - Fuzzy completion
+- `zeno-insert-space` - Space insertion with snippet handling
+- `zeno-snippet-next-placeholder` - Navigate snippet placeholders
+
+#### Not Yet Implemented
+- `zeno-history-selection` - Command history fuzzy search
+- `zeno-ghq-cd` - Repository navigation with ghq
+- `zeno-insert-snippet` - Interactive snippet selection
+- `zeno-toggle-auto-snippet` - Toggle automatic snippet expansion
+
+## Dependency Management
+
+**Import Guidelines**:
+- All imports in implementation files should be centralized through `src/deps.ts`
+- All imports in test files should be centralized through `test/deps.ts`
+- Inside `deps.ts` files, prefer JSR (JavaScript Registry) imports whenever possible
+- This approach ensures consistent dependency management and easier migration
