@@ -91,15 +91,14 @@ end
 - **Fuzzy completion** - Tab completion with fzf
 - **Insert literal space** - Insert space without expansion (Ctrl-X Space)
 - **Snippet placeholder navigation** - Navigate through snippet placeholders
+- **History selection** - Fuzzy search command history (Ctrl-R)
+- **GHQ repository navigation** - Navigate to ghq-managed repositories
+- **Insert snippet** - Select and insert snippets from list
+- **Toggle auto snippet** - Enable/disable automatic snippet expansion
 
 ### Current limitations for Fish
 
 - Socket mode is enabled by default (disable with ZENO_DISABLE_SOCK=1)
-- Some widgets are not yet ported:
-  - `zeno-history-selection` (Ctrl-R history search)
-  - `zeno-ghq-cd` (repository navigation)
-  - `zeno-insert-snippet` (snippet list selection)
-  - `zeno-toggle-auto-snippet` (toggle auto expansion)
 - Key binding syntax differs from Zsh
 
 ## Usage
