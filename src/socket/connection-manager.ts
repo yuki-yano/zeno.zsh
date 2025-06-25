@@ -11,44 +11,48 @@ type Connection = {
   startTime: number;
 };
 
-/**
- * Manages socket connections with limits and timeouts
- */
-export class ConnectionManager {
-  private connections = new Map<number, Connection>();
-  private connectionId = 0;
-  private readonly maxConnections: number;
-  private readonly connectionTimeout: number;
+type ConnectionManagerState = {
+  connections: Map<number, Connection>;
+  connectionId: number;
+  maxConnections: number;
+  connectionTimeout: number;
+};
 
-  constructor(config: ConnectionConfig = {}) {
-    this.maxConnections = config.maxConnections ?? 100;
-    this.connectionTimeout = config.connectionTimeout ?? 60000; // 60 seconds default
-  }
+/**
+ * Creates a connection manager with limits and timeouts
+ */
+export const createConnectionManager = (config: ConnectionConfig = {}) => {
+  const state: ConnectionManagerState = {
+    connections: new Map<number, Connection>(),
+    connectionId: 0,
+    maxConnections: config.maxConnections ?? 100,
+    connectionTimeout: config.connectionTimeout ?? 60000, // 60 seconds default
+  };
 
   /**
    * Add a new connection
    */
-  addConnection(conn: Deno.Conn, writer: TextWriter): number {
+  const addConnection = (conn: Deno.Conn, writer: TextWriter): number => {
     // Check connection limit
-    if (this.connections.size >= this.maxConnections) {
-      throw new Error(`Connection limit reached (${this.maxConnections})`);
+    if (state.connections.size >= state.maxConnections) {
+      throw new Error(`Connection limit reached (${state.maxConnections})`);
     }
 
-    const id = this.connectionId++;
-    this.connections.set(id, {
+    const id = state.connectionId++;
+    state.connections.set(id, {
       conn,
       writer,
       startTime: Date.now(),
     });
 
     return id;
-  }
+  };
 
   /**
    * Remove a connection
    */
-  removeConnection(id: number): void {
-    const connection = this.connections.get(id);
+  const removeConnection = (id: number): void => {
+    const connection = state.connections.get(id);
     if (connection) {
       connection.writer.clearConn();
       try {
@@ -56,35 +60,43 @@ export class ConnectionManager {
       } catch {
         // Connection might already be closed
       }
-      this.connections.delete(id);
+      state.connections.delete(id);
     }
-  }
+  };
 
   /**
    * Clean up timed out connections
    */
-  cleanupTimedOutConnections(): void {
+  const cleanupTimedOutConnections = (): void => {
     const now = Date.now();
-    for (const [id, connection] of this.connections.entries()) {
-      if (now - connection.startTime > this.connectionTimeout) {
-        this.removeConnection(id);
+    for (const [id, connection] of state.connections.entries()) {
+      if (now - connection.startTime > state.connectionTimeout) {
+        removeConnection(id);
       }
     }
-  }
+  };
 
   /**
    * Get active connection count
    */
-  getActiveConnectionCount(): number {
-    return this.connections.size;
-  }
+  const getActiveConnectionCount = (): number => {
+    return state.connections.size;
+  };
 
   /**
    * Close all connections
    */
-  closeAll(): void {
-    for (const id of this.connections.keys()) {
-      this.removeConnection(id);
+  const closeAll = (): void => {
+    for (const id of state.connections.keys()) {
+      removeConnection(id);
     }
-  }
-}
+  };
+
+  return {
+    addConnection,
+    removeConnection,
+    cleanupTimedOutConnections,
+    getActiveConnectionCount,
+    closeAll,
+  };
+};
