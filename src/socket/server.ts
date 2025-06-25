@@ -5,7 +5,25 @@ import { createConnectionManager } from "./connection-manager.ts";
 import type { SocketServerConfig } from "./types.ts";
 
 /**
- * Creates a socket server with the provided handler
+ * Creates a Unix socket server that listens for client connections
+ *
+ * @param config - Server configuration
+ * @param config.socketPath - Path to the Unix socket file
+ * @param config.handler - Function to handle incoming requests
+ * @param config.onError - Optional error handler
+ * @param config.connectionConfig - Optional connection management configuration
+ * @returns Server object with start and stop methods
+ *
+ * @example
+ * ```ts
+ * const server = createSocketServer({
+ *   socketPath: "/tmp/zeno.sock",
+ *   handler: async ({ args, writer }) => {
+ *     await writer.write({ format: "%s\n", text: "Hello" });
+ *   }
+ * });
+ * await server.start();
+ * ```
  */
 export const createSocketServer = (config: SocketServerConfig) => {
   const { socketPath, handler, onError, connectionConfig } = config;
