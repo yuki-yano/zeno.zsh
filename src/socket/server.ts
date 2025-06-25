@@ -1,7 +1,7 @@
 import { iterateReader } from "../deps.ts";
 import { TextWriter } from "../text-writer.ts";
 import { getErrorMessage } from "../utils/error.ts";
-import { ConnectionManager } from "./connection-manager.ts";
+import { createConnectionManager } from "./connection-manager.ts";
 import type { SocketServerConfig } from "./types.ts";
 
 /**
@@ -9,7 +9,7 @@ import type { SocketServerConfig } from "./types.ts";
  */
 export const createSocketServer = (config: SocketServerConfig) => {
   const { socketPath, handler, onError, connectionConfig } = config;
-  const connectionManager = new ConnectionManager(connectionConfig);
+  const connectionManager = createConnectionManager(connectionConfig);
 
   // Set up periodic cleanup of timed out connections
   const cleanupInterval = setInterval(() => {
