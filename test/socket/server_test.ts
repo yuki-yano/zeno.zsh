@@ -1,15 +1,15 @@
-import { assertEquals, assertStringIncludes } from "../deps.ts";
+import { assertEquals } from "../deps.ts";
 import { createSocketServer } from "../../src/socket/server.ts";
 
 Deno.test("createSocketServer - basic functionality", async (t) => {
   await t.step("creates server with handler", () => {
-    let handlerCalled = false;
-    
+    // Handler would be called when connection is made
+
     const server = createSocketServer({
       socketPath: "/tmp/test.sock",
-      handler: async ({ args, writer }) => {
-        handlerCalled = false; // Will be called when connection is made
-        await writer.write({ format: "%s\n", text: "success" });
+      handler: ({ writer }) => {
+        // Handler logic here
+        return writer.write({ format: "%s\n", text: "success" });
       },
     });
 
@@ -20,16 +20,16 @@ Deno.test("createSocketServer - basic functionality", async (t) => {
   });
 
   await t.step("creates server with error handler", () => {
-    let errorHandlerCalled = false;
-    
+    // Error handler would be called when error occurs
+
     const server = createSocketServer({
       socketPath: "/tmp/test.sock",
-      handler: async () => {
+      handler: () => {
         throw new Error("Test error");
       },
-      onError: async (error, writer) => {
-        errorHandlerCalled = false; // Will be called when error occurs
-        await writer.write({ format: "%s\n", text: "custom error" });
+      onError: (_error, writer) => {
+        // Error handler logic here
+        return writer.write({ format: "%s\n", text: "custom error" });
       },
     });
 
@@ -40,8 +40,8 @@ Deno.test("createSocketServer - basic functionality", async (t) => {
   await t.step("respects connection config", () => {
     const server = createSocketServer({
       socketPath: "/tmp/test.sock",
-      handler: async ({ writer }) => {
-        await writer.write({ format: "%s\n", text: "ok" });
+      handler: ({ writer }) => {
+        return writer.write({ format: "%s\n", text: "ok" });
       },
       connectionConfig: {
         maxConnections: 25,

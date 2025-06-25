@@ -7,7 +7,7 @@ Deno.test("createApp", async (t) => {
   await t.step("creates app with default registry", () => {
     const app = createApp();
     const registry = app.getCommandRegistry();
-    
+
     // Should have default commands registered
     assertEquals(registry.get("pid") !== undefined, true);
     assertEquals(registry.get("chdir") !== undefined, true);
@@ -20,10 +20,10 @@ Deno.test("createApp", async (t) => {
       await writer.write({ format: "%s\n", text: "custom output" });
     });
     customRegistry.register(testCommand);
-    
+
     const app = createApp({ commandRegistry: customRegistry });
     const registry = app.getCommandRegistry();
-    
+
     // Should have custom command
     assertEquals(registry.get("custom-test") !== undefined, true);
     // Should not have default commands
@@ -34,12 +34,15 @@ Deno.test("createApp", async (t) => {
     // Create custom registry to control output
     const customRegistry = createCommandRegistry();
     const testCommand = createCommand("test-cli", async ({ input, writer }) => {
-      await writer.write({ format: "%s\n", text: `lbuffer: ${input.lbuffer || 'empty'}` });
+      await writer.write({
+        format: "%s\n",
+        text: `lbuffer: ${input.lbuffer || "empty"}`,
+      });
     });
     customRegistry.register(testCommand);
-    
+
     const app = createApp({ commandRegistry: customRegistry });
-    
+
     // Capture output
     const originalWrite = Deno.stdout.write;
     const output: Uint8Array[] = [];
@@ -47,7 +50,7 @@ Deno.test("createApp", async (t) => {
       output.push(data.slice());
       return Promise.resolve(data.length);
     };
-    
+
     // Mock Deno.exit
     const originalExit = Deno.exit;
     let exitCode: number | undefined;
@@ -55,17 +58,17 @@ Deno.test("createApp", async (t) => {
       exitCode = code;
       throw new Error("exit");
     };
-    
+
     try {
       await app.execCli(["--zeno-mode=test-cli", "--input.lbuffer=hello"]);
-    } catch (e) {
-      if ((e as Error).message !== "exit") throw e;
+    } catch (_e) {
+      if ((_e as Error).message !== "exit") throw _e;
     }
-    
+
     // Restore
     Deno.stdout.write = originalWrite;
     Deno.exit = originalExit;
-    
+
     const outputText = new TextDecoder().decode(output[0]);
     assertStringIncludes(outputText, "lbuffer: hello");
     assertEquals(exitCode, 0);
@@ -73,7 +76,7 @@ Deno.test("createApp", async (t) => {
 
   await t.step("execCli with invalid command", async () => {
     const app = createApp({ commandRegistry: createCommandRegistry() });
-    
+
     // Capture output
     const originalWrite = Deno.stdout.write;
     const output: Uint8Array[] = [];
@@ -81,7 +84,7 @@ Deno.test("createApp", async (t) => {
       output.push(data.slice());
       return Promise.resolve(data.length);
     };
-    
+
     // Mock Deno.exit
     const originalExit = Deno.exit;
     let exitCode: number | undefined;
@@ -89,18 +92,18 @@ Deno.test("createApp", async (t) => {
       exitCode = code;
       throw new Error("exit");
     };
-    
+
     try {
       await app.execCli(["--zeno-mode=non-existent"]);
-    } catch (e) {
-      if ((e as Error).message !== "exit") throw e;
+    } catch (_e) {
+      if ((_e as Error).message !== "exit") throw _e;
     }
-    
+
     // Restore
     Deno.stdout.write = originalWrite;
     Deno.exit = originalExit;
-    
-    const outputText = output.map(d => new TextDecoder().decode(d)).join("");
+
+    const outputText = output.map((d) => new TextDecoder().decode(d)).join("");
     assertStringIncludes(outputText, "failure");
     assertStringIncludes(outputText, "non-existent mode is not exist");
     assertEquals(exitCode, 0);
@@ -113,7 +116,7 @@ Deno.test("createApp", async (t) => {
         connectionTimeout: 15000,
       },
     });
-    
+
     // The config should be passed through to the socket server
     // We can't directly test this without starting a server,
     // but we can verify the app accepts the config

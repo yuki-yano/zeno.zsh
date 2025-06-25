@@ -4,8 +4,16 @@ import { TextWriter } from "../../src/text-writer.ts";
 
 // Mock Deno.Conn for testing
 const createMockConn = (): Deno.Conn => ({
-  localAddr: { transport: "tcp", hostname: "127.0.0.1", port: 8080 } as Deno.NetAddr,
-  remoteAddr: { transport: "tcp", hostname: "127.0.0.1", port: 8081 } as Deno.NetAddr,
+  localAddr: {
+    transport: "tcp",
+    hostname: "127.0.0.1",
+    port: 8080,
+  } as Deno.NetAddr,
+  remoteAddr: {
+    transport: "tcp",
+    hostname: "127.0.0.1",
+    port: 8081,
+  } as Deno.NetAddr,
   readable: new ReadableStream(),
   writable: new WritableStream(),
   read: () => Promise.resolve(null),
@@ -55,7 +63,7 @@ Deno.test("createConnectionManager", async (t) => {
 
   await t.step("removes non-existent connection gracefully", () => {
     const manager = createConnectionManager();
-    
+
     // Should not throw when removing non-existent connection
     manager.removeConnection(999);
     assertEquals(manager.getActiveConnectionCount(), 0);
@@ -67,7 +75,7 @@ Deno.test("createConnectionManager", async (t) => {
     const writer = new TextWriter();
 
     // Add connection
-    const id = manager.addConnection(conn, writer);
+    const _id = manager.addConnection(conn, writer);
     assertEquals(manager.getActiveConnectionCount(), 1);
 
     // Wait for timeout

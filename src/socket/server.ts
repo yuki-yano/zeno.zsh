@@ -17,7 +17,7 @@ export const createSocketServer = (config: SocketServerConfig) => {
       // Set up periodic cleanup of timed out connections
       cleanupInterval = setInterval(() => {
         connectionManager.cleanupTimedOutConnections();
-      }, 10000); // Clean up every 10 seconds
+      }, 10000) as unknown as number; // Clean up every 10 seconds
 
       const listener = Deno.listen({
         transport: "unix",
