@@ -26,7 +26,18 @@ const argsParseOption: Readonly<Partial<ArgParserOptions>> = {
 };
 
 /**
- * Parse command line arguments
+ * Parse command line arguments for zeno
+ *
+ * @param args - Command line arguments to parse
+ * @returns Parsed mode and input object
+ *
+ * @example
+ * ```ts
+ * const { mode, input } = parseArgs([
+ *   "--zeno-mode", "snippet-list",
+ *   "--input", '{"lbuffer": "git "}'
+ * ]);
+ * ```
  */
 export const parseArgs = (args: readonly string[]) => {
   const parsedArgs = argsParser([...args], argsParseOption) as Readonly<Args>;
@@ -52,6 +63,20 @@ export const parseArgs = (args: readonly string[]) => {
 
 /**
  * Create a command executor with the given registry
+ *
+ * @param registry - Command registry containing available commands
+ * @returns Async function that executes commands based on mode
+ *
+ * @example
+ * ```ts
+ * const registry = createCommandRegistry();
+ * const executor = createCommandExecutor(registry);
+ * await executor({
+ *   mode: "snippet-list",
+ *   input: { lbuffer: "git " },
+ *   writer: new TextWriter()
+ * });
+ * ```
  */
 export const createCommandExecutor = (registry: CommandRegistry) => {
   return async (context: CommandContext & { mode: string }) => {
