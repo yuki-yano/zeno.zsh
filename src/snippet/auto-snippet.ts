@@ -3,6 +3,9 @@ import { normalizeCommand, parseCommand } from "../command.ts";
 import { executeCommand } from "../util/exec.ts";
 import type { Input } from "../type/shell.ts";
 
+/**
+ * Result of auto-snippet expansion
+ */
 export type AutoSnippetData = {
   status: "success";
   buffer: string;
@@ -13,11 +16,27 @@ export type AutoSnippetData = {
   cursor?: undefined;
 };
 
+/**
+ * Check if the buffer matches the given context pattern
+ * @param buffer - The current command buffer
+ * @param context - Regular expression pattern to match against
+ * @returns true if the buffer matches the context
+ */
 const matchContext = (buffer: string, context: string): boolean => {
   const bufferRegex = new RegExp(context);
   return bufferRegex.test(buffer);
 };
 
+/**
+ * Automatically expand snippets based on the current buffer content
+ *
+ * This function checks if the current command line matches any snippet patterns
+ * and expands them accordingly. It supports context-aware snippets and command
+ * evaluation.
+ *
+ * @param input - Shell input containing lbuffer and rbuffer
+ * @returns Expanded buffer with new cursor position, or failure status
+ */
 export const autoSnippet = async (
   input: Input,
 ): Promise<AutoSnippetData> => {
