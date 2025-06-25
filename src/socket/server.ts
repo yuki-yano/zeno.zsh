@@ -11,6 +11,7 @@ export const createSocketServer = (config: SocketServerConfig) => {
   const { socketPath, handler, onError, connectionConfig } = config;
   const connectionManager = createConnectionManager(connectionConfig);
   let cleanupInterval: number | undefined;
+  let listener: Deno.Listener | undefined;
 
   return {
     async start(): Promise<void> {
@@ -19,12 +20,10 @@ export const createSocketServer = (config: SocketServerConfig) => {
         connectionManager.cleanupTimedOutConnections();
       }, 10000) as unknown as number; // Clean up every 10 seconds
 
-      const listener = Deno.listen({
+      listener = Deno.listen({
         transport: "unix",
         path: socketPath,
       });
-
-      let textDecoder: TextDecoder | undefined;
 
       try {
         for await (const conn of listener) {
@@ -33,6 +32,9 @@ export const createSocketServer = (config: SocketServerConfig) => {
             const writer = new TextWriter();
             writer.setConn(conn);
 
+            // Create TextDecoder per connection to avoid sharing state
+            const textDecoder = new TextDecoder();
+
             let connectionId: number | undefined;
 
             try {
@@ -40,7 +42,6 @@ export const createSocketServer = (config: SocketServerConfig) => {
 
               for await (const r of iterateReader(conn)) {
                 try {
-                  textDecoder = textDecoder ?? new TextDecoder();
                   const json = textDecoder.decode(r);
                   const clientCall = JSON.parse(json) as {
                     args?: readonly string[];
@@ -48,6 +49,8 @@ export const createSocketServer = (config: SocketServerConfig) => {
                   const args = clientCall.args ?? [];
 
                   await handler({ args, writer });
+                  // Send response delimiter to indicate end of response
+                  await conn.write(new TextEncoder().encode("\n"));
                 } catch (error) {
                   if (onError) {
                     await onError(error, writer);
@@ -58,8 +61,8 @@ export const createSocketServer = (config: SocketServerConfig) => {
                       text: getErrorMessage(error),
                     });
                   }
-                } finally {
-                  conn.closeWrite();
+                  // Send response delimiter even on error
+                  await conn.write(new TextEncoder().encode("\n"));
                 }
               }
             } catch (error) {
@@ -90,12 +93,14 @@ export const createSocketServer = (config: SocketServerConfig) => {
           })().catch(console.error);
         }
       } finally {
+        listener?.close();
         clearInterval(cleanupInterval);
         connectionManager.closeAll();
       }
     },
 
     stop(): void {
+      listener?.close();
       if (cleanupInterval !== undefined) {
         clearInterval(cleanupInterval);
         cleanupInterval = undefined;
