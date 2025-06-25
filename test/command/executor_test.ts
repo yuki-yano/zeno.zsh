@@ -1,5 +1,8 @@
-import { assertEquals, assertStringIncludes } from "../deps.ts";
-import { parseArgs, createCommandExecutor } from "../../src/command/executor.ts";
+import { assertEquals } from "../deps.ts";
+import {
+  createCommandExecutor,
+  parseArgs,
+} from "../../src/command/executor.ts";
 import { createCommandRegistry } from "../../src/command/registry.ts";
 import { createCommand } from "../../src/command/types.ts";
 
@@ -57,30 +60,31 @@ Deno.test("createCommandExecutor", async (t) => {
   await t.step("executes registered command", async () => {
     const registry = createCommandRegistry();
     const executor = createCommandExecutor(registry);
-    
+
     // Track execution
     let executed = false;
     const testCommand = createCommand("test", async ({ writer }) => {
       executed = true;
       await writer.write({ format: "%s\n", text: "test output" });
     });
-    
+
     registry.register(testCommand);
-    
+
     // Create mock writer
     const output: string[] = [];
     const mockWriter = {
-      write: async ({ text }: { format: string; text: string }) => {
+      write: ({ text }: { format: string; text: string }) => {
         output.push(text);
+        return Promise.resolve();
       },
     };
-    
+
     await executor({
       mode: "test",
       input: {},
       writer: mockWriter,
     });
-    
+
     assertEquals(executed, true);
     assertEquals(output.includes("test output"), true);
   });
@@ -88,20 +92,21 @@ Deno.test("createCommandExecutor", async (t) => {
   await t.step("handles non-existent command", async () => {
     const registry = createCommandRegistry();
     const executor = createCommandExecutor(registry);
-    
+
     const output: string[] = [];
     const mockWriter = {
-      write: async ({ text }: { format: string; text: string }) => {
+      write: ({ text }: { format: string; text: string }) => {
         output.push(text);
+        return Promise.resolve();
       },
     };
-    
+
     await executor({
       mode: "non-existent",
       input: {},
       writer: mockWriter,
     });
-    
+
     assertEquals(output.includes("failure"), true);
     // Check that failure is written and error message includes the mode name
     assertEquals(output[0], "failure");
@@ -111,32 +116,35 @@ Deno.test("createCommandExecutor", async (t) => {
   await t.step("passes input to command correctly", async () => {
     const registry = createCommandRegistry();
     const executor = createCommandExecutor(registry);
-    
-    let receivedInput: any;
-    const testCommand = createCommand("test-input", async ({ input, writer }) => {
-      receivedInput = input;
-      await writer.write({ format: "%s\n", text: "ok" });
-    });
-    
+
+    let receivedInput: Record<string, unknown> | undefined;
+    const testCommand = createCommand(
+      "test-input",
+      async ({ input, writer }) => {
+        receivedInput = input;
+        await writer.write({ format: "%s\n", text: "ok" });
+      },
+    );
+
     registry.register(testCommand);
-    
+
     const mockWriter = {
-      write: async () => {},
+      write: () => Promise.resolve(),
     };
-    
+
     const testInput = {
       lbuffer: "left",
       rbuffer: "right",
       snippet: "test",
       dir: "/home",
     };
-    
+
     await executor({
       mode: "test-input",
       input: testInput,
       writer: mockWriter,
     });
-    
-    assertEquals(receivedInput, testInput);
+
+    assertEquals(receivedInput!, testInput);
   });
 });
