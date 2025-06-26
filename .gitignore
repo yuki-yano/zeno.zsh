@@ -1,3 +1,4 @@
 .claude
-tmp/
-log/claude/
+ai
+log
+tmp
