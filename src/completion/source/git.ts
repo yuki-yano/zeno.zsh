@@ -13,7 +13,7 @@ import {
   GIT_BRANCH_LOG_TAG_REFLOG_CALLBACK,
   GIT_BRANCH_SOURCE,
   GIT_LOG_SOURCE,
-  GIT_LS_FILES_SOURCE_0,
+  GIT_LS_FILES_SOURCE,
   GIT_STASH_CALLBACK,
   GIT_STASH_SOURCE,
   GIT_STATUS_CALLBACK,
@@ -63,12 +63,13 @@ export const gitSources: readonly CompletionSource[] = [
       /^git diff(?=.* -- ) .* $/,
       /^git diff(?=.* --no-index ) .* $/,
     ],
-    sourceCommand: GIT_LS_FILES_SOURCE_0,
+    sourceCommand: GIT_LS_FILES_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
       "--multi": true,
       "--prompt": "'Git Diff Branch Files> '",
       "--preview": GIT_LS_FILES_PREVIEW,
+      "--read0": true,
     },
   },
   {
@@ -131,12 +132,13 @@ export const gitSources: readonly CompletionSource[] = [
     excludePatterns: [
       / --(?:conflict|pathspec-from-file) $/,
     ],
-    sourceCommand: GIT_LS_FILES_SOURCE_0,
+    sourceCommand: GIT_LS_FILES_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
       "--multi": true,
       "--prompt": "'Git Checkout Branch Files> '",
       "--preview": GIT_LS_FILES_PREVIEW,
+      "--read0": true,
     },
   },
   {
@@ -196,12 +198,13 @@ export const gitSources: readonly CompletionSource[] = [
     excludePatterns: [
       / --pathspec-from-file $/,
     ],
-    sourceCommand: GIT_LS_FILES_SOURCE_0,
+    sourceCommand: GIT_LS_FILES_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Reset Branch Files> '",
       "--multi": true,
       "--preview": GIT_LS_FILES_PREVIEW,
+      "--read0": true,
     },
   },
   {
@@ -273,12 +276,13 @@ export const gitSources: readonly CompletionSource[] = [
     patterns: [
       /^git restore(?=.* (?:-s |--source[= ])) .* $/,
     ],
-    sourceCommand: GIT_LS_FILES_SOURCE_0,
+    sourceCommand: GIT_LS_FILES_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Restore Files> '",
       "--multi": true,
       "--preview": GIT_LS_FILES_PREVIEW,
+      "--read0": true,
     },
   },
   {
@@ -404,11 +408,12 @@ export const gitSources: readonly CompletionSource[] = [
     patterns: [
       /^git log(?=.* -- ) .* $/,
     ],
-    sourceCommand: GIT_LS_FILES_SOURCE_0,
+    sourceCommand: GIT_LS_FILES_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Log File> '",
       "--preview": GIT_LS_FILES_PREVIEW,
+      "--read0": true,
     },
   },
   {
@@ -479,12 +484,13 @@ export const gitSources: readonly CompletionSource[] = [
     patterns: [
       /^git mv(?: .*)? $/,
     ],
-    sourceCommand: GIT_LS_FILES_SOURCE_0,
+    sourceCommand: GIT_LS_FILES_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
       "--multi": true,
       "--prompt": "'Git Mv Files> '",
       "--preview": GIT_LS_FILES_PREVIEW,
+      "--read0": true,
     },
   },
   {
@@ -492,12 +498,13 @@ export const gitSources: readonly CompletionSource[] = [
     patterns: [
       /^git rm(?: .*)? $/,
     ],
-    sourceCommand: GIT_LS_FILES_SOURCE_0,
+    sourceCommand: GIT_LS_FILES_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
       "--multi": true,
       "--prompt": "'Git Rm Files> '",
       "--preview": GIT_LS_FILES_PREVIEW,
+      "--read0": true,
     },
   },
   {

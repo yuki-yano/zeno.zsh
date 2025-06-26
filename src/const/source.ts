@@ -18,7 +18,7 @@ export const GIT_STATUS_SOURCE = "git -c color.status=always status --short";
 export const GIT_STATUS_CALLBACK = String
   .raw`perl -ne 'print substr($_, 3)'`;
 
-export const GIT_LS_FILES_SOURCE_0 = "git ls-files -z";
+export const GIT_LS_FILES_SOURCE = "git ls-files -z";
 
 export const GIT_LOG_SOURCE =
   `git log --decorate --color=always --format='%C(green)[commit] ${git_log_format}' ${column_with_tab}`;
