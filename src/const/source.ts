@@ -14,10 +14,10 @@ const git_stash_list_format = ["%C(magenta)%gd", "%C(yellow)%cr", "%C(auto)%s"]
 
 const column_with_tab = "| column -t -s $'\\t'";
 
-export const GIT_STATUS_SOURCE_0 =
-  "git -c color.status=always status --short -z";
-export const GIT_STATUS_CALLBACK_0 = String
-  .raw`perl -ne 'BEGIN{$/ = "\0"; $\ = "\0"} print substr($_, 3)'`;
+export const GIT_STATUS_SOURCE =
+  "git -c color.status=always status --short";
+export const GIT_STATUS_CALLBACK = String
+  .raw`perl -ne 'print substr($_, 3)'`;
 
 export const GIT_LS_FILES_SOURCE_0 = "git ls-files -z";
 
