@@ -16,8 +16,8 @@ import {
   GIT_LS_FILES_SOURCE_0,
   GIT_STASH_CALLBACK,
   GIT_STASH_SOURCE,
-  GIT_STATUS_CALLBACK_0,
-  GIT_STATUS_SOURCE_0,
+  GIT_STATUS_CALLBACK,
+  GIT_STATUS_SOURCE,
   GIT_TAG_SOURCE,
 } from "../../const/source.ts";
 import type { CompletionSource } from "../../type/fzf.ts";
@@ -28,17 +28,15 @@ export const gitSources: readonly CompletionSource[] = [
     patterns: [
       /^git add(?: .*)? $/,
     ],
-    sourceCommand: GIT_STATUS_SOURCE_0,
+    sourceCommand: GIT_STATUS_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
       "--multi": true,
       "--no-sort": true,
       "--prompt": "'Git Add Files> '",
       "--preview": GIT_STATUS_PREVIEW,
-      "--read0": true,
     },
-    callback: GIT_STATUS_CALLBACK_0,
-    callbackZero: true,
+    callback: GIT_STATUS_CALLBACK,
   },
   {
     name: "git diff files",
@@ -49,17 +47,15 @@ export const gitSources: readonly CompletionSource[] = [
       /^git diff.* [^-].* -- /,
       / --no-index /,
     ],
-    sourceCommand: GIT_STATUS_SOURCE_0,
+    sourceCommand: GIT_STATUS_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
       "--multi": true,
       "--no-sort": true,
       "--prompt": "'Git Diff Files> '",
       "--preview": GIT_STATUS_PREVIEW,
-      "--read0": true,
     },
-    callback: GIT_STATUS_CALLBACK_0,
-    callbackZero: true,
+    callback: GIT_STATUS_CALLBACK,
   },
   {
     name: "git diff branch files",
@@ -73,7 +69,6 @@ export const gitSources: readonly CompletionSource[] = [
       "--multi": true,
       "--prompt": "'Git Diff Branch Files> '",
       "--preview": GIT_LS_FILES_PREVIEW,
-      "--read0": true,
     },
   },
   {
@@ -118,17 +113,15 @@ export const gitSources: readonly CompletionSource[] = [
       / -[mF] $/,
       / --(?:author|date|template|trailer) $/,
     ],
-    sourceCommand: GIT_STATUS_SOURCE_0,
+    sourceCommand: GIT_STATUS_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
       "--multi": true,
       "--no-sort": true,
       "--preview": GIT_STATUS_PREVIEW,
       "--prompt": "'Git Commit Files> '",
-      "--read0": true,
     },
-    callback: GIT_STATUS_CALLBACK_0,
-    callbackZero: true,
+    callback: GIT_STATUS_CALLBACK,
   },
   {
     name: "git checkout branch files",
@@ -144,7 +137,6 @@ export const gitSources: readonly CompletionSource[] = [
       "--multi": true,
       "--prompt": "'Git Checkout Branch Files> '",
       "--preview": GIT_LS_FILES_PREVIEW,
-      "--read0": true,
     },
   },
   {
@@ -172,17 +164,15 @@ export const gitSources: readonly CompletionSource[] = [
     excludePatterns: [
       / --(?:conflict|pathspec-from-file) $/,
     ],
-    sourceCommand: GIT_STATUS_SOURCE_0,
+    sourceCommand: GIT_STATUS_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Checkout Files> '",
       "--multi": true,
       "--no-sort": true,
       "--preview": GIT_STATUS_PREVIEW,
-      "--read0": true,
     },
-    callback: GIT_STATUS_CALLBACK_0,
-    callbackZero: true,
+    callback: GIT_STATUS_CALLBACK,
   },
   {
     name: "git delete branch",
@@ -212,7 +202,6 @@ export const gitSources: readonly CompletionSource[] = [
       "--prompt": "'Git Reset Branch Files> '",
       "--multi": true,
       "--preview": GIT_LS_FILES_PREVIEW,
-      "--read0": true,
     },
   },
   {
@@ -240,17 +229,15 @@ export const gitSources: readonly CompletionSource[] = [
     excludePatterns: [
       / --pathspec-from-file $/,
     ],
-    sourceCommand: GIT_STATUS_SOURCE_0,
+    sourceCommand: GIT_STATUS_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Reset Files> '",
       "--multi": true,
       "--no-sort": true,
       "--preview": GIT_STATUS_PREVIEW,
-      "--read0": true,
     },
-    callback: GIT_STATUS_CALLBACK_0,
-    callbackZero: true,
+    callback: GIT_STATUS_CALLBACK,
   },
   {
     name: "git switch",
@@ -292,7 +279,6 @@ export const gitSources: readonly CompletionSource[] = [
       "--prompt": "'Git Restore Files> '",
       "--multi": true,
       "--preview": GIT_LS_FILES_PREVIEW,
-      "--read0": true,
     },
   },
   {
@@ -300,17 +286,15 @@ export const gitSources: readonly CompletionSource[] = [
     patterns: [
       /^git restore(?: .*)? $/,
     ],
-    sourceCommand: GIT_STATUS_SOURCE_0,
+    sourceCommand: GIT_STATUS_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Restore Files> '",
       "--multi": true,
       "--no-sort": true,
       "--preview": GIT_STATUS_PREVIEW,
-      "--read0": true,
     },
-    callback: GIT_STATUS_CALLBACK_0,
-    callbackZero: true,
+    callback: GIT_STATUS_CALLBACK,
   },
   {
     name: "git rebase branch",
@@ -405,17 +389,15 @@ export const gitSources: readonly CompletionSource[] = [
     patterns: [
       /git stash push(?: .*)? $/,
     ],
-    sourceCommand: GIT_STATUS_SOURCE_0,
+    sourceCommand: GIT_STATUS_SOURCE,
     options: {
       ...DEFAULT_OPTIONS,
       "--multi": true,
       "--no-sort": true,
       "--prompt": "'Git Stash Push Files> '",
       "--preview": GIT_STATUS_PREVIEW,
-      "--read0": true,
     },
-    callback: GIT_STATUS_CALLBACK_0,
-    callbackZero: true,
+    callback: GIT_STATUS_CALLBACK,
   },
   {
     name: "git log file",
@@ -427,7 +409,6 @@ export const gitSources: readonly CompletionSource[] = [
       ...DEFAULT_OPTIONS,
       "--prompt": "'Git Log File> '",
       "--preview": GIT_LS_FILES_PREVIEW,
-      "--read0": true,
     },
   },
   {
@@ -504,7 +485,6 @@ export const gitSources: readonly CompletionSource[] = [
       "--multi": true,
       "--prompt": "'Git Mv Files> '",
       "--preview": GIT_LS_FILES_PREVIEW,
-      "--read0": true,
     },
   },
   {
@@ -518,7 +498,6 @@ export const gitSources: readonly CompletionSource[] = [
       "--multi": true,
       "--prompt": "'Git Rm Files> '",
       "--preview": GIT_LS_FILES_PREVIEW,
-      "--read0": true,
     },
   },
   {
