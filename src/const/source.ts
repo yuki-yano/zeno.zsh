@@ -14,8 +14,7 @@ const git_stash_list_format = ["%C(magenta)%gd", "%C(yellow)%cr", "%C(auto)%s"]
 
 const column_with_tab = "| column -t -s $'\\t'";
 
-export const GIT_STATUS_SOURCE =
-  "git -c color.status=always status --short";
+export const GIT_STATUS_SOURCE = "git -c color.status=always status --short";
 export const GIT_STATUS_CALLBACK = String
   .raw`perl -ne 'print substr($_, 3)'`;
 
