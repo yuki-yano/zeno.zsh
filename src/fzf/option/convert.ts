@@ -34,16 +34,18 @@ const generalOptionsToArray = (options: FzfOptions) => {
       !(CONVERT_IMPLEMENTED_OPTIONS as readonly string[]).includes(key)
     )
     .map(([key, value]) => {
-      if (typeof value === "string") {
+      if (typeof value === "string" || typeof value === "number") {
         return `${key}=${value}`;
       } else if (typeof value === "boolean") {
         if (value) {
           return key;
         }
+        return undefined;
       } else {
         return key;
       }
-    });
+    })
+    .filter((option): option is string => option !== undefined);
 };
 
 const optionsToArray = (options: FzfOptions) => {
