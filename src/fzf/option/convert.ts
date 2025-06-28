@@ -34,9 +34,7 @@ const generalOptionsToArray = (options: FzfOptions) => {
       !(CONVERT_IMPLEMENTED_OPTIONS as readonly string[]).includes(key)
     )
     .map(([key, value]) => {
-      if (typeof value === "string") {
-        return `${key}=${value}`;
-      } else if (typeof value === "number") {
+      if (typeof value === "string" || typeof value === "number") {
         return `${key}=${value}`;
       } else if (typeof value === "boolean") {
         if (value) {

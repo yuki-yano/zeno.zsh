@@ -21,8 +21,8 @@ describe("fzf option convert", () => {
 
     it("handles number values correctly", () => {
       const options: FzfOptions = {
-        "--header-lines": 2 as unknown as string,
-        "--height": 80 as unknown as string,
+        "--header-lines": 2,
+        "--height": 80,
       };
 
       const result = fzfOptionsToString(options);
@@ -35,7 +35,7 @@ describe("fzf option convert", () => {
       const options: FzfOptions = {
         "--multi": true,
         "--ansi": true,
-        "--disabled": false as unknown as true,
+        "--disabled": false,
       };
 
       const result = fzfOptionsToString(options);
@@ -46,7 +46,7 @@ describe("fzf option convert", () => {
     it("handles mixed types", () => {
       const options: FzfOptions = {
         "--header": "Results",
-        "--header-lines": 2 as unknown as string,
+        "--header-lines": 2,
         "--multi": true,
         "--preview": "echo {}",
       };
@@ -63,8 +63,8 @@ describe("fzf option convert", () => {
 
     it("handles undefined and null correctly", () => {
       const options: FzfOptions = {
-        "--undefined-value": undefined as unknown as string,
-        "--null-value": null as unknown as string,
+        "--undefined-value": undefined,
+        "--null-value": null,
       };
 
       const result = fzfOptionsToString(options);
