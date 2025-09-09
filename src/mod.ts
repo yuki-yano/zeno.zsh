@@ -1,3 +1,5 @@
+import type { ConfigFunction } from "./type/config.ts";
+
 /**
  * @module
  * Zeno configuration types and utilities for TypeScript config files
@@ -40,17 +42,17 @@ export type {
 
 /**
  * Define a zeno configuration with context-aware dynamic generation
- * 
+ *
  * @param configFn - A function that receives context and returns configuration
  * @returns The configuration function for zeno to execute
- * 
+ *
  * @example
  * ```typescript
  * import { defineConfig } from "jsr:@yuki-yano/zeno";
- * 
+ *
  * export default defineConfig((context) => {
  *   const { projectRoot, currentDirectory, env, shell } = context;
- *   
+ *
  *   // Generate configuration based on project context
  *   return {
  *     snippets: generateSnippets(projectRoot),
@@ -58,13 +60,13 @@ export type {
  *   };
  * });
  * ```
- * 
+ *
  * @example
  * ```typescript
  * // Async configuration
  * export default defineConfig(async (context) => {
  *   const projectConfig = await loadProjectConfig(context.projectRoot);
- *   
+ *
  *   return {
  *     snippets: projectConfig.snippets || [],
  *     completions: []
@@ -72,6 +74,6 @@ export type {
  * });
  * ```
  */
-export function defineConfig(configFn: ConfigFunction): ConfigFunction {
+export const defineConfig = (configFn: ConfigFunction): ConfigFunction => {
   return configFn;
-}
+};
