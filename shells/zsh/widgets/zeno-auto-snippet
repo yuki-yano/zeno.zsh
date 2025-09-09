@@ -4,13 +4,22 @@ emulate -L zsh
 
 local -a out
 
+# TODO: Workaround for the issue where PROMPT disappears during the first auto-snippet execution from Deno 2.4.4 onward
+#       Since the PROMPT flickers during the first auto-snippet execution, we will properly address it once the cause is identified
+zeno-default-auto-snippet-fallback() {
+  zle self-insert
+  zle reset-prompt
+}
+
+zle -N zeno-default-auto-snippet-fallback
+
 out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=auto-snippet \
   --input.lbuffer="$LBUFFER" \
   --input.rbuffer="$RBUFFER" \
   )}" )
 
 if [[ $ZENO_ENABLE -eq 0 || $out[1] != success ]]; then
-  zle ${ZENO_AUTO_SNIPPET_FALLBACK:-self-insert}
+  zle ${ZENO_AUTO_SNIPPET_FALLBACK:-zeno-default-auto-snippet-fallback}
   return
 fi
 
