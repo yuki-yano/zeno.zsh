@@ -11,6 +11,33 @@ export const getDefaultSettings = (): Settings => ({
 });
 
 /**
+ * Utility: determine if file name is YAML
+ */
+const isYaml = (fileName: string): boolean => {
+  const lower = fileName.toLowerCase();
+  return lower.endsWith(".yml") || lower.endsWith(".yaml");
+};
+
+/**
+ * Find YAML files directly under a directory (non-recursive)
+ */
+export const findYamlFilesInDir = async (dir: string): Promise<string[]> => {
+  const files: string[] = [];
+  try {
+    for await (const entry of Deno.readDir(dir)) {
+      if (entry.isFile && isYaml(entry.name)) {
+        files.push(path.join(dir, entry.name));
+      }
+    }
+  } catch (_) {
+    // If directory cannot be read, treat as no files
+    return [];
+  }
+  files.sort();
+  return files;
+};
+
+/**
  * Find config file path
  * Priority:
  * 1. $ZENO_HOME/config.yml
@@ -65,4 +92,28 @@ export const loadConfigFile = async (configPath: string): Promise<Settings> => {
     }
     throw new Error(`Failed to load config from ${configPath}: ${error}`);
   }
+};
+
+/**
+ * Load and merge multiple config files
+ * - Concatenates array fields in alphabetical file order
+ */
+export const loadConfigFiles = async (
+  paths: readonly string[],
+): Promise<Settings> => {
+  const results = await Promise.all(
+    paths.map((p) =>
+      loadConfigFile(p).catch((error) => {
+        console.error(`Skipping broken config file ${p}: ${error}`);
+        return null;
+      })
+    ),
+  );
+
+  const validSettings = results.filter((s): s is Settings => s != null);
+
+  return {
+    snippets: validSettings.flatMap((s) => s.snippets),
+    completions: validSettings.flatMap((s) => s.completions),
+  };
 };
