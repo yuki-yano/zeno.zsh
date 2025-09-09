@@ -229,9 +229,12 @@ See: https://github.com/yuki-yano/zeno.zsh/blob/main/src/completion/source/git.t
 
 The configuration file is searched from the following.
 
-- `$ZENO_HOME/config.yml`
-- `$XDG_CONFIG_HOME/zeno/config.yml` or `~/.config/zeno/config.yml`
-- Find `.../zeno/config.yml` from each in `$XDG_CONFIG_DIRS`
+- If `$ZENO_HOME` is a directory, all `*.yml`/`*.yaml` directly under it are loaded and merged (A→Z).
+- Otherwise, search XDG config directories in order and if `zeno/` exists, load and merge all `zeno/*.yml`/`*.yaml` in the first directory that contains any.
+- Fallbacks for backward compatibility:
+  - `$ZENO_HOME/config.yml`
+  - `$XDG_CONFIG_HOME/zeno/config.yml` or `~/.config/zeno/config.yml`
+  - Find `.../zeno/config.yml` from each in `$XDG_CONFIG_DIRS`
 
 ### Example
 

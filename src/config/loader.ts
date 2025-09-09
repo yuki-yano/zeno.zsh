@@ -1,5 +1,9 @@
 import { exists, path, xdg, yamlParse } from "../deps.ts";
-import type { Settings } from "../type/settings.ts";
+import type {
+  Settings,
+  Snippet,
+  UserCompletionSource,
+} from "../type/settings.ts";
 import { getEnv } from "./env.ts";
 
 export const DEFAULT_CONFIG_FILENAME = "config.yml";
@@ -9,6 +13,33 @@ export const getDefaultSettings = (): Settings => ({
   snippets: [],
   completions: [],
 });
+
+/**
+ * Utility: determine if file name is YAML
+ */
+const isYaml = (fileName: string): boolean => {
+  const lower = fileName.toLowerCase();
+  return lower.endsWith(".yml") || lower.endsWith(".yaml");
+};
+
+/**
+ * Find YAML files directly under a directory (non-recursive)
+ */
+export const findYamlFilesInDir = async (dir: string): Promise<string[]> => {
+  const files: string[] = [];
+  try {
+    for await (const entry of Deno.readDir(dir)) {
+      if (entry.isFile && isYaml(entry.name)) {
+        files.push(path.join(dir, entry.name));
+      }
+    }
+  } catch (_) {
+    // If directory cannot be read, treat as no files
+    return [];
+  }
+  files.sort();
+  return files;
+};
 
 /**
  * Find config file path
@@ -65,4 +96,23 @@ export const loadConfigFile = async (configPath: string): Promise<Settings> => {
     }
     throw new Error(`Failed to load config from ${configPath}: ${error}`);
   }
+};
+
+/**
+ * Load and merge multiple config files
+ * - Concatenates array fields in alphabetical file order
+ */
+export const loadConfigFiles = async (
+  paths: readonly string[],
+): Promise<Settings> => {
+  let snippets: Snippet[] = [];
+  let completions: UserCompletionSource[] = [];
+
+  for (const p of paths) {
+    const s = await loadConfigFile(p);
+    snippets = [...snippets, ...s.snippets];
+    completions = [...completions, ...s.completions];
+  }
+
+  return { snippets, completions };
 };
