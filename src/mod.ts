@@ -8,6 +8,7 @@ import type { ConfigFunction } from "./type/config.ts";
  * ```typescript
  * import { defineConfig } from "jsr:@yuki-yano/zeno";
  *
+ * // Required: Use defineConfig to export configuration function
  * export default defineConfig(({ projectRoot, currentDirectory }) => {
  *   // Dynamic configuration based on context
  *   const isGitRepo = projectRoot.includes('.git');
@@ -41,7 +42,10 @@ export type {
 } from "./type/config.ts";
 
 /**
- * Define a zeno configuration with context-aware dynamic generation
+ * Define a zeno configuration with context-aware dynamic generation.
+ *
+ * This function is required for all TypeScript configuration files.
+ * Direct object exports are not supported.
  *
  * @param configFn - A function that receives context and returns configuration
  * @returns The configuration function for zeno to execute
@@ -50,6 +54,7 @@ export type {
  * ```typescript
  * import { defineConfig } from "jsr:@yuki-yano/zeno";
  *
+ * // Required: All TypeScript configs must use defineConfig
  * export default defineConfig((context) => {
  *   const { projectRoot, currentDirectory, env, shell } = context;
  *
@@ -63,7 +68,7 @@ export type {
  *
  * @example
  * ```typescript
- * // Async configuration
+ * // Async configuration (also requires defineConfig)
  * export default defineConfig(async (context) => {
  *   const projectConfig = await loadProjectConfig(context.projectRoot);
  *
