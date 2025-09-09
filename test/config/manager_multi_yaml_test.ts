@@ -7,7 +7,8 @@ import {
   path,
 } from "../deps.ts";
 import { Helper } from "../helpers.ts";
-import { clearCache, getSettings } from "../../src/settings.ts";
+import { clearCache } from "../../src/settings.ts";
+import { createConfigManager } from "../../src/config/manager.ts";
 
 describe("config manager - multi YAML loading", () => {
   const context = new Helper();
@@ -24,18 +25,16 @@ describe("config manager - multi YAML loading", () => {
     const tempDir = context.getTempDir();
 
     // Isolate XDG so local environment won't interfere
-    Deno.env.set(
-      "XDG_CONFIG_DIRS",
-      [path.join(tempDir, "xdg1"), path.join(tempDir, "xdg2")].join(
-        path.DELIMITER,
-      ),
-    );
-    Deno.env.set("XDG_CONFIG_HOME", path.join(tempDir, "xdg-home-empty"));
+    const fakeEnv = {
+      ZENO_HOME: path.join(tempDir, "zeno-home"),
+      XDG_CONFIG_HOME: path.join(tempDir, "xdg-home-empty"),
+      XDG_CONFIG_DIRS: [path.join(tempDir, "xdg1"), path.join(tempDir, "xdg2")],
+    };
 
     // Prepare $ZENO_HOME with two YAML files
-    const zenoHome = path.join(tempDir, "zeno-home");
+    const zenoHome = fakeEnv.ZENO_HOME;
     Deno.mkdirSync(zenoHome, { recursive: true });
-    Deno.env.set("ZENO_HOME", zenoHome);
+    // use envProvider instead of mutating process env
 
     const aYml = path.join(zenoHome, "a.yml");
     const bYaml = path.join(zenoHome, "b.yaml");
@@ -66,7 +65,18 @@ completions:
 `,
     );
 
-    const settings = await getSettings();
+    const manager = createConfigManager({
+      envProvider: () => ({
+        DEFAULT_FZF_OPTIONS: "",
+        SOCK: undefined,
+        GIT_CAT: "cat",
+        GIT_TREE: "tree",
+        DISABLE_BUILTIN_COMPLETION: false,
+        HOME: fakeEnv.ZENO_HOME,
+      }),
+      xdgConfigDirsProvider: () => fakeEnv.XDG_CONFIG_DIRS,
+    });
+    const settings = await manager.getSettings();
     assertEquals(settings.snippets.map((s) => s.keyword), ["a", "b"]);
     assertEquals(settings.completions.map((c) => c.name), ["comp-a", "comp-b"]);
   });
@@ -74,22 +84,14 @@ completions:
   it("merges YAML files under first XDG config dir's zeno/ when $ZENO_HOME has none", async () => {
     const tempDir = context.getTempDir();
 
-    // Ensure $ZENO_HOME does not point to a directory with YAMLs
-    Deno.env.delete("ZENO_HOME");
-
-    // Isolate XDG directories
-    Deno.env.set(
-      "XDG_CONFIG_DIRS",
-      [path.join(tempDir, "xdg1"), path.join(tempDir, "xdg2")].join(
-        path.DELIMITER,
-      ),
-    );
-
-    // Set XDG_CONFIG_HOME and place YAMLs under zeno/
     const xdgHome = path.join(tempDir, "xdg-home");
     const appDir = path.join(xdgHome, "zeno");
     Deno.mkdirSync(appDir, { recursive: true });
-    Deno.env.set("XDG_CONFIG_HOME", xdgHome);
+    const fakeEnv = {
+      ZENO_HOME: undefined as string | undefined,
+      XDG_CONFIG_HOME: xdgHome,
+      XDG_CONFIG_DIRS: [path.join(tempDir, "xdg1"), path.join(tempDir, "xdg2")],
+    };
 
     const aYml = path.join(appDir, "01.yml");
     const bYaml = path.join(appDir, "02.yaml");
@@ -112,7 +114,19 @@ completions:
 `,
     );
 
-    const settings = await getSettings();
+    const manager = createConfigManager({
+      envProvider: () => ({
+        DEFAULT_FZF_OPTIONS: "",
+        SOCK: undefined,
+        GIT_CAT: "cat",
+        GIT_TREE: "tree",
+        DISABLE_BUILTIN_COMPLETION: false,
+        HOME: fakeEnv.ZENO_HOME,
+      }),
+      xdgConfigDirsProvider:
+        () => [fakeEnv.XDG_CONFIG_HOME, ...fakeEnv.XDG_CONFIG_DIRS],
+    });
+    const settings = await manager.getSettings();
     assertEquals(settings.snippets.map((s) => s.keyword), ["x"]);
     assertEquals(settings.completions.map((c) => c.name), ["comp-y"]);
   });
@@ -120,19 +134,16 @@ completions:
   it("falls back to $ZENO_HOME/config.yml when no YAML groups exist", async () => {
     const tempDir = context.getTempDir();
 
-    // Isolate XDG so it doesn't pick up real config
-    Deno.env.set(
-      "XDG_CONFIG_DIRS",
-      [path.join(tempDir, "xdg1"), path.join(tempDir, "xdg2")].join(
-        path.DELIMITER,
-      ),
-    );
-    Deno.env.set("XDG_CONFIG_HOME", path.join(tempDir, "xdg-home-empty"));
+    const fakeEnv = {
+      ZENO_HOME: path.join(tempDir, "zeno-home2"),
+      XDG_CONFIG_HOME: path.join(tempDir, "xdg-home-empty"),
+      XDG_CONFIG_DIRS: [path.join(tempDir, "xdg1"), path.join(tempDir, "xdg2")],
+    };
 
     // Prepare $ZENO_HOME with a single config.yml
-    const zenoHome = path.join(tempDir, "zeno-home2");
+    const zenoHome = fakeEnv.ZENO_HOME;
     Deno.mkdirSync(zenoHome, { recursive: true });
-    Deno.env.set("ZENO_HOME", zenoHome);
+    // use envProvider instead of mutating process env
     const configYml = path.join(zenoHome, "config.yml");
     Deno.writeTextFileSync(
       configYml,
@@ -143,31 +154,34 @@ snippets:
 `,
     );
 
-    const settings = await getSettings();
+    const manager = createConfigManager({
+      envProvider: () => ({
+        DEFAULT_FZF_OPTIONS: "",
+        SOCK: undefined,
+        GIT_CAT: "cat",
+        GIT_TREE: "tree",
+        DISABLE_BUILTIN_COMPLETION: false,
+        HOME: fakeEnv.ZENO_HOME,
+      }),
+      xdgConfigDirsProvider: () => fakeEnv.XDG_CONFIG_DIRS,
+    });
+    const settings = await manager.getSettings();
     assertEquals(settings.snippets.map((s) => s.keyword), ["only"]);
   });
 
   it("falls back to XDG zeno/config.yml when $ZENO_HOME has no YAML and no config.yml", async () => {
     const tempDir = context.getTempDir();
 
-    // Point $ZENO_HOME to an empty dir without YAML/config.yml
     const emptyHome = path.join(tempDir, "empty-home");
     Deno.mkdirSync(emptyHome, { recursive: true });
-    Deno.env.set("ZENO_HOME", emptyHome);
-
-    // Provide XDG config with single-file legacy config
     const xdgHome = path.join(tempDir, "xdg-home-single");
     const appDir = path.join(xdgHome, "zeno");
     Deno.mkdirSync(appDir, { recursive: true });
-    Deno.env.set("XDG_CONFIG_HOME", xdgHome);
-
-    // Isolate XDG directories to avoid real system dirs
-    Deno.env.set(
-      "XDG_CONFIG_DIRS",
-      [path.join(tempDir, "xdg1"), path.join(tempDir, "xdg2")].join(
-        path.DELIMITER,
-      ),
-    );
+    const fakeEnv = {
+      ZENO_HOME: emptyHome,
+      XDG_CONFIG_HOME: xdgHome,
+      XDG_CONFIG_DIRS: [path.join(tempDir, "xdg1"), path.join(tempDir, "xdg2")],
+    };
 
     const cfg = path.join(appDir, "config.yml");
     Deno.writeTextFileSync(
@@ -179,7 +193,19 @@ snippets:
 `,
     );
 
-    const settings = await getSettings();
+    const manager = createConfigManager({
+      envProvider: () => ({
+        DEFAULT_FZF_OPTIONS: "",
+        SOCK: undefined,
+        GIT_CAT: "cat",
+        GIT_TREE: "tree",
+        DISABLE_BUILTIN_COMPLETION: false,
+        HOME: fakeEnv.ZENO_HOME,
+      }),
+      xdgConfigDirsProvider:
+        () => [fakeEnv.XDG_CONFIG_HOME, ...fakeEnv.XDG_CONFIG_DIRS],
+    });
+    const settings = await manager.getSettings();
     assertEquals(settings.snippets.map((s) => s.keyword), ["xdg"]);
   });
 });

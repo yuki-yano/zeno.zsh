@@ -12,11 +12,14 @@ import { getEnv } from "./env.ts";
 /**
  * Create a config manager with caching using closure
  */
-export const createConfigManager = () => {
+export const createConfigManager = (opts?: {
+  envProvider?: () => ReturnType<typeof getEnv>;
+  xdgConfigDirsProvider?: () => readonly string[];
+}) => {
   let cache: Settings | undefined;
 
   const loadSettings = async (): Promise<Settings> => {
-    const env = getEnv();
+    const env = opts?.envProvider ? opts.envProvider() : getEnv();
 
     // If $ZENO_HOME is set to a directory, load all YAML files under it
     if (env.HOME && (await exists(env.HOME))) {
@@ -35,7 +38,10 @@ export const createConfigManager = () => {
     }
 
     // If not found in $ZENO_HOME, search XDG config directories for zeno/*.yml|*.yaml
-    for (const baseDir of xdg.configDirs()) {
+    const xdgDirs = opts?.xdgConfigDirsProvider
+      ? opts.xdgConfigDirsProvider()
+      : xdg.configDirs();
+    for (const baseDir of xdgDirs) {
       const appDir = path.join(baseDir, DEFAULT_APP_DIR);
       if (await exists(appDir)) {
         try {
