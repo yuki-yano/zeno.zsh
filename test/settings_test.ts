@@ -15,7 +15,7 @@ import {
   loadConfigFile,
   setSettings,
 } from "../src/settings.ts";
-import { Snippet, UserCompletionSource } from "../src/type/settings.ts";
+import type { Snippet, UserCompletionSource } from "../src/type/settings.ts";
 
 describe("settings", () => {
   const context = new Helper();
