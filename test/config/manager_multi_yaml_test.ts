@@ -136,11 +136,14 @@ snippets:
     Deno.env.set("XDG_CONFIG_HOME", xdgHome);
 
     const cfg = path.join(appDir, "config.yml");
-    Deno.writeTextFileSync(cfg, `
+    Deno.writeTextFileSync(
+      cfg,
+      `
 snippets:
   - keyword: xdg
     snippet: single
-`);
+`,
+    );
 
     const settings = await getSettings();
     assertEquals(settings.snippets.map((s) => s.keyword), ["xdg"]);

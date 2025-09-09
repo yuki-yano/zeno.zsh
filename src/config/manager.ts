@@ -2,7 +2,6 @@ import { exists, path, xdg } from "../deps.ts";
 import type { Settings } from "../type/settings.ts";
 import {
   DEFAULT_APP_DIR,
-  findConfigFilePath,
   findYamlFilesInDir,
   getDefaultSettings,
   loadConfigFile,
