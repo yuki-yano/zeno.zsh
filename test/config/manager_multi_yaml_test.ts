@@ -81,6 +81,44 @@ completions:
     assertEquals(settings.completions.map((c) => c.name), ["comp-a", "comp-b"]);
   });
 
+  it("skips broken YAML in $ZENO_HOME and loads the rest", async () => {
+    const tempDir = context.getTempDir();
+
+    const fakeEnv = {
+      ZENO_HOME: path.join(tempDir, "zeno-bad"),
+      XDG_CONFIG_HOME: path.join(tempDir, "xdg-home-empty"),
+      XDG_CONFIG_DIRS: [path.join(tempDir, "xdg1"), path.join(tempDir, "xdg2")],
+    };
+
+    const zenoHome = fakeEnv.ZENO_HOME;
+    Deno.mkdirSync(zenoHome, { recursive: true });
+    // valid
+    Deno.writeTextFileSync(
+      path.join(zenoHome, "01.yml"),
+      `\nsnippets:\n  - keyword: ok\n    snippet: fine\n`,
+    );
+    // invalid YAML
+    Deno.writeTextFileSync(
+      path.join(zenoHome, "02.yml"),
+      `snippets: [ - ]`,
+    );
+
+    const manager = createConfigManager({
+      envProvider: () => ({
+        DEFAULT_FZF_OPTIONS: "",
+        SOCK: undefined,
+        GIT_CAT: "cat",
+        GIT_TREE: "tree",
+        DISABLE_BUILTIN_COMPLETION: false,
+        HOME: fakeEnv.ZENO_HOME,
+      }),
+      xdgConfigDirsProvider: () => fakeEnv.XDG_CONFIG_DIRS,
+    });
+
+    const settings = await manager.getSettings();
+    assertEquals(settings.snippets.map((s) => s.keyword), ["ok"]);
+  });
+
   it("merges YAML files under first XDG config dir's zeno/ when $ZENO_HOME has none", async () => {
     const tempDir = context.getTempDir();
 

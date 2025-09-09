@@ -105,14 +105,19 @@ export const loadConfigFile = async (configPath: string): Promise<Settings> => {
 export const loadConfigFiles = async (
   paths: readonly string[],
 ): Promise<Settings> => {
-  let snippets: Snippet[] = [];
-  let completions: UserCompletionSource[] = [];
+  const results = await Promise.all(
+    paths.map((p) =>
+      loadConfigFile(p).catch((error) => {
+        console.error(`Skipping broken config file ${p}: ${error}`);
+        return null;
+      })
+    ),
+  );
 
-  for (const p of paths) {
-    const s = await loadConfigFile(p);
-    snippets = [...snippets, ...s.snippets];
-    completions = [...completions, ...s.completions];
-  }
+  const validSettings = results.filter((s): s is Settings => s != null);
 
-  return { snippets, completions };
+  return {
+    snippets: validSettings.flatMap((s) => s.snippets),
+    completions: validSettings.flatMap((s) => s.completions),
+  };
 };
