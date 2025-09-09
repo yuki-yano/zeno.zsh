@@ -1,3 +1,11 @@
 {
-  "lock": false
+  "lock": false,
+  "name": "@yuki-yano/zeno",
+  "version": "0.1.0",
+  "license": "MIT",
+  "exports": "./src/mod.ts",
+  "publish": {
+    "include": ["src/**/*.ts", "README.md", "LICENSE"],
+    "exclude": ["src/**/*_test.ts", "test/**", "shells/**"]
+  }
 }
