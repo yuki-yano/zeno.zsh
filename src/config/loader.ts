@@ -1,9 +1,5 @@
 import { exists, path, xdg, yamlParse } from "../deps.ts";
-import type {
-  Settings,
-  Snippet,
-  UserCompletionSource,
-} from "../type/settings.ts";
+import type { Settings } from "../type/settings.ts";
 import { getEnv } from "./env.ts";
 
 export const DEFAULT_CONFIG_FILENAME = "config.yml";
