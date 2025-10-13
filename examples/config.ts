@@ -5,70 +5,99 @@
  * The configuration adapts based on the current project type and directory.
  */
 
-import { defineConfig } from "../src/mod.ts";
+import { defineConfig, directoryExists, fileExists } from "../src/mod.ts";
 import type { Snippet } from "../src/mod.ts";
+import { path } from "../src/deps.ts";
 
-export default defineConfig(({ projectRoot, currentDirectory, env, shell }) => {
-  // Detect project types
-  const isGitRepo = projectRoot.includes(".git");
-  const isNodeProject = currentDirectory.includes("node_modules") ||
-    projectRoot.includes("package.json");
-  const isDockerProject = projectRoot.includes("Dockerfile") ||
-    projectRoot.includes("docker-compose.yml");
-  const isKubernetesProject = currentDirectory.includes("k8s") ||
-    currentDirectory.includes("kubernetes");
+const { join } = path;
 
-  // Base snippets available everywhere
-  const baseSnippets: Snippet[] = [
-    {
-      name: "null redirect",
-      keyword: "null",
-      snippet: ">/dev/null 2>&1",
-      context: {
-        lbuffer: ".+\\s",
+export default defineConfig(
+  async ({ projectRoot, currentDirectory, env: _env, shell }) => {
+    // Detect project types using filesystem clues
+    const [
+      gitDirExists,
+      packageJsonExists,
+      nodeModulesExists,
+      dockerfileExists,
+      dockerComposeYamlExists,
+      dockerComposeYmlExists,
+      kubeDirAtRootExists,
+      kubeDirInCurrentExists,
+      kubernetesDirAtRootExists,
+      kubernetesDirInCurrentExists,
+    ] = await Promise.all([
+      directoryExists(join(projectRoot, ".git")),
+      fileExists(join(projectRoot, "package.json")),
+      directoryExists(join(projectRoot, "node_modules")),
+      fileExists(join(projectRoot, "Dockerfile")),
+      fileExists(join(projectRoot, "docker-compose.yaml")),
+      fileExists(join(projectRoot, "docker-compose.yml")),
+      directoryExists(join(projectRoot, "k8s")),
+      directoryExists(join(currentDirectory, "k8s")),
+      directoryExists(join(projectRoot, "kubernetes")),
+      directoryExists(join(currentDirectory, "kubernetes")),
+    ]);
+
+    const isGitRepo = gitDirExists;
+    const isNodeProject = packageJsonExists || nodeModulesExists;
+    const isDockerProject =
+      dockerfileExists || dockerComposeYamlExists || dockerComposeYmlExists;
+    const isKubernetesProject = kubeDirAtRootExists ||
+      kubeDirInCurrentExists ||
+      kubernetesDirAtRootExists ||
+      kubernetesDirInCurrentExists;
+
+    // Base snippets available everywhere
+    const baseSnippets: Snippet[] = [
+      {
+        name: "null redirect",
+        keyword: "null",
+        snippet: ">/dev/null 2>&1",
+        context: {
+          lbuffer: ".+\\s",
+        },
       },
-    },
-    {
-      name: "pipe grep",
-      keyword: "G",
-      snippet: "| grep ",
-      context: {
-        lbuffer: ".+\\s",
+      {
+        name: "pipe grep",
+        keyword: "G",
+        snippet: "| grep ",
+        context: {
+          lbuffer: ".+\\s",
+        },
       },
-    },
-    {
-      name: "pipe less",
-      keyword: "L",
-      snippet: "| less",
-      context: {
-        lbuffer: ".+\\s",
+      {
+        name: "pipe less",
+        keyword: "L",
+        snippet: "| less",
+        context: {
+          lbuffer: ".+\\s",
+        },
       },
-    },
-    {
-      name: "pipe awk print",
-      keyword: "awk",
-      snippet: "| awk '{print ${{1:1}}}'",
-      context: {
-        lbuffer: ".+\\s",
+      {
+        name: "pipe awk print",
+        keyword: "awk",
+        snippet: "| awk '{print ${{1:1}}}'",
+        context: {
+          lbuffer: ".+\\s",
+        },
       },
-    },
-    {
-      name: "pipe jq",
-      keyword: "jq",
-      snippet: "| jq '{{.}}'",
-      context: {
-        lbuffer: ".+\\s",
+      {
+        name: "pipe jq",
+        keyword: "jq",
+        snippet: "| jq '{{.}}'",
+        context: {
+          lbuffer: ".+\\s",
+        },
       },
-    },
-    {
-      name: "pipe wc lines",
-      keyword: "wcl",
-      snippet: "| wc -l",
-      context: {
-        lbuffer: ".+\\s",
+      {
+        name: "pipe wc lines",
+        keyword: "wcl",
+        snippet: "| wc -l",
+        context: {
+          lbuffer: ".+\\s",
+        },
       },
-    },
-  ];
+    ];
 
   // Git-specific snippets
   const gitSnippets: Snippet[] = [
@@ -410,7 +439,8 @@ export default defineConfig(({ projectRoot, currentDirectory, env, shell }) => {
     snippets,
     completions,
   };
-});
+  },
+);
 
 /**
  * Alternative: Async configuration with external data loading
@@ -463,4 +493,3 @@ export default defineConfig(({ projectRoot, currentDirectory, env, shell }) => {
  *   };
  * });
  */
-
