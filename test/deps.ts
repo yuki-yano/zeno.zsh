@@ -3,6 +3,8 @@ export {
   assert,
   assertEquals,
   assertExists,
+  assertNotStrictEquals,
+  assertStrictEquals,
   assertStringIncludes,
   assertThrows,
 } from "jsr:@std/assert@1.0.13";
