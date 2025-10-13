@@ -1,5 +1,5 @@
 import { assertEquals } from "./deps.ts";
-import { write } from "../src/text-writer.ts";
+import type { write } from "../src/text-writer.ts";
 import {
   handleNullableResult,
   handleStatusResult,
