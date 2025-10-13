@@ -26,14 +26,14 @@ const isTypeScriptConfig = (fileName: string): boolean => {
   return lower.endsWith(".ts");
 };
 
-/**
- * Find YAML files directly under a directory (non-recursive)
- */
-export const findYamlFilesInDir = async (dir: string): Promise<string[]> => {
+const findFilesInDir = async (
+  dir: string,
+  predicate: (fileName: string) => boolean,
+): Promise<string[]> => {
   const files: string[] = [];
   try {
     for await (const entry of Deno.readDir(dir)) {
-      if (entry.isFile && isYaml(entry.name)) {
+      if (entry.isFile && predicate(entry.name)) {
         files.push(path.join(dir, entry.name));
       }
     }
@@ -46,24 +46,17 @@ export const findYamlFilesInDir = async (dir: string): Promise<string[]> => {
 };
 
 /**
+ * Find YAML files directly under a directory (non-recursive)
+ */
+export const findYamlFilesInDir = (dir: string): Promise<string[]> =>
+  findFilesInDir(dir, isYaml);
+
+/**
  * Find TypeScript config files directly under a directory (non-recursive)
  */
-export const findTypeScriptFilesInDir = async (
+export const findTypeScriptFilesInDir = (
   dir: string,
-): Promise<string[]> => {
-  const files: string[] = [];
-  try {
-    for await (const entry of Deno.readDir(dir)) {
-      if (entry.isFile && isTypeScriptConfig(entry.name)) {
-        files.push(path.join(dir, entry.name));
-      }
-    }
-  } catch (_) {
-    return [];
-  }
-  files.sort();
-  return files;
-};
+): Promise<string[]> => findFilesInDir(dir, isTypeScriptConfig);
 
 /**
  * Find config file path

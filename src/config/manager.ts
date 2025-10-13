@@ -188,6 +188,41 @@ export const createConfigDiscovery = (): DiscoverConfigFiles => {
     }
   };
 
+  const findLegacyConfig = async (
+    env: ReturnType<typeof getEnv>,
+    xdgDirs: readonly string[],
+  ): Promise<string | undefined> => {
+    if (env.HOME) {
+      const homeConfig = path.join(env.HOME, DEFAULT_CONFIG_FILENAME);
+      if (await exists(homeConfig)) {
+        try {
+          await Deno.stat(homeConfig);
+          return homeConfig;
+        } catch (error) {
+          console.error(`Failed to load config: ${error}`);
+        }
+      }
+    }
+
+    for (const baseDir of xdgDirs) {
+      const candidate = path.join(
+        baseDir,
+        DEFAULT_APP_DIR,
+        DEFAULT_CONFIG_FILENAME,
+      );
+      if (await exists(candidate)) {
+        try {
+          await Deno.stat(candidate);
+          return candidate;
+        } catch (error) {
+          console.error(`Failed to load config: ${error}`);
+        }
+      }
+    }
+
+    return undefined;
+  };
+
   return async ({ env, xdgDirs }) => {
     if (env.HOME) {
       const result = await collectFromDir(env.HOME);
@@ -204,33 +239,9 @@ export const createConfigDiscovery = (): DiscoverConfigFiles => {
       }
     }
 
-    // Legacy fallback to config.yml
-    if (env.HOME) {
-      const homeConfig = path.join(env.HOME, DEFAULT_CONFIG_FILENAME);
-      if (await exists(homeConfig)) {
-        try {
-          await Deno.stat(homeConfig);
-          return { yamlFiles: [homeConfig], tsFiles: [] };
-        } catch (error) {
-          console.error(`Failed to load config: ${error}`);
-        }
-      }
-    }
-
-    for (const baseDir of xdgDirs) {
-      const candidate = path.join(
-        baseDir,
-        DEFAULT_APP_DIR,
-        DEFAULT_CONFIG_FILENAME,
-      );
-      if (await exists(candidate)) {
-        try {
-          await Deno.stat(candidate);
-          return { yamlFiles: [candidate], tsFiles: [] };
-        } catch (error) {
-          console.error(`Failed to load config: ${error}`);
-        }
-      }
+    const legacyConfig = await findLegacyConfig(env, xdgDirs);
+    if (legacyConfig) {
+      return { yamlFiles: [legacyConfig], tsFiles: [] };
     }
 
     return { yamlFiles: [], tsFiles: [] };
