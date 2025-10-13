@@ -234,8 +234,7 @@ fi
   - rebase
   - merge
 
-See:
-https://github.com/yuki-yano/zeno.zsh/blob/main/src/completion/source/git.ts
+See: [src/completion/source/git.ts](https://github.com/yuki-yano/zeno.zsh/blob/main/src/completion/source/git.ts)
 
 ## User configuration file
 
@@ -368,7 +367,7 @@ export default defineConfig(() => ({
     {
       name: "kill signal",
       patterns: ["^kill -s $"],
-      sourceCommand: "kill -l | tr ' ' \\\"\\n\\"",
+      sourceCommand: "kill -l | tr ' ' '\\n'"
       options: { "--prompt": "'Kill Signal> '" },
     },
     {
