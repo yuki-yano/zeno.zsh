@@ -42,6 +42,14 @@ export type {
 } from "./type/config.ts";
 
 /**
+ * Internal marker used to verify that exported configuration functions
+ * have been wrapped with {@link defineConfig}.
+ */
+export const CONFIG_FUNCTION_MARK = Symbol.for(
+  "@yuki-yano/zeno.defineConfig",
+);
+
+/**
  * Define a zeno configuration with context-aware dynamic generation.
  *
  * This function is required for all TypeScript configuration files.
@@ -80,5 +88,51 @@ export type {
  * ```
  */
 export const defineConfig = (configFn: ConfigFunction): ConfigFunction => {
+  if (
+    Object.getOwnPropertyDescriptor(configFn, CONFIG_FUNCTION_MARK) == null
+  ) {
+    Object.defineProperty(configFn, CONFIG_FUNCTION_MARK, {
+      value: true,
+      enumerable: false,
+      configurable: false,
+      writable: false,
+    });
+  }
   return configFn;
 };
+
+/**
+ * Check whether a path exists.
+ * @param target - Absolute or relative path to inspect.
+ * @param kind - Optional kind restriction. Defaults to `"any"`.
+ */
+export const pathExists = async (
+  target: string,
+  kind: "any" | "file" | "dir" = "any",
+): Promise<boolean> => {
+  try {
+    const info = await Deno.stat(target);
+    if (kind === "file") return info.isFile;
+    if (kind === "dir") return info.isDirectory;
+    return true;
+  } catch (error) {
+    if (error instanceof Deno.errors.NotFound) {
+      return false;
+    }
+    throw error;
+  }
+};
+
+/**
+ * Check whether a file exists.
+ * @param target - Path to the file.
+ */
+export const fileExists = (target: string): Promise<boolean> =>
+  pathExists(target, "file");
+
+/**
+ * Check whether a directory exists.
+ * @param target - Path to the directory.
+ */
+export const directoryExists = (target: string): Promise<boolean> =>
+  pathExists(target, "dir");
