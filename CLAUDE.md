@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Active Specifications
+
+- `typescript-config-support`: TypeScript ベースの設定と JSR パッケージ公開を進める。
+
 ## Project Overview
 
 zeno.zsh is a multi-shell fuzzy completion and utility plugin built with Deno. Originally developed for Zsh, it now includes support for Fish shell. It provides:
