@@ -332,7 +332,7 @@ TypeScript configs can be split into multiple files. Each file returns a partial
 // ~/.config/zeno/10-snippets.ts
 import { defineConfig } from "jsr:@yuki-yano/zeno";
 
-export default defineConfig(() => ({
+export default defineConfig(({ projectRoot, currentDirectory }) => ({
   snippets: [
     {
       name: "git status",
@@ -361,7 +361,7 @@ export default defineConfig(() => ({
 // ~/.config/zeno/20-completions.ts
 import { defineConfig } from "jsr:@yuki-yano/zeno";
 
-export default defineConfig(() => ({
+export default defineConfig(({ projectRoot, currentDirectory }) => ({
   snippets: [],
   completions: [
     {
