@@ -19,6 +19,14 @@ const isYaml = (fileName: string): boolean => {
 };
 
 /**
+ * Utility: determine if file name is a TypeScript config
+ */
+const isTypeScriptConfig = (fileName: string): boolean => {
+  const lower = fileName.toLowerCase();
+  return lower.endsWith(".ts");
+};
+
+/**
  * Find YAML files directly under a directory (non-recursive)
  */
 export const findYamlFilesInDir = async (dir: string): Promise<string[]> => {
@@ -31,6 +39,26 @@ export const findYamlFilesInDir = async (dir: string): Promise<string[]> => {
     }
   } catch (_) {
     // If directory cannot be read, treat as no files
+    return [];
+  }
+  files.sort();
+  return files;
+};
+
+/**
+ * Find TypeScript config files directly under a directory (non-recursive)
+ */
+export const findTypeScriptFilesInDir = async (
+  dir: string,
+): Promise<string[]> => {
+  const files: string[] = [];
+  try {
+    for await (const entry of Deno.readDir(dir)) {
+      if (entry.isFile && isTypeScriptConfig(entry.name)) {
+        files.push(path.join(dir, entry.name));
+      }
+    }
+  } catch (_) {
     return [];
   }
   files.sort();
