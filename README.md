@@ -53,7 +53,8 @@ zeno now has experimental support for [Fish shell](https://fishshell.com/).
 fisher install yuki-yano/zeno.zsh
 ```
 
-Fisher will automatically clone the full repository to `~/.local/share/zeno.zsh` and set up the necessary paths.
+Fisher will automatically clone the full repository to `~/.local/share/zeno.zsh`
+and set up the necessary paths.
 
 #### Manual installation
 
@@ -63,7 +64,8 @@ $ echo "set -gx ZENO_ROOT /path/to/zeno.zsh" >> ~/.config/fish/config.fish
 $ ln -s /path/to/zeno.zsh/shells/fish/conf.d/zeno.fish ~/.config/fish/conf.d/
 ```
 
-Note: Setting `ZENO_ROOT` explicitly is recommended for manual installations to avoid path resolution issues.
+Note: Setting `ZENO_ROOT` explicitly is recommended for manual installations to
+avoid path resolution issues.
 
 ### Configuration for Fish
 
@@ -139,6 +141,15 @@ Use zeno-history-completion zle
 ### Change ghq managed repository
 
 Use zeno-ghq-cd zle
+
+## Configuration files
+
+zeno loads configuration files from the config directory (defaults to
+`~/.config/zeno/`, or `$ZENO_HOME` if set) and merges them in alphabetical
+order. Both YAML (`*.yml`, `*.yaml`) and TypeScript (`*.ts`) files are
+supported, so you can pick the format that suits your workflow. TypeScript
+configs can import `defineConfig` and types from `jsr:@yuki-yano/zeno`, giving
+you access to the full `ConfigContext` for dynamic setups.
 
 ## Configuration example
 
@@ -223,20 +234,24 @@ fi
   - rebase
   - merge
 
-See: https://github.com/yuki-yano/zeno.zsh/blob/main/src/completion/source/git.ts
+See:
+https://github.com/yuki-yano/zeno.zsh/blob/main/src/completion/source/git.ts
 
 ## User configuration file
 
 The configuration file is searched from the following.
 
-- If `$ZENO_HOME` is a directory, all `*.yml`/`*.yaml` directly under it are loaded and merged (A→Z).
-- Otherwise, search XDG config directories in order and if `zeno/` exists, load and merge all `zeno/*.yml`/`*.yaml` in the first directory that contains any.
+- If `$ZENO_HOME` is a directory, all `*.yml`/`*.yaml` and `*.ts` directly under
+  it are loaded and merged (A→Z).
+- Otherwise, search XDG config directories in order and if `zeno/` exists, load
+  and merge all `zeno/*.yml`/`*.yaml`/`*.ts` in the first directory that
+  contains any.
 - Fallbacks for backward compatibility:
   - `$ZENO_HOME/config.yml`
   - `$XDG_CONFIG_HOME/zeno/config.yml` or `~/.config/zeno/config.yml`
   - Find `.../zeno/config.yml` from each in `$XDG_CONFIG_DIRS`
 
-### Example
+### Example (YAML)
 
 ```sh
 $ touch ~/.config/zeno/config.yml
@@ -273,7 +288,6 @@ snippets:
       lbuffer: '^git\s+checkout\s+'
     evaluate: true # eval snippet
 
-
 completions:
   # simple sourceCommand, no callback
   - name: kill signal
@@ -307,14 +321,89 @@ completions:
       --prompt: "'Chdir> '"
       --preview: "cd {} && ls -a | sed '/^[.]*$/d'"
     callback: "cut -z -c 3-"
-    callbackZero: true  # null termination is used in `callback` I/O
+    callbackZero: true # null termination is used in `callback` I/O
+```
+
+### Example (TypeScript)
+
+TypeScript configs can be split into multiple files. Each file returns a partial
+`Settings` object and zeno merges them in alphabetical order.
+
+```ts
+// ~/.config/zeno/10-snippets.ts
+import { defineConfig } from "jsr:@yuki-yano/zeno";
+
+export default defineConfig(() => ({
+  snippets: [
+    {
+      name: "git status",
+      keyword: "gs",
+      snippet: "git status --short --branch",
+    },
+    {
+      name: "branch",
+      keyword: "B",
+      snippet: "git symbolic-ref --short HEAD",
+      context: { lbuffer: "^git\\s+checkout\\s+" },
+      evaluate: true,
+    },
+    {
+      name: "null",
+      keyword: "null",
+      snippet: ">/dev/null 2>&1",
+      context: { lbuffer: ".+\\s" },
+    },
+  ],
+  completions: [],
+}));
+```
+
+```ts
+// ~/.config/zeno/20-completions.ts
+import { defineConfig } from "jsr:@yuki-yano/zeno";
+
+export default defineConfig(() => ({
+  snippets: [],
+  completions: [
+    {
+      name: "kill signal",
+      patterns: ["^kill -s $"],
+      sourceCommand: "kill -l | tr ' ' \\\"\\n\\"",
+      options: { "--prompt": "'Kill Signal> '" },
+    },
+    {
+      name: "kill pid",
+      patterns: ["^kill( .*)? $"],
+      excludePatterns: [" -[lns] $"],
+      sourceCommand: "LANG=C ps -ef | sed 1d",
+      options: { "--multi": true, "--prompt": "'Kill Process> '" },
+      callback: "awk '{print $2}'",
+    },
+    {
+      name: "chdir",
+      patterns: ["^cd $"],
+      sourceCommand: "find . -path '*/.git' -prune -o -maxdepth 5 -type d -print0",
+      options: {
+        "--read0": true,
+        "--prompt": "'Chdir> '",
+        "--preview": "cd {} && ls -a | sed '/^[.]*$/d'",
+      },
+      callback: "cut -z -c 3-",
+      callbackZero: true,
+    },
+  ],
+}));
 ```
 
 ## FAQ
 
-Q: [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) does not work well.
+Q:
+[zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)
+does not work well.
 
-A: Use [fast-syntax-highlighting](https://github.com/zdharma-continuum/fast-syntax-highlighting) instead.
+A: Use
+[fast-syntax-highlighting](https://github.com/zdharma-continuum/fast-syntax-highlighting)
+instead.
 
 ## Related project
 
