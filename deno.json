@@ -4,11 +4,6 @@
   "version": "0.1.0",
   "license": "MIT",
   "exports": "./src/mod.ts",
-  "imports": {
-    "yargs_parser": "https://deno.land/x/yargs_parser@yargs-parser-v21.1.1-deno/deno.ts",
-    "yargs_parser/types": "https://deno.land/x/yargs_parser@yargs-parser-v21.1.1-deno/lib/yargs-parser-types.ts",
-    "xdg": "https://deno.land/x/xdg@v10.6.0/src/mod.deno.ts"
-  },
   "publish": {
     "include": ["src/mod.ts", "src/type/**/*.ts", "README.md", "LICENSE"],
     "exclude": ["src/**/*_test.ts", "test/**", "shells/**"]
