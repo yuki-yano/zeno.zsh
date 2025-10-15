@@ -33,7 +33,7 @@ const findFilesInDir = async (
   const files: string[] = [];
   try {
     for await (const entry of Deno.readDir(dir)) {
-      if (entry.isFile && predicate(entry.name)) {
+      if ((entry.isFile || entry.isSymlink) && predicate(entry.name)) {
         files.push(path.join(dir, entry.name));
       }
     }
