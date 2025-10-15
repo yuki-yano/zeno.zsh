@@ -91,6 +91,68 @@ export default defineConfig(async ({ projectRoot, currentDirectory }) => {
     assertEquals(rootSnippet?.snippet, projectDir);
   });
 
+  it("prioritizes project .zeno configs while merging with user configs", async () => {
+    const tempDir = helper.getTempDir();
+    const zenoHome = path.join(tempDir, "zeno-home-priority");
+    Deno.mkdirSync(zenoHome, { recursive: true });
+
+    const projectDir = path.join(tempDir, "project-priority");
+    Deno.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
+    const nestedDir = path.join(projectDir, "nested");
+    Deno.mkdirSync(nestedDir, { recursive: true });
+
+    const projectZenoDir = path.join(projectDir, ".zeno");
+    Deno.mkdirSync(projectZenoDir, { recursive: true });
+
+    const projectConfig = path.join(projectZenoDir, "00-project.yml");
+    Deno.writeTextFileSync(
+      projectConfig,
+      `
+snippets:
+  - keyword: project
+    snippet: from-project
+`,
+    );
+
+    const homeConfig = path.join(zenoHome, "01-home.yml");
+    Deno.writeTextFileSync(
+      homeConfig,
+      `
+snippets:
+  - keyword: home
+    snippet: from-home
+`,
+    );
+
+    const manager = createConfigManager({
+      envProvider: () => ({
+        DEFAULT_FZF_OPTIONS: "",
+        SOCK: undefined,
+        GIT_CAT: "cat",
+        GIT_TREE: "tree",
+        DISABLE_BUILTIN_COMPLETION: false,
+        HOME: zenoHome,
+      }),
+      xdgConfigDirsProvider: () => [],
+      cwdProvider: () => nestedDir,
+    });
+
+    const settings = await manager.getSettings();
+
+    assertEquals(
+      settings.snippets.map((snippet) => snippet.keyword),
+      ["project", "home"],
+    );
+    const projectSnippet = settings.snippets.find((snippet) =>
+      snippet.keyword === "project"
+    );
+    const homeSnippet = settings.snippets.find((snippet) =>
+      snippet.keyword === "home"
+    );
+    assertEquals(projectSnippet?.snippet, "from-project");
+    assertEquals(homeSnippet?.snippet, "from-home");
+  });
+
   it("logs errors and continues when defineConfig marker is missing", async () => {
     const tempDir = helper.getTempDir();
     const zenoHome = path.join(tempDir, "zeno-home-ts-error");

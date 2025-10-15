@@ -44,6 +44,7 @@ type DiscoverConfigFiles = (params: {
   cwd: string;
   env: ReturnType<typeof getEnv>;
   xdgDirs: readonly string[];
+  projectRoot: string;
 }) => Promise<DiscoveredConfigFiles>;
 
 type ResolveConfigContext = (params: {
@@ -223,28 +224,59 @@ export const createConfigDiscovery = (): DiscoverConfigFiles => {
     return undefined;
   };
 
-  return async ({ env, xdgDirs }) => {
-    if (env.HOME) {
-      const result = await collectFromDir(env.HOME);
-      if (result) {
-        return result;
+  return async ({ env, xdgDirs, projectRoot }) => {
+    const yamlFiles: string[] = [];
+    const tsFiles: string[] = [];
+    const seen = new Set<string>();
+
+    const appendFiles = (files: DiscoveredConfigFiles) => {
+      for (const file of files.yamlFiles) {
+        if (seen.has(file)) {
+          continue;
+        }
+        seen.add(file);
+        yamlFiles.push(file);
       }
+      for (const file of files.tsFiles) {
+        if (seen.has(file)) {
+          continue;
+        }
+        seen.add(file);
+        tsFiles.push(file);
+      }
+    };
+
+    const tryCollectDir = async (dir: string | undefined) => {
+      if (!dir) {
+        return;
+      }
+      const result = await collectFromDir(dir);
+      if (result) {
+        appendFiles(result);
+      }
+    };
+
+    await tryCollectDir(path.join(projectRoot, ".zeno"));
+
+    if (env.HOME) {
+      await tryCollectDir(env.HOME);
     }
 
     for (const baseDir of xdgDirs) {
-      const appDir = path.join(baseDir, DEFAULT_APP_DIR);
-      const result = await collectFromDir(appDir);
-      if (result) {
-        return result;
+      await tryCollectDir(path.join(baseDir, DEFAULT_APP_DIR));
+    }
+
+    if (yamlFiles.length === 0 && tsFiles.length === 0) {
+      const legacyConfig = await findLegacyConfig(env, xdgDirs);
+      if (legacyConfig) {
+        if (!seen.has(legacyConfig)) {
+          seen.add(legacyConfig);
+          yamlFiles.push(legacyConfig);
+        }
       }
     }
 
-    const legacyConfig = await findLegacyConfig(env, xdgDirs);
-    if (legacyConfig) {
-      return { yamlFiles: [legacyConfig], tsFiles: [] };
-    }
-
-    return { yamlFiles: [], tsFiles: [] };
+    return { yamlFiles, tsFiles };
   };
 };
 
@@ -383,7 +415,13 @@ export const createConfigManager = (opts?: {
     const cwd = cwdProvider();
     const zenoEnv = envProvider();
     const xdgDirs = xdgConfigDirsProvider();
-    const discovered = await discovery({ cwd, env: zenoEnv, xdgDirs });
+    const projectRoot = await detectProjectRoot(cwd);
+    const discovered = await discovery({
+      cwd,
+      env: zenoEnv,
+      xdgDirs,
+      projectRoot,
+    });
 
     const envRecord = collectContextEnv(cwd);
     if (zenoEnv.HOME && envRecord.HOME === undefined) {
