@@ -144,12 +144,15 @@ Use zeno-ghq-cd zle
 
 ## Configuration files
 
-zeno loads configuration files from the config directory (defaults to
-`~/.config/zeno/`, or `$ZENO_HOME` if set) and merges them in alphabetical
-order. Both YAML (`*.yml`, `*.yaml`) and TypeScript (`*.ts`) files are
-supported, so you can pick the format that suits your workflow. TypeScript
-configs can import `defineConfig` and types from `jsr:@yuki-yano/zeno`, giving
-you access to the full `ConfigContext` for dynamic setups.
+zeno loads configuration files from the project and user config directories and
+merges them in priority order. If the current workspace has a `.zeno/`
+directory, its contents are loaded first, followed by the user config directory
+(`$ZENO_HOME` or `~/.config/zeno/`), and finally any XDG config directories.
+Within each location, files are merged alphabetically. Both YAML (`*.yml`,
+`*.yaml`) and TypeScript (`*.ts`) files are supported, so you can pick the
+format that suits your workflow. TypeScript configs can import `defineConfig`
+and types from `jsr:@yuki-yano/zeno`, giving you access to the full
+`ConfigContext` for dynamic setups.
 
 ## Configuration example
 
@@ -234,18 +237,22 @@ fi
   - rebase
   - merge
 
-See: [src/completion/source/git.ts](https://github.com/yuki-yano/zeno.zsh/blob/main/src/completion/source/git.ts)
+See:
+[src/completion/source/git.ts](https://github.com/yuki-yano/zeno.zsh/blob/main/src/completion/source/git.ts)
 
 ## User configuration file
 
-The configuration file is searched from the following.
+The configuration files are discovered and merged in the following order.
 
-- If `$ZENO_HOME` is a directory, all `*.yml`/`*.yaml` and `*.ts` directly under
-  it are loaded and merged (A→Z).
-- Otherwise, search XDG config directories in order and if `zeno/` exists, load
-  and merge all `zeno/*.yml`/`*.yaml`/`*.ts` in the first directory that
-  contains any.
-- Fallbacks for backward compatibility:
+- If the detected project root contains a `.zeno/` directory, load all
+  `.zeno/*.yml`/`*.yaml`/`*.ts` (A→Z).
+- If `$ZENO_HOME` is a directory, merge all `*.yml`/`*.yaml`/`*.ts` directly
+  under it.
+- For each path in `$XDG_CONFIG_DIRS`, if `zeno/` exists, merge all
+  `zeno/*.yml`/`*.yaml`/`*.ts` (directories are processed in the order provided
+  by XDG).
+- Fallbacks for backward compatibility (used only when no files were found in
+  the locations above):
   - `$ZENO_HOME/config.yml`
   - `$XDG_CONFIG_HOME/zeno/config.yml` or `~/.config/zeno/config.yml`
   - Find `.../zeno/config.yml` from each in `$XDG_CONFIG_DIRS`
