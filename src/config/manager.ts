@@ -230,20 +230,18 @@ export const createConfigDiscovery = (): DiscoverConfigFiles => {
     const seen = new Set<string>();
 
     const appendFiles = (files: DiscoveredConfigFiles) => {
-      for (const file of files.yamlFiles) {
-        if (seen.has(file)) {
-          continue;
+      const processFiles = (source: readonly string[], target: string[]) => {
+        for (const file of source) {
+          if (seen.has(file)) {
+            continue;
+          }
+          seen.add(file);
+          target.push(file);
         }
-        seen.add(file);
-        yamlFiles.push(file);
-      }
-      for (const file of files.tsFiles) {
-        if (seen.has(file)) {
-          continue;
-        }
-        seen.add(file);
-        tsFiles.push(file);
-      }
+      };
+
+      processFiles(files.yamlFiles, yamlFiles);
+      processFiles(files.tsFiles, tsFiles);
     };
 
     const tryCollectDir = async (dir: string | undefined) => {
@@ -269,10 +267,8 @@ export const createConfigDiscovery = (): DiscoverConfigFiles => {
     if (yamlFiles.length === 0 && tsFiles.length === 0) {
       const legacyConfig = await findLegacyConfig(env, xdgDirs);
       if (legacyConfig) {
-        if (!seen.has(legacyConfig)) {
-          seen.add(legacyConfig);
-          yamlFiles.push(legacyConfig);
-        }
+        seen.add(legacyConfig);
+        yamlFiles.push(legacyConfig);
       }
     }
 
