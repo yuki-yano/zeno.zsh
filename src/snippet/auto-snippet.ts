@@ -1,7 +1,7 @@
 import { loadSnippets } from "./settings.ts";
 import { normalizeCommand, parseCommand } from "../command.ts";
-import { executeCommand } from "../util/exec.ts";
 import type { Input } from "../type/shell.ts";
+import { extractSnippetContent } from "./snippet-utils.ts";
 
 /**
  * Result of auto-snippet expansion
@@ -62,8 +62,6 @@ export const autoSnippet = async (
     lbufferWithoutLastWord += `${tokens.slice(0, -1).join(" ")} `;
   }
 
-  const placeholderRegex = /\{\{[^{}\s]*\}\}/;
-
   const snippets = await loadSnippets();
   for (const { snippet, keyword, context, evaluate } of snippets) {
     if (keyword !== lastWord) {
@@ -92,19 +90,16 @@ export const autoSnippet = async (
       }
     }
 
-    let snipText = snippet;
-    if (evaluate === true) {
-      snipText = await executeCommand(snippet);
-    }
-
-    const placeholderMatch = placeholderRegex.exec(snipText);
+    const { text: snipText, placeholderIndex } = await extractSnippetContent(
+      snippet,
+      evaluate,
+    );
 
     let cursor = lbufferWithoutLastWord.length;
-    if (placeholderMatch == null) {
+    if (placeholderIndex == null) {
       cursor += snipText.length + 1;
     } else {
-      snipText = snipText.replace(placeholderRegex, "");
-      cursor += placeholderMatch.index;
+      cursor += placeholderIndex;
     }
 
     let newBuffer = `${lbufferWithoutLastWord}${snipText}${rbuffer}`;
