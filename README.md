@@ -374,7 +374,7 @@ export default defineConfig(({ projectRoot, currentDirectory }) => ({
     {
       name: "kill signal",
       patterns: ["^kill -s $"],
-      sourceCommand: "kill -l | tr ' ' '\\n'"
+      sourceCommand: "kill -l | tr ' ' '\\n'",
       options: { "--prompt": "'Kill Signal> '" },
     },
     {
