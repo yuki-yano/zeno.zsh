@@ -1,5 +1,33 @@
 #autoload
 
-command deno run --unstable-byonm --no-check \
-  --allow-env --allow-read --allow-run --allow-write \
-  -- "$ZENO_ROOT/src/cli.ts" "$@"
+local -a args deno_flags
+# NOTE: Same auto-snippet workaround as bin/zeno: silence first-run dependency downloads to avoid wiping the prompt
+local -i quiet=0
+
+args=("$@")
+deno_flags=(
+  --unstable-byonm
+  --no-check
+  --allow-env
+  --allow-read
+  --allow-run
+  --allow-write
+)
+
+for (( i = 1; i <= $#args; ++i )); do
+  case ${args[i]} in
+    --zeno-mode=auto-snippet)
+      quiet=1
+      break
+      ;;
+    --zeno-mode)
+      if (( i + 1 <= $#args )) && [[ ${args[i+1]} == auto-snippet ]]; then
+        quiet=1
+        break
+      fi
+      ;;
+  esac
+done
+(( quiet )) && deno_flags+=(--quiet)
+
+command deno run "${deno_flags[@]}" -- "$ZENO_ROOT/src/cli.ts" "${args[@]}"
