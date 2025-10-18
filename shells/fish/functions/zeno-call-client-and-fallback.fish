@@ -10,11 +10,17 @@ function zeno-call-client-and-fallback
             zeno-client $argv
             return
         end
-        
+
         # Socket doesn't exist, try to start server
         zeno-start-server
+
+        # If server started successfully, try to connect
+        if test $status -eq 0; and test -S $ZENO_SOCK
+            zeno-client $argv
+            return
+        end
     end
-    
+
     # Fallback to direct zeno call
     zeno $argv
 end

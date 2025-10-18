@@ -17,9 +17,10 @@ function zeno-completion --description "Fuzzy completion with fzf"
     end
     
     # Call zeno with completion mode
+    # Note: Fish command substitution automatically splits by newlines
     set -l out (zeno-call-client-and-fallback --zeno-mode=completion \
         --input.lbuffer="$lbuffer" \
-        --input.rbuffer="$rbuffer" | string split \n)
+        --input.rbuffer="$rbuffer")
     
     if test "$out[1]" != "success"
         # Fallback to default Fish completion

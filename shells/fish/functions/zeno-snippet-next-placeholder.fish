@@ -13,9 +13,10 @@ function zeno-snippet-next-placeholder --description "Navigate to next snippet p
     end
     
     # Call zeno with next-placeholder mode
+    # Note: Fish command substitution automatically splits by newlines
     set -l out (zeno-call-client-and-fallback --zeno-mode=next-placeholder \
         --input.lbuffer="$lbuffer" \
-        --input.rbuffer="$rbuffer" | string split \n)
+        --input.rbuffer="$rbuffer")
     
     # Update buffer and cursor if successful
     if test "$out[1]" = "success" -a -n "$out[2]"

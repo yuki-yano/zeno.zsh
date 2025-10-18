@@ -17,9 +17,10 @@ function zeno-auto-snippet-and-accept-line --description "Expand snippet and exe
     end
     
     # Call zeno with auto-snippet mode
+    # Note: Fish command substitution automatically splits by newlines
     set -l out (zeno-call-client-and-fallback --zeno-mode=auto-snippet \
         --input.lbuffer="$lbuffer" \
-        --input.rbuffer="$rbuffer" | string split \n)
+        --input.rbuffer="$rbuffer")
     
     # Update buffer if successful
     if test "$ZENO_ENABLE" = "1" -a "$out[1]" = "success" -a -n "$out[2]"

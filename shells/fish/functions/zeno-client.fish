@@ -54,6 +54,7 @@ function zeno-client --description "Send request to zeno socket server"
     end
     
     # Output result
-    echo -n $result
+    # Use string join to preserve newlines in the output
+    string join \n -- $result
     return 0
 end

@@ -10,11 +10,10 @@ function zeno-start-server --description "Start zeno socket server in background
     end
     
     # Start server in background
-    # Fish doesn't have nohup built-in, but we can use command nohup
+    # Determine server binary path
+    set -l server_bin "$ZENO_ROOT/bin/zeno-server"
     if set -q ZENO_SERVER_BIN
-        set -l server_bin $ZENO_SERVER_BIN
-    else
-        set -l server_bin "$ZENO_ROOT/bin/zeno-server"
+        set server_bin $ZENO_SERVER_BIN
     end
     
     # Start the server in background with proper process management
