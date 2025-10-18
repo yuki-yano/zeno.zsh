@@ -1,5 +1,6 @@
 import { normalizeCommand } from "../command.ts";
 import type { Input } from "../type/shell.ts";
+import { findPlaceholder } from "./snippet-utils.ts";
 
 export const nextPlaceholder = (
   input: Input,
@@ -7,15 +8,14 @@ export const nextPlaceholder = (
   const lbuffer = input.lbuffer ?? "";
   const rbuffer = input.rbuffer ?? "";
   const buffer = normalizeCommand(`${lbuffer}${rbuffer}`);
-  const placeholderRegex = /\{\{[^{}\s]*\}\}/;
 
-  const placeholderMatch = placeholderRegex.exec(buffer);
-  if (placeholderMatch == null) {
+  const placeholder = findPlaceholder(buffer);
+  if (placeholder == null) {
     return null;
   }
 
   return {
-    nextBuffer: buffer.replace(placeholderRegex, ""),
-    index: placeholderMatch.index,
+    nextBuffer: placeholder.nextBuffer,
+    index: placeholder.index,
   };
 };
