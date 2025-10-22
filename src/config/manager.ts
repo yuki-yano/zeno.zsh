@@ -108,6 +108,46 @@ const createEnvSignature = (env: ConfigEnvRecord): string => {
   return entries.map(([key, value]) => `${key}=${value}`).join(";");
 };
 
+const createZenoEnvSignature = (
+  env: ReturnType<typeof getEnv>,
+): string => {
+  const entries = Object.entries(env)
+    .map(([key, value]) => [key, value == null ? "" : String(value)] as const)
+    .sort((a, b) => a[0].localeCompare(b[0]));
+  return entries.map(([key, value]) => `${key}=${value}`).join(";");
+};
+
+const resolveContext = async (
+  {
+    cwd,
+    zenoEnv,
+    contextResolver,
+  }: {
+    cwd: string;
+    zenoEnv: ReturnType<typeof getEnv>;
+    contextResolver: ResolveConfigContext;
+  },
+): Promise<{
+  context: ConfigContext;
+  contextSignature: string;
+}> => {
+  const envRecord = collectContextEnv(cwd);
+  // Prefer HOME from zeno env if collectContextEnv did not expose it.
+  if (zenoEnv.HOME && envRecord.HOME === undefined) {
+    envRecord.HOME = zenoEnv.HOME;
+  }
+  const frozenEnv = Object.freeze({ ...envRecord });
+
+  const homeDirectory = frozenEnv["HOME"] ?? Deno.env.get("HOME") ?? "";
+  const context = await contextResolver({
+    cwd,
+    env: frozenEnv,
+    homeDirectory,
+  });
+  const contextSignature = createEnvSignature(envRecord);
+  return { context, contextSignature };
+};
+
 const cloneAndFreezeSnippet = (snippet: Snippet): Snippet =>
   Object.freeze({ ...snippet }) as Snippet;
 
@@ -376,10 +416,13 @@ export const createTsConfigEvaluator = (
   };
 };
 
-const createCacheKey = (context: ConfigContext): CacheKey => ({
+const createCacheKey = (
+  context: ConfigContext,
+  envSignature: string,
+): CacheKey => ({
   cwd: context.currentDirectory,
   projectRoot: context.projectRoot,
-  envSignature: createEnvSignature(context.env),
+  envSignature,
   shell: context.shell,
   homeDirectory: context.homeDirectory,
 });
@@ -410,6 +453,7 @@ export const createConfigManager = (opts?: {
   const loadSettings = async (): Promise<Settings> => {
     const cwd = cwdProvider();
     const zenoEnv = envProvider();
+    const envSignatureZeno = createZenoEnvSignature(zenoEnv);
     const xdgDirs = xdgConfigDirsProvider();
     const projectRoot = await detectProjectRoot(cwd);
     const discovered = await discovery({
@@ -419,20 +463,16 @@ export const createConfigManager = (opts?: {
       projectRoot,
     });
 
-    const envRecord = collectContextEnv(cwd);
-    if (zenoEnv.HOME && envRecord.HOME === undefined) {
-      envRecord.HOME = zenoEnv.HOME;
-    }
-    const frozenEnv = Object.freeze({ ...envRecord });
-
-    const homeDirectory = frozenEnv["HOME"] ?? Deno.env.get("HOME") ?? "";
-    const context = await contextResolver({
+    const { context, contextSignature } = await resolveContext({
       cwd,
-      env: frozenEnv,
-      homeDirectory,
+      zenoEnv,
+      contextResolver,
     });
-
-    const key = createCacheKey(context);
+    const combinedSignature = JSON.stringify([
+      contextSignature,
+      envSignatureZeno,
+    ]);
+    const key = createCacheKey(context, combinedSignature);
     if (cache) {
       if (cache.source === "manual") {
         return cache.settings;
@@ -470,6 +510,17 @@ export const createConfigManager = (opts?: {
 
     setSettings: (settings: Settings): void => {
       cache = { source: "manual", settings: freezeSettings(settings) };
+    },
+
+    getContext: async (): Promise<ConfigContext> => {
+      const cwd = cwdProvider();
+      const zenoEnv = envProvider();
+      const { context } = await resolveContext({
+        cwd,
+        zenoEnv,
+        contextResolver,
+      });
+      return context;
     },
 
     clearCache: (): void => {

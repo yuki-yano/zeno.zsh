@@ -1,4 +1,4 @@
-import type { FzfOptions } from "./fzf.ts";
+import type { CompletionSourceFunction, FzfOptions } from "./fzf.ts";
 
 export type Settings = Readonly<{
   snippets: readonly Snippet[];
@@ -18,13 +18,30 @@ export type Snippet = Readonly<{
   evaluate?: boolean;
 }>;
 
-export type UserCompletionSource = Readonly<{
+type UserCompletionSourceBase = Readonly<{
   name: string;
   patterns: readonly string[];
   excludePatterns?: readonly string[];
-  sourceCommand: string;
   preview?: string;
   options?: FzfOptions;
-  callback: string;
+  callback?: string;
   callbackZero?: boolean;
 }>;
+
+export type UserCommandCompletionSource =
+  & UserCompletionSourceBase
+  & Readonly<{
+    sourceCommand: string;
+    sourceFunction?: never;
+  }>;
+
+export type UserFunctionCompletionSource =
+  & UserCompletionSourceBase
+  & Readonly<{
+    sourceFunction: CompletionSourceFunction;
+    sourceCommand?: never;
+  }>;
+
+export type UserCompletionSource =
+  | UserCommandCompletionSource
+  | UserFunctionCompletionSource;

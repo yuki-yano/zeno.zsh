@@ -6,7 +6,19 @@ import { insertSnippet } from "../../snippet/insert-snippet.ts";
 import { nextPlaceholder } from "../../snippet/next-placeholder.ts";
 import { completion } from "../../completion/completion.ts";
 import { fzfOptionsToString } from "../../fzf/option/convert.ts";
-import { handleNullableResult, handleStatusResult } from "../../app-helpers.ts";
+import {
+  handleNullableResult,
+  handleStatusResult,
+  writeResult,
+} from "../../app-helpers.ts";
+import type { WriteFunction } from "../../app-helpers.ts";
+import { getConfigContext } from "../../config/index.ts";
+import {
+  type CompletionFunctionSource,
+  isFunctionCompletionSource,
+} from "../../type/fzf.ts";
+
+const MAX_INLINE_COMMAND_LENGTH = 120_000;
 
 // Command implementations
 export const pidCommand = createCommand(
@@ -23,6 +35,7 @@ export const chdirCommand = createCommand(
       throw new Error("option required: --input.dir=<path>");
     }
     Deno.chdir(input.dir);
+    return Promise.resolve();
   },
 );
 
@@ -80,14 +93,108 @@ export const completionCommand = createCommand(
   "completion",
   async ({ input, writer }) => {
     const source = await completion(input);
-    await handleNullableResult(writer.write.bind(writer), source, (s) => [
-      s.sourceCommand,
-      fzfOptionsToString(s.options),
-      s.callback ?? "",
-      s.callbackZero ? "zero" : "",
-    ]);
+    if (!source) {
+      await writeResult(writer.write.bind(writer), "failure");
+      return;
+    }
+
+    if (isFunctionCompletionSource(source)) {
+      await handleFunctionCompletion(writer.write.bind(writer), source);
+      return;
+    }
+
+    await writeResult(
+      writer.write.bind(writer),
+      "success",
+      source.sourceCommand,
+      fzfOptionsToString(source.options),
+      source.callback ?? "",
+      source.callbackZero ? "zero" : "",
+    );
   },
 );
+
+const handleFunctionCompletion = async (
+  writeFn: WriteFunction,
+  source: CompletionFunctionSource,
+): Promise<void> => {
+  try {
+    const context = await getConfigContext();
+    const result = await source.sourceFunction(context);
+
+    if (!Array.isArray(result)) {
+      throw new Error(
+        "Completion source function must return an array (items will be stringified)",
+      );
+    }
+
+    const candidates = result.map((item) => `${item}`);
+    const options = source.options;
+    const separatorIsNull = Boolean(options["--read0"]);
+    const command = await createCandidatesCommand(candidates, separatorIsNull);
+
+    await writeResult(
+      writeFn,
+      "success",
+      command,
+      fzfOptionsToString(options),
+      source.callback ?? "",
+      source.callbackZero ? "zero" : "",
+    );
+  } catch (_error) {
+    await writeResult(writeFn, "failure");
+  }
+};
+
+const createCandidatesCommand = async (
+  candidates: readonly string[],
+  useNullSeparator: boolean,
+): Promise<string> => {
+  if (candidates.length === 0) {
+    return "printf ''";
+  }
+
+  const format = useNullSeparator ? "%s\\0" : "%s\\n";
+
+  let inlineLength = `printf '${format}'`.length;
+  const quotedCandidates: string[] = [];
+  let exceedsArgMax = false;
+
+  for (const candidate of candidates) {
+    const quoted = quoteForSingleShellArg(candidate);
+    inlineLength += quoted.length + 1; // account for the separating space
+    if (inlineLength > MAX_INLINE_COMMAND_LENGTH) {
+      exceedsArgMax = true;
+      break;
+    }
+    quotedCandidates.push(quoted);
+  }
+
+  if (!exceedsArgMax) {
+    return `printf '${format}' ${quotedCandidates.join(" ")}`;
+  }
+
+  const separator = useNullSeparator ? "\0" : "\n";
+  const trailing = useNullSeparator ? "\0" : "\n";
+  const tempFile = await Deno.makeTempFile({
+    prefix: "zeno-completion-",
+    suffix: useNullSeparator ? ".bin" : ".txt",
+  });
+  const encoder = new TextEncoder();
+  const payload = candidates.join(separator) + trailing;
+  await Deno.writeFile(tempFile, encoder.encode(payload));
+
+  const quotedPath = quoteForSingleShellArg(tempFile);
+  return `cat ${quotedPath}; rm -f ${quotedPath}`;
+};
+
+const quoteForSingleShellArg = (value: string): string => {
+  if (value.length === 0) {
+    return "''";
+  }
+
+  return `'${value.replace(/'/g, `'\"'\"'`)}'`;
+};
 
 /**
  * Create and register all commands

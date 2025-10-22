@@ -1,32 +1,7 @@
-/**
- * Context information provided to configuration functions
- */
-export type ConfigContext = {
-  /**
-   * The root directory of the project (usually where .git is located)
-   */
-  projectRoot: string;
+import type { ConfigContext } from "./context.ts";
+import type { Settings } from "./settings.ts";
 
-  /**
-   * The current working directory where zeno is being executed
-   */
-  currentDirectory: string;
-
-  /**
-   * Environment variables
-   */
-  env: Record<string, string | undefined>;
-
-  /**
-   * The shell type (zsh or fish)
-   */
-  shell: "zsh" | "fish";
-
-  /**
-   * User home directory
-   */
-  homeDirectory: string;
-};
+export type { ConfigContext } from "./context.ts";
 
 /**
  * Configuration function that returns Settings based on context
@@ -43,4 +18,3 @@ export type ConfigModule = {
 };
 
 // Re-export Settings for convenience
-import type { Settings } from "./settings.ts";

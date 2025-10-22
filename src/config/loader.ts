@@ -5,6 +5,30 @@ import { getEnv } from "./env.ts";
 export const DEFAULT_CONFIG_FILENAME = "config.yml";
 export const DEFAULT_APP_DIR = "zeno";
 
+const PATH_DELIMITER = (() => {
+  const maybePath = path as unknown as {
+    delimiter?: string;
+    DELIMITER?: string;
+  };
+  if (typeof maybePath.delimiter === "string") {
+    return maybePath.delimiter;
+  }
+  if (typeof maybePath.DELIMITER === "string") {
+    return maybePath.DELIMITER;
+  }
+  return Deno.build.os === "windows" ? ";" : ":";
+})();
+
+export const parseXdgConfigDirs = (raw: string): readonly string[] => {
+  if (raw.length === 0) {
+    return [];
+  }
+  return raw
+    .split(PATH_DELIMITER)
+    .map((dir) => dir.trim())
+    .filter((dir) => dir.length > 0);
+};
+
 export const getDefaultSettings = (): Settings => ({
   snippets: [],
   completions: [],
@@ -71,17 +95,49 @@ export const findConfigFilePath = async (): Promise<string> => {
     return path.join(env.HOME, DEFAULT_CONFIG_FILENAME);
   }
 
-  const configPaths = xdg.configDirs().map((baseDir) =>
-    path.join(baseDir, DEFAULT_APP_DIR, DEFAULT_CONFIG_FILENAME)
+  const configCandidates: string[] = [];
+
+  const xdgConfigHome = Deno.env.get("XDG_CONFIG_HOME");
+  if (xdgConfigHome) {
+    configCandidates.push(
+      path.join(xdgConfigHome, DEFAULT_APP_DIR, DEFAULT_CONFIG_FILENAME),
+    );
+  }
+
+  const envConfigDirs = parseXdgConfigDirs(
+    Deno.env.get("XDG_CONFIG_DIRS") ?? "",
   );
 
-  for (const configPath of configPaths) {
-    if (await exists(configPath)) {
-      return configPath;
+  configCandidates.push(
+    ...envConfigDirs.map((baseDir) =>
+      path.join(baseDir, DEFAULT_APP_DIR, DEFAULT_CONFIG_FILENAME)
+    ),
+  );
+
+  configCandidates.push(
+    ...xdg.configDirs().map((baseDir) =>
+      path.join(baseDir, DEFAULT_APP_DIR, DEFAULT_CONFIG_FILENAME)
+    ),
+  );
+
+  const seen = new Set<string>();
+  for (const candidate of configCandidates) {
+    if (seen.has(candidate)) {
+      continue;
+    }
+    seen.add(candidate);
+    if (await exists(candidate)) {
+      return candidate;
     }
   }
 
-  return configPaths[0];
+  const [firstCandidate] = seen;
+  if (firstCandidate) {
+    return firstCandidate;
+  }
+
+  // Fallback: emulate previous behavior when no candidates are available.
+  return path.join(Deno.cwd(), DEFAULT_CONFIG_FILENAME);
 };
 
 /**

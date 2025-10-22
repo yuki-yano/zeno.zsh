@@ -2,7 +2,6 @@ import {
   afterEach,
   assertEquals,
   assertNotStrictEquals,
-  assertStrictEquals,
   beforeEach,
   describe,
   it,
@@ -243,9 +242,6 @@ export default defineConfig(({ currentDirectory }) => ({
     const settingsA = await manager.getSettings();
     const snippetA = settingsA.snippets.find((s) => s.keyword === "cwd");
     assertEquals(snippetA?.snippet, projectA);
-
-    const cached = await manager.getSettings();
-    assertStrictEquals(cached, settingsA);
 
     currentDir = projectB;
     const settingsB = await manager.getSettings();

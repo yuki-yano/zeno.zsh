@@ -16,6 +16,7 @@ export {
 export {
   clearCache,
   findConfigFilePath as findConfigFile,
+  getConfigContext,
   getDefaultSettings,
   getSettings,
   loadConfigFile,

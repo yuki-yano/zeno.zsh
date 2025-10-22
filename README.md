@@ -330,6 +330,12 @@ completions:
     callbackZero: true # null termination is used in `callback` I/O
 ```
 
+TypeScript config files can also replace `sourceCommand` with a `sourceFunction`
+that returns completion candidates programmatically. The function receives the
+same `ConfigContext` as `defineConfig` and may return a `ReadonlyArray<string>`
+or a `Promise` of it. Only one of `sourceCommand` or `sourceFunction` can be
+specified for a completion.
+
 ### Example (TypeScript)
 
 TypeScript configs can be split into multiple files. Each file returns a partial
@@ -367,6 +373,7 @@ export default defineConfig(({ projectRoot, currentDirectory }) => ({
 ```ts
 // ~/.config/zeno/20-completions.ts
 import { defineConfig } from "jsr:@yuki-yano/zeno";
+import { join } from "jsr:@std/path@^1.0.0/join";
 
 export default defineConfig(({ projectRoot, currentDirectory }) => ({
   snippets: [],
@@ -388,7 +395,8 @@ export default defineConfig(({ projectRoot, currentDirectory }) => ({
     {
       name: "chdir",
       patterns: ["^cd $"],
-      sourceCommand: "find . -path '*/.git' -prune -o -maxdepth 5 -type d -print0",
+      sourceCommand:
+        "find . -path '*/.git' -prune -o -maxdepth 5 -type d -print0",
       options: {
         "--read0": true,
         "--prompt": "'Chdir> '",
@@ -396,6 +404,23 @@ export default defineConfig(({ projectRoot, currentDirectory }) => ({
       },
       callback: "cut -z -c 3-",
       callbackZero: true,
+    },
+    {
+      name: "npm scripts",
+      patterns: ["^npm run $"],
+      sourceFunction: async ({ projectRoot }) => {
+        try {
+          const pkgPath = join(projectRoot, "package.json");
+          const pkg = JSON.parse(
+            await Deno.readTextFile(pkgPath),
+          ) as { scripts?: Record<string, unknown> };
+          return Object.keys(pkg.scripts ?? {});
+        } catch {
+          return [];
+        }
+      },
+      options: { "--prompt": "'npm scripts> '" },
+      callback: "npm run {{}}",
     },
   ],
 }));
