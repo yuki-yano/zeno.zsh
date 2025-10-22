@@ -18,6 +18,7 @@ export {
 // Convenience functions for backward compatibility
 import { getConfigManager } from "./manager.ts";
 import type { Settings } from "../type/settings.ts";
+import type { ConfigContext } from "../type/config.ts";
 
 /**
  * Get the current zeno settings
@@ -25,6 +26,16 @@ import type { Settings } from "../type/settings.ts";
  */
 export const getSettings = (): Promise<Settings> => {
   return getConfigManager().getSettings();
+};
+
+/**
+ * Get the context used to evaluate configuration files.
+ * The context is derived lazily and refreshed on each invocation to reflect
+ * the latest working directory and environment state.
+ * @returns Promise resolving to the current configuration context
+ */
+export const getConfigContext = (): Promise<ConfigContext> => {
+  return getConfigManager().getContext();
 };
 
 /**

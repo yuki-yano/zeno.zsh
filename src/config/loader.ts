@@ -71,17 +71,50 @@ export const findConfigFilePath = async (): Promise<string> => {
     return path.join(env.HOME, DEFAULT_CONFIG_FILENAME);
   }
 
-  const configPaths = xdg.configDirs().map((baseDir) =>
-    path.join(baseDir, DEFAULT_APP_DIR, DEFAULT_CONFIG_FILENAME)
+  const configCandidates: string[] = [];
+
+  const xdgConfigHome = Deno.env.get("XDG_CONFIG_HOME");
+  if (xdgConfigHome) {
+    configCandidates.push(
+      path.join(xdgConfigHome, DEFAULT_APP_DIR, DEFAULT_CONFIG_FILENAME),
+    );
+  }
+
+  const envConfigDirsRaw = Deno.env.get("XDG_CONFIG_DIRS") ?? "";
+  const envConfigDirs = envConfigDirsRaw.length > 0
+    ? envConfigDirsRaw.split(path.DELIMITER).filter((dir) => dir.length > 0)
+    : [];
+
+  configCandidates.push(
+    ...envConfigDirs.map((baseDir) =>
+      path.join(baseDir, DEFAULT_APP_DIR, DEFAULT_CONFIG_FILENAME)
+    ),
   );
 
-  for (const configPath of configPaths) {
-    if (await exists(configPath)) {
-      return configPath;
+  configCandidates.push(
+    ...xdg.configDirs().map((baseDir) =>
+      path.join(baseDir, DEFAULT_APP_DIR, DEFAULT_CONFIG_FILENAME)
+    ),
+  );
+
+  const seen = new Set<string>();
+  for (const candidate of configCandidates) {
+    if (seen.has(candidate)) {
+      continue;
+    }
+    seen.add(candidate);
+    if (await exists(candidate)) {
+      return candidate;
     }
   }
 
-  return configPaths[0];
+  const [firstCandidate] = seen;
+  if (firstCandidate) {
+    return firstCandidate;
+  }
+
+  // Fallback: emulate previous behavior when no candidates are available.
+  return path.join(Deno.cwd(), DEFAULT_CONFIG_FILENAME);
 };
 
 /**

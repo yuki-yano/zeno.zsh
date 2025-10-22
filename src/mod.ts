@@ -32,14 +32,28 @@ import type { ConfigFunction } from "./type/config.ts";
 export type {
   Settings,
   Snippet,
+  UserCommandCompletionSource,
   UserCompletionSource,
+  UserFunctionCompletionSource,
 } from "./type/settings.ts";
+
+export type { CompletionSourceFunction } from "./type/fzf.ts";
 
 export type {
   ConfigContext,
   ConfigFunction,
   ConfigModule,
 } from "./type/config.ts";
+
+export {
+  clearCache,
+  findConfigFilePath as findConfigFile,
+  getConfigContext,
+  getDefaultSettings,
+  getSettings,
+  loadConfigFile,
+  setSettings,
+} from "./config/index.ts";
 
 /**
  * Internal marker used to verify that exported configuration functions
