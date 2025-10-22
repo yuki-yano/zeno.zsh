@@ -18,6 +18,8 @@ import {
   isFunctionCompletionSource,
 } from "../../type/fzf.ts";
 
+const MAX_INLINE_COMMAND_LENGTH = 120_000;
+
 // Command implementations
 export const pidCommand = createCommand(
   "pid",
@@ -127,14 +129,15 @@ const handleFunctionCompletion = async (
     }
 
     const candidates = result.map((item) => `${item}`);
-    const separatorIsNull = Boolean(source.options["--read0"]);
-    const command = createPrintfCommand(candidates, separatorIsNull);
+    const options = source.options;
+    const separatorIsNull = Boolean(options["--read0"]);
+    const command = await createCandidatesCommand(candidates, separatorIsNull);
 
     await writeResult(
       writeFn,
       "success",
       command,
-      fzfOptionsToString(source.options),
+      fzfOptionsToString(options),
       source.callback ?? "",
       source.callbackZero ? "zero" : "",
     );
@@ -143,21 +146,55 @@ const handleFunctionCompletion = async (
   }
 };
 
-const createPrintfCommand = (
+const createCandidatesCommand = async (
   candidates: readonly string[],
   useNullSeparator: boolean,
-): string => {
+): Promise<string> => {
   if (candidates.length === 0) {
     return "printf ''";
   }
 
   const format = useNullSeparator ? "%s\\0" : "%s\\n";
-  const quotedCandidates = candidates.map(quoteForSingleShellArg).join(" ");
-  return `printf '${format}' ${quotedCandidates}`;
+
+  let inlineLength = `printf '${format}'`.length;
+  const quotedCandidates: string[] = [];
+  let exceedsArgMax = false;
+
+  for (const candidate of candidates) {
+    const quoted = quoteForSingleShellArg(candidate);
+    inlineLength += quoted.length + 1; // account for the separating space
+    if (inlineLength > MAX_INLINE_COMMAND_LENGTH) {
+      exceedsArgMax = true;
+      break;
+    }
+    quotedCandidates.push(quoted);
+  }
+
+  if (!exceedsArgMax) {
+    return `printf '${format}' ${quotedCandidates.join(" ")}`;
+  }
+
+  const separator = useNullSeparator ? "\0" : "\n";
+  const trailing = useNullSeparator ? "\0" : "\n";
+  const tempFile = await Deno.makeTempFile({
+    prefix: "zeno-completion-",
+    suffix: useNullSeparator ? ".bin" : ".txt",
+  });
+  const encoder = new TextEncoder();
+  const payload = candidates.join(separator) + trailing;
+  await Deno.writeFile(tempFile, encoder.encode(payload));
+
+  const quotedPath = quoteForSingleShellArg(tempFile);
+  return `cat ${quotedPath}; rm -f ${quotedPath}`;
 };
 
-const quoteForSingleShellArg = (value: string): string =>
-  `'${value.replace(/'/g, `'\\''`)}'`;
+const quoteForSingleShellArg = (value: string): string => {
+  if (value.length === 0) {
+    return "''";
+  }
+
+  return `'${value.replace(/'/g, `'\"'\"'`)}'`;
+};
 
 /**
  * Create and register all commands

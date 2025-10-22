@@ -5,6 +5,30 @@ import { getEnv } from "./env.ts";
 export const DEFAULT_CONFIG_FILENAME = "config.yml";
 export const DEFAULT_APP_DIR = "zeno";
 
+const PATH_DELIMITER = (() => {
+  const maybePath = path as unknown as {
+    delimiter?: string;
+    DELIMITER?: string;
+  };
+  if (typeof maybePath.delimiter === "string") {
+    return maybePath.delimiter;
+  }
+  if (typeof maybePath.DELIMITER === "string") {
+    return maybePath.DELIMITER;
+  }
+  return Deno.build.os === "windows" ? ";" : ":";
+})();
+
+export const parseXdgConfigDirs = (raw: string): readonly string[] => {
+  if (raw.length === 0) {
+    return [];
+  }
+  return raw
+    .split(PATH_DELIMITER)
+    .map((dir) => dir.trim())
+    .filter((dir) => dir.length > 0);
+};
+
 export const getDefaultSettings = (): Settings => ({
   snippets: [],
   completions: [],
@@ -80,10 +104,9 @@ export const findConfigFilePath = async (): Promise<string> => {
     );
   }
 
-  const envConfigDirsRaw = Deno.env.get("XDG_CONFIG_DIRS") ?? "";
-  const envConfigDirs = envConfigDirsRaw.length > 0
-    ? envConfigDirsRaw.split(path.DELIMITER).filter((dir) => dir.length > 0)
-    : [];
+  const envConfigDirs = parseXdgConfigDirs(
+    Deno.env.get("XDG_CONFIG_DIRS") ?? "",
+  );
 
   configCandidates.push(
     ...envConfigDirs.map((baseDir) =>

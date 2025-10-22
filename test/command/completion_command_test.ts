@@ -111,7 +111,7 @@ describe("completionCommand with sourceFunction", () => {
     });
 
     assertEquals(output[0], "success");
-    const expected = "printf '%s\\n' 'O'\\''Reilly' 'spaced name'";
+    const expected = "printf '%s\\n' 'O'\"'\"'Reilly' 'spaced name'";
     assertEquals(output[1], expected);
   });
 
