@@ -1,5 +1,5 @@
 import { assertEquals, beforeAll, describe, it } from "../deps.ts";
-import { parametrize } from "../helpers.ts";
+import { parametrize, withHistoryDefaults } from "../helpers.ts";
 
 import { autoSnippet } from "../../src/snippet/auto-snippet.ts";
 import type { AutoSnippetData } from "../../src/snippet/auto-snippet.ts";
@@ -8,7 +8,7 @@ import type { Input } from "../../src/type/shell.ts";
 
 describe("snippet/auto-snippet", () => {
   beforeAll(() => {
-    setSettings({
+    setSettings(withHistoryDefaults({
       snippets: [
         {
           name: "git status",
@@ -48,7 +48,7 @@ describe("snippet/auto-snippet", () => {
         },
       ],
       completions: [],
-    });
+    }));
   });
 
   describe("autoSnippet()", () => {

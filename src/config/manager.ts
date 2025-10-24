@@ -2,10 +2,18 @@ import { exists, path, xdg } from "../deps.ts";
 import { CONFIG_FUNCTION_MARK, directoryExists, fileExists } from "../mod.ts";
 import type { ConfigContext } from "../type/config.ts";
 import type {
+  HistorySettings,
   Settings,
   Snippet,
   UserCompletionSource,
 } from "../type/settings.ts";
+import {
+  accumulateHistorySettings,
+  cloneHistorySettings,
+  createHistoryAccumulatorState,
+  finalizeHistorySettings,
+  parseHistoryConfig,
+} from "./history.ts";
 import {
   DEFAULT_APP_DIR,
   DEFAULT_CONFIG_FILENAME,
@@ -159,10 +167,12 @@ const cloneAndFreezeCompletion = (
 const freezeSettings = (settings: {
   snippets: readonly Snippet[];
   completions: readonly UserCompletionSource[];
+  history: HistorySettings;
 }): Settings =>
   Object.freeze({
     snippets: settings.snippets.map(cloneAndFreezeSnippet),
     completions: settings.completions.map(cloneAndFreezeCompletion),
+    history: cloneHistorySettings(settings.history),
   }) as Settings;
 
 export const mergeSettingsList = (
@@ -172,9 +182,15 @@ export const mergeSettingsList = (
     return freezeSettings(getDefaultSettings());
   }
 
+  const historyState = settingsList.reduce(
+    (state, settings) => accumulateHistorySettings(state, settings.history),
+    createHistoryAccumulatorState(),
+  );
+
   const merged = {
     snippets: settingsList.flatMap((settings) => settings.snippets),
     completions: settingsList.flatMap((settings) => settings.completions),
+    history: finalizeHistorySettings(historyState),
   };
 
   return freezeSettings(merged);
@@ -185,6 +201,7 @@ const normalizeSettings = (value: unknown): Settings => {
     const maybe = value as {
       snippets?: unknown;
       completions?: unknown;
+      history?: unknown;
     };
     const snippets = Array.isArray(maybe.snippets)
       ? maybe.snippets as ReadonlyArray<Snippet>
@@ -192,8 +209,9 @@ const normalizeSettings = (value: unknown): Settings => {
     const completions = Array.isArray(maybe.completions)
       ? maybe.completions as ReadonlyArray<UserCompletionSource>
       : [];
+    const history = parseHistoryConfig(maybe.history);
 
-    return freezeSettings({ snippets, completions });
+    return freezeSettings({ snippets, completions, history });
   }
 
   return freezeSettings(getDefaultSettings());

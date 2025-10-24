@@ -1,5 +1,5 @@
 import { assertEquals, beforeAll, describe, it } from "../deps.ts";
-import { parametrize } from "../helpers.ts";
+import { parametrize, withHistoryDefaults } from "../helpers.ts";
 
 import { insertSnippet } from "../../src/snippet/insert-snippet.ts";
 import type { InsertSnippetData } from "../../src/snippet/insert-snippet.ts";
@@ -8,7 +8,7 @@ import type { Input } from "../../src/type/shell.ts";
 
 describe("snippet/insert-snippet", () => {
   beforeAll(() => {
-    setSettings({
+    setSettings(withHistoryDefaults({
       snippets: [
         {
           name: "foo",
@@ -34,7 +34,7 @@ describe("snippet/insert-snippet", () => {
         },
       ],
       completions: [],
-    });
+    }));
   });
 
   describe("insertSnippet()", () => {

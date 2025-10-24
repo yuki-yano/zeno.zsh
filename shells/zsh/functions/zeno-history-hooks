@@ -1,0 +1,168 @@
+#autoload
+
+function zeno-history-hooks() {
+  emulate -L zsh
+
+  autoload -Uz add-zsh-hook
+
+  typeset -g ZENO_HISTORY_SESSION_ID
+  typeset -g ZENO_HISTORY_LAST_COMMAND
+  typeset -g ZENO_HISTORY_LAST_STARTED_AT
+  typeset -g ZENO_HISTORY_LAST_PWD
+  typeset -g ZENO_HISTORY_SUPPRESS
+
+  if [[ -z ${ZENO_HISTORY_SESSION_ID-} ]]; then
+    local random_component
+    random_component=$(printf '%08x' $RANDOM $RANDOM 2>/dev/null)
+    ZENO_HISTORY_SESSION_ID="${EPOCHSECONDS}-${$}-${random_component}"
+  fi
+
+  zmodload zsh/datetime 2>/dev/null
+
+  function zeno-history-preexec() {
+    emulate -L zsh
+    if [[ -n ${ZENO_HISTORY_SUPPRESS-} ]]; then
+      return
+    fi
+
+    typeset -g ZENO_HISTORY_LAST_COMMAND="$1"
+    typeset -g ZENO_HISTORY_LAST_STARTED_AT="$EPOCHREALTIME"
+    typeset -g ZENO_HISTORY_LAST_PWD="$PWD"
+  }
+
+  function zeno-history-format-iso() {
+    emulate -L zsh
+
+    local realtime="$1"
+    if [[ -z $realtime ]]; then
+      realtime="$EPOCHREALTIME"
+    fi
+
+    local seconds part_fraction
+    if [[ $realtime == *.* ]]; then
+      seconds="${realtime%%.*}"
+      part_fraction="${realtime#*.}"
+    else
+      seconds="$realtime"
+      part_fraction=""
+    fi
+
+    if [[ -z $seconds ]]; then
+      seconds="$EPOCHSECONDS"
+    fi
+
+    local iso=""
+    if command -v date >/dev/null 2>&1; then
+      iso=$(command date -u -r "$seconds" "+%Y-%m-%dT%H:%M:%S" 2>/dev/null || true)
+      if [[ -z $iso ]]; then
+        iso=$(command date -u -d "@${seconds}" "+%Y-%m-%dT%H:%M:%S" 2>/dev/null || true)
+      fi
+    fi
+
+    if [[ -z $iso ]]; then
+      local TZ=UTC
+      iso=$(strftime "%Y-%m-%dT%H:%M:%S" "$seconds" 2>/dev/null || true)
+    fi
+
+    if [[ -z $iso ]]; then
+      iso=$(command date -u "+%Y-%m-%dT%H:%M:%S" 2>/dev/null || true)
+    fi
+
+    part_fraction="${part_fraction%%[!0-9]*}"
+    part_fraction="${part_fraction:0:3}"
+    part_fraction="${(l:3::0:)part_fraction}"
+
+    printf '%s.%sZ' "$iso" "$part_fraction"
+  }
+
+  function zeno-history-duration-ms() {
+    emulate -L zsh
+
+    local start="$1"
+    local finish="$2"
+
+    if [[ -z $start || -z $finish ]]; then
+      return
+    fi
+
+    local -F 10 start_f="$start"
+    local -F 10 finish_f="$finish"
+    local -F 10 diff
+    diff=$(( finish_f - start_f ))
+    if (( diff < 0 )); then
+      diff=0
+    fi
+
+    local -F 10 ms
+    ms=$(( diff * 1000 ))
+    printf '%.0f' "$ms"
+  }
+
+  function zeno-history-precmd() {
+    local exit_status=$?
+    emulate -L zsh
+    if [[ -z ${ZENO_HISTORY_LAST_COMMAND-} ]]; then
+      return
+    fi
+
+    if [[ -n ${ZENO_HISTORY_SUPPRESS-} ]]; then
+      return
+    fi
+
+    local started_at="${ZENO_HISTORY_LAST_STARTED_AT-}"
+    local finished_at="$EPOCHREALTIME"
+    local ts duration_ms
+
+    if [[ -n $started_at ]]; then
+      ts=$(zeno-history-format-iso "$started_at")
+      duration_ms=$(zeno-history-duration-ms "$started_at" "$finished_at")
+    else
+      ts=$(zeno-history-format-iso "")
+      duration_ms=""
+    fi
+
+    local args
+    args=(
+      history log
+      --cmd "$ZENO_HISTORY_LAST_COMMAND"
+      --exit "$exit_status"
+    )
+
+    if [[ -n ${ZENO_HISTORY_LAST_PWD-} ]]; then
+      args+=(--pwd "$ZENO_HISTORY_LAST_PWD")
+    fi
+
+    if [[ -n $ts ]]; then
+      args+=(--ts "$ts")
+    fi
+
+    if [[ -n $duration_ms ]]; then
+      args+=(--duration-ms "$duration_ms")
+    fi
+
+    if [[ -n ${ZENO_HISTORY_SESSION_ID-} ]]; then
+      args+=(--session "$ZENO_HISTORY_SESSION_ID")
+    fi
+
+    if [[ -n ${HOST-} ]]; then
+      args+=(--host "$HOST")
+    fi
+
+    if [[ -n ${USER-} ]]; then
+      args+=(--user "$USER")
+    fi
+
+    args+=(--shell "${ZSH_NAME:-zsh}")
+
+    ZENO_HISTORY_SUPPRESS=1
+    zeno-call-client-and-fallback "${args[@]}" >/dev/null 2>&1
+    unset ZENO_HISTORY_SUPPRESS
+
+    unset ZENO_HISTORY_LAST_COMMAND ZENO_HISTORY_LAST_STARTED_AT ZENO_HISTORY_LAST_PWD
+  }
+
+  add-zsh-hook -d preexec zeno-history-preexec 2>/dev/null
+  add-zsh-hook -d precmd zeno-history-precmd 2>/dev/null
+  add-zsh-hook preexec zeno-history-preexec
+  add-zsh-hook precmd zeno-history-precmd
+}

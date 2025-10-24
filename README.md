@@ -9,6 +9,7 @@ Zsh/Fish fuzzy completion and utility plugin with [Deno](https://deno.land/).
   - Builtin git completion
   - User defined completion
 - ZLE utilities
+- History+ (global / repository / directory / session scopes, delete, export/import)
 
 ## Demo
 
@@ -134,9 +135,13 @@ Git Add Files> ...
 
 Use zeno-insert-snippet zle
 
-### Search history
+### Search history (History+)
 
-Use zeno-history-completion zle
+- Press `Ctrl-R` to open the History+ widget; press it again to cycle the scope in the order `global → repository → directory → session`.
+- Search the command column (fzf ignores the time column), and press Enter to paste the raw command into your prompt.
+- Press `Ctrl-D` for a soft delete (logical delete) or `Alt-D` for a hard delete that also edits your `HISTFILE`.
+- Use `zeno history query|log|delete|export|import` to work directly with the SQLite-backed history from scripts.
+- Configure `history.fzf_command` / `history.fzf_options` in your YAML or TypeScript config to override the fzf (or fzf-tmux) command and its options.
 
 ### Change ghq managed repository
 
@@ -187,6 +192,13 @@ export ZENO_GIT_CAT="cat"
 export ZENO_GIT_TREE="tree"
 # git folder preview with color
 # export ZENO_GIT_TREE="eza --tree"
+
+# History settings example (zeno.config.yml)
+# history:
+#   fzf_command: "fzf-tmux"
+#   fzf_options:
+#     - "-p"
+#     - "80%"
 
 if [[ -n $ZENO_LOADED ]]; then
   bindkey ' '  zeno-auto-snippet

@@ -8,6 +8,7 @@ deno_flags=(
   --allow-read
   --allow-run
   --allow-write
+  --allow-ffi
 )
 
 # NOTE: Suppress --quiet when auto-snippet runs first because Deno's initial dependency downloads flood stderr,

@@ -15,7 +15,30 @@ import {
   loadConfigFile,
   setSettings,
 } from "../src/settings.ts";
-import type { Snippet, UserCompletionSource } from "../src/type/settings.ts";
+import type {
+  HistorySettings,
+  Snippet,
+  UserCompletionSource,
+} from "../src/type/settings.ts";
+
+const createDefaultHistory = (): HistorySettings => ({
+  defaultScope: "global",
+  redact: [],
+  keymap: {
+    deleteSoft: "ctrl-d",
+    deleteHard: "alt-d",
+    toggleScope: "ctrl-r",
+  },
+  fzfCommand: undefined,
+  fzfOptions: undefined,
+});
+
+const withDefaultHistory = <T extends Record<string, unknown>>(
+  value: T,
+): T & { history: HistorySettings } => ({
+  ...value,
+  history: createDefaultHistory(),
+});
 
 describe("settings", () => {
   const context = new Helper();
@@ -121,10 +144,13 @@ describe("settings", () => {
 
       const settings = await loadConfigFile(existConfigFile);
 
-      assertEquals(settings, {
-        snippets: [],
-        completions: [],
-      });
+      assertEquals(
+        settings,
+        withDefaultHistory({
+          snippets: [],
+          completions: [],
+        }),
+      );
     });
 
     it("returns parsed Settings", async () => {
@@ -173,10 +199,13 @@ completions:
 
       const settings = await loadConfigFile(existConfigFile);
 
-      assertEquals(settings, {
-        snippets: expectedSnippets,
-        completions: expectedCompletions,
-      });
+      assertEquals(
+        settings,
+        withDefaultHistory({
+          snippets: expectedSnippets,
+          completions: expectedCompletions,
+        }),
+      );
     });
   });
 
@@ -200,10 +229,13 @@ completions:
 
       const settings = await getSettings();
 
-      assertEquals(settings, {
-        snippets: [],
-        completions: [],
-      });
+      assertEquals(
+        settings,
+        withDefaultHistory({
+          snippets: [],
+          completions: [],
+        }),
+      );
     });
 
     it("returns Settings from detected config file", async () => {
@@ -233,10 +265,13 @@ snippets:
 
       const settings = await getSettings();
 
-      assertEquals(settings, {
-        snippets: expectedSnippets,
-        completions: [],
-      });
+      assertEquals(
+        settings,
+        withDefaultHistory({
+          snippets: expectedSnippets,
+          completions: [],
+        }),
+      );
     });
 
     it("returns Settings from cache", async () => {
@@ -250,10 +285,13 @@ snippets:
 
       // Call getSettings to generate cache.
       const settings = await getSettings();
-      assertEquals(settings, {
-        snippets: [],
-        completions: [],
-      });
+      assertEquals(
+        settings,
+        withDefaultHistory({
+          snippets: [],
+          completions: [],
+        }),
+      );
 
       // Update cache.
       const expectedSnippets: Snippet[] = [
@@ -262,18 +300,23 @@ snippets:
           snippet: "git status",
         },
       ];
-      setSettings({
-        snippets: expectedSnippets,
-        completions: [],
-      });
+      setSettings(
+        withDefaultHistory({
+          snippets: expectedSnippets,
+          completions: [],
+        }),
+      );
 
       // Call getSettings again
       const cachedSettings = await getSettings();
 
-      assertEquals(cachedSettings, {
-        snippets: expectedSnippets,
-        completions: [],
-      });
+      assertEquals(
+        cachedSettings,
+        withDefaultHistory({
+          snippets: expectedSnippets,
+          completions: [],
+        }),
+      );
     });
   });
 
@@ -285,10 +328,10 @@ snippets:
           snippet: "git status",
         },
       ];
-      const expectedSettings = {
+      const expectedSettings = withDefaultHistory({
         snippets: expectedSnippets,
         completions: [],
-      };
+      });
 
       setSettings(expectedSettings);
       const settings = await getSettings();
@@ -314,10 +357,12 @@ snippets:
           snippet: "git status",
         },
       ];
-      setSettings({
-        snippets: expectedSnippets,
-        completions: [],
-      });
+      setSettings(
+        withDefaultHistory({
+          snippets: expectedSnippets,
+          completions: [],
+        }),
+      );
 
       // Clear cache
       clearCache();
@@ -326,10 +371,13 @@ snippets:
       const settings = await getSettings();
 
       // It should not return the cached value
-      assertEquals(settings, {
-        snippets: [],
-        completions: [],
-      });
+      assertEquals(
+        settings,
+        withDefaultHistory({
+          snippets: [],
+          completions: [],
+        }),
+      );
     });
   });
 });

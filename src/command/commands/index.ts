@@ -12,11 +12,19 @@ import {
   writeResult,
 } from "../../app-helpers.ts";
 import type { WriteFunction } from "../../app-helpers.ts";
-import { getConfigContext } from "../../config/index.ts";
+import { getConfigContext, getSettings } from "../../config/index.ts";
 import {
   type CompletionFunctionSource,
   isFunctionCompletionSource,
 } from "../../type/fzf.ts";
+import { createHistoryLogCommand } from "../../history/log-command.ts";
+import { createHistoryQueryCommand } from "../../history/query-command.ts";
+import { createHistoryDeleteCommand } from "../../history/delete-command.ts";
+import { createHistoryExportCommand } from "../../history/export-command.ts";
+import { createHistoryImportCommand } from "../../history/import-command.ts";
+import { createHistoryFzfConfigCommand } from "../../history/fzf-config-command.ts";
+import { getHistoryModule } from "../../history/runtime.ts";
+import { ulid } from "../../deps.ts";
 
 const MAX_INLINE_COMMAND_LENGTH = 120_000;
 
@@ -210,6 +218,44 @@ export const createCommandRegistry = () => {
   registry.register(insertSnippetCommand);
   registry.register(nextPlaceholderCommand);
   registry.register(completionCommand);
+  registry.register(
+    createHistoryLogCommand({
+      getHistoryModule,
+      loadHistorySettings: async () => (await getSettings()).history,
+      generateId: () => ulid(),
+      now: () => new Date().toISOString(),
+    }),
+  );
+  registry.register(
+    createHistoryQueryCommand({
+      getHistoryModule,
+      loadHistorySettings: async () => (await getSettings()).history,
+      now: () => new Date(),
+    }),
+  );
+  registry.register(
+    createHistoryFzfConfigCommand({
+      loadHistorySettings: async () => (await getSettings()).history,
+    }),
+  );
+  registry.register(
+    createHistoryDeleteCommand({
+      getHistoryModule,
+    }),
+  );
+  registry.register(
+    createHistoryExportCommand({
+      getHistoryModule,
+      loadHistorySettings: async () => (await getSettings()).history,
+      now: () => new Date(),
+    }),
+  );
+  registry.register(
+    createHistoryImportCommand({
+      getHistoryModule,
+      loadHistorySettings: async () => (await getSettings()).history,
+    }),
+  );
 
   return registry;
 };

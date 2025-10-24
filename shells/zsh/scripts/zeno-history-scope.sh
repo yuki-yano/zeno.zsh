@@ -1,0 +1,52 @@
+#!/bin/sh
+set -eu
+
+state_file=${1:?state file required}
+debug_log=${2:-}
+global_file=${3:?global file required}
+repository_file=${4:?repository file required}
+directory_file=${5:?directory file required}
+session_file=${6:?session file required}
+
+scope=$(cat "$state_file" 2>/dev/null || true)
+[ -z "$scope" ] && scope=global
+case "$scope" in
+  global) target="$global_file" ;;
+  repository) target="$repository_file" ;;
+  directory) target="$directory_file" ;;
+  session) target="$session_file" ;;
+  *) target="$global_file" ;;
+esac
+
+header_dim=$(printf '\033[2m')
+header_reset=$(printf '\033[0m')
+header_active=$(printf '\033[1;36m')
+
+header=""
+for name in global repository directory session; do
+  if [ "$name" = "$scope" ]; then
+    header="$header ${header_active}[${name}]${header_reset}"
+  else
+    header="$header ${header_dim}${name}${header_reset}"
+  fi
+done
+header=${header# }
+
+printf '\t%s\n' "$header"
+
+filter_stream() {
+  while IFS= read -r line; do
+    case "$line" in
+      $'\t'scope:*)
+        continue
+        ;;
+    esac
+    printf '%s\n' "$line"
+  done
+}
+
+if [ -f "$target" ]; then
+  filter_stream <"$target"
+fi
+
+tail -n 0 -F "$target" | filter_stream

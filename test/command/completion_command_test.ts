@@ -1,5 +1,5 @@
 import { afterEach, assertEquals, beforeEach, describe, it } from "../deps.ts";
-import { Helper } from "../helpers.ts";
+import { Helper, withHistoryDefaults } from "../helpers.ts";
 import { completionCommand } from "../../src/command/commands/index.ts";
 import { getCompletionSourceCache } from "../../src/completion/source/cache.ts";
 import { clearCache, setSettings } from "../../src/settings.ts";
@@ -29,7 +29,7 @@ describe("completionCommand with sourceFunction", () => {
 
   it("evaluates sourceFunction and encodes newline separated results", async () => {
     const captured: string[] = [];
-    setSettings({
+    setSettings(withHistoryDefaults({
       snippets: [],
       completions: [{
         name: "dynamic",
@@ -39,7 +39,7 @@ describe("completionCommand with sourceFunction", () => {
           return ["alpha", "beta"];
         },
       }],
-    });
+    }));
 
     const output: string[] = [];
     await completionCommand.execute({
@@ -60,7 +60,7 @@ describe("completionCommand with sourceFunction", () => {
 
   it("uses null separated encoding when --read0 is specified", async () => {
     const invoked: number[] = [];
-    setSettings({
+    setSettings(withHistoryDefaults({
       snippets: [],
       completions: [{
         name: "dynamic",
@@ -71,7 +71,7 @@ describe("completionCommand with sourceFunction", () => {
         },
         options: { "--read0": true },
       }],
-    });
+    }));
 
     const output: string[] = [];
     await completionCommand.execute({
@@ -90,14 +90,14 @@ describe("completionCommand with sourceFunction", () => {
   });
 
   it("quotes candidates with spaces and single quotes", async () => {
-    setSettings({
+    setSettings(withHistoryDefaults({
       snippets: [],
       completions: [{
         name: "quote",
         patterns: ["^q"],
         sourceFunction: (_context) => ["O'Reilly", "spaced name"],
       }],
-    });
+    }));
 
     const output: string[] = [];
     await completionCommand.execute({
@@ -116,14 +116,14 @@ describe("completionCommand with sourceFunction", () => {
   });
 
   it("encodes empty result as printf ''", async () => {
-    setSettings({
+    setSettings(withHistoryDefaults({
       snippets: [],
       completions: [{
         name: "empty",
         patterns: ["^e"],
         sourceFunction: (_context) => [],
       }],
-    });
+    }));
 
     const output: string[] = [];
     await completionCommand.execute({
@@ -141,14 +141,14 @@ describe("completionCommand with sourceFunction", () => {
   });
 
   it("supports async sourceFunction", async () => {
-    setSettings({
+    setSettings(withHistoryDefaults({
       snippets: [],
       completions: [{
         name: "async",
         patterns: ["^a"],
         sourceFunction: (_context) => Promise.resolve(["async-value"]),
       }],
-    });
+    }));
 
     const output: string[] = [];
     await completionCommand.execute({
@@ -166,7 +166,7 @@ describe("completionCommand with sourceFunction", () => {
   });
 
   it("returns failure when sourceFunction throws", async () => {
-    setSettings({
+    setSettings(withHistoryDefaults({
       snippets: [],
       completions: [{
         name: "dynamic",
@@ -175,7 +175,7 @@ describe("completionCommand with sourceFunction", () => {
           throw new Error("boom");
         },
       }],
-    });
+    }));
 
     const output: string[] = [];
     await completionCommand.execute({

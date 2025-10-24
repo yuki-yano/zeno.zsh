@@ -3,7 +3,7 @@
 .DEFAULT_GOAL := help
 
 SRCS := ./src ./test
-ALLOW := --allow-env --allow-read --allow-run --allow-write
+ALLOW := --allow-env --allow-read --allow-run --allow-write --allow-ffi
 FLAG := --unstable-byonm
 TEST_FLAG := ${FLAG}
 

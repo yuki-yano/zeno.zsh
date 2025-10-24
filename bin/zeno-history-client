@@ -1,0 +1,27 @@
+#!/usr/bin/env zsh
+
+emulate -L zsh
+setopt no_aliases
+
+local script_dir=${0:A:h}
+local zeno_root=${ZENO_ROOT:-${script_dir:h}}
+
+path=(${zeno_root}/bin $path)
+typeset -gx PATH
+typeset -gx ZENO_ROOT=$zeno_root
+
+local functions_dir=${zeno_root}/shells/zsh/functions
+if [[ -d $functions_dir ]]; then
+  local idx=${fpath[(I)$functions_dir]}
+  if (( idx == 0 )); then
+    fpath=($functions_dir $fpath)
+  fi
+fi
+
+autoload -Uz zeno-call-client-and-fallback zeno-enable-sock 2>/dev/null
+
+if [[ -z ${ZENO_DISABLE_SOCK-} ]]; then
+  (( $+functions[zeno-enable-sock] )) && zeno-enable-sock
+fi
+
+zeno-call-client-and-fallback "$@"
