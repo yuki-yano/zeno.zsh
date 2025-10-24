@@ -31,11 +31,11 @@ const createHistorySettings = () => ({
 describe("history log command", () => {
   it("fails when historyLog payload is absent", async () => {
     const command = createHistoryLogCommand({
-      async getHistoryModule() {
-        throw new Error("should not be called");
+      getHistoryModule() {
+        return Promise.reject(new Error("should not be called"));
       },
-      async loadHistorySettings() {
-        return createHistorySettings();
+      loadHistorySettings() {
+        return Promise.resolve(createHistorySettings());
       },
       generateId: () => "01TESTID000000000000000000",
       now: () => "2024-01-01T00:00:00.000Z",
@@ -55,32 +55,32 @@ describe("history log command", () => {
   it("invokes module with parsed payload and reports success", async () => {
     const captured: LogCommandInput[] = [];
     const command = createHistoryLogCommand({
-      async getHistoryModule() {
-        return {
-          async logCommand(payload) {
+      getHistoryModule() {
+        return Promise.resolve({
+          logCommand(payload) {
             captured.push(payload);
-            return { ok: true as const, value: undefined };
+            return Promise.resolve({ ok: true as const, value: undefined });
           },
           setRedactPatterns() {},
-          async queryHistory() {
-            return { ok: true as const, value: { items: [] } };
+          queryHistory() {
+            return Promise.resolve({ ok: true as const, value: { items: [] } });
           },
-          async deleteHistory() {
-            return { ok: true as const, value: undefined };
+          deleteHistory() {
+            return Promise.resolve({ ok: true as const, value: undefined });
           },
-          async exportHistory() {
-            return { ok: true as const, value: undefined };
+          exportHistory() {
+            return Promise.resolve({ ok: true as const, value: undefined });
           },
-          async importHistory() {
-            return {
+          importHistory() {
+            return Promise.resolve({
               ok: true as const,
               value: { added: 0, skipped: 0, total: 0 },
-            };
+            });
           },
-        };
+        });
       },
-      async loadHistorySettings() {
-        return createHistorySettings();
+      loadHistorySettings() {
+        return Promise.resolve(createHistorySettings());
       },
       generateId: () => "01TESTID000000000000000000",
       now: () => "2024-01-01T00:00:00.000Z",
@@ -116,37 +116,37 @@ describe("history log command", () => {
 
   it("reports failure when module returns an error", async () => {
     const command = createHistoryLogCommand({
-      async getHistoryModule() {
-        return {
-          async logCommand() {
-            return {
+      getHistoryModule() {
+        return Promise.resolve({
+          logCommand() {
+            return Promise.resolve({
               ok: false as const,
               error: {
                 type: "io" as const,
                 message: "failed to write database",
               },
-            };
+            });
           },
           setRedactPatterns() {},
-          async queryHistory() {
-            return { ok: true as const, value: { items: [] } };
+          queryHistory() {
+            return Promise.resolve({ ok: true as const, value: { items: [] } });
           },
-          async deleteHistory() {
-            return { ok: true as const, value: undefined };
+          deleteHistory() {
+            return Promise.resolve({ ok: true as const, value: undefined });
           },
-          async exportHistory() {
-            return { ok: true as const, value: undefined };
+          exportHistory() {
+            return Promise.resolve({ ok: true as const, value: undefined });
           },
-          async importHistory() {
-            return {
+          importHistory() {
+            return Promise.resolve({
               ok: true as const,
               value: { added: 0, skipped: 0, total: 0 },
-            };
+            });
           },
-        };
+        });
       },
-      async loadHistorySettings() {
-        return createHistorySettings();
+      loadHistorySettings() {
+        return Promise.resolve(createHistorySettings());
       },
       generateId: () => "01TESTID000000000000000000",
       now: () => "2024-01-01T00:00:00.000Z",

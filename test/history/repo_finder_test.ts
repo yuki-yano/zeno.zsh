@@ -26,7 +26,7 @@ describe("RepoFinder", () => {
 
     try {
       const finder = createRepoFinder({
-        runGitRevParse: async () => null,
+        runGitRevParse: () => Promise.resolve(null),
       });
       const result = await finder.resolve(
         path.join(structure.root, "app", "src"),
@@ -48,7 +48,7 @@ describe("RepoFinder", () => {
 
     try {
       const finder = createRepoFinder({
-        runGitRevParse: async () => null,
+        runGitRevParse: () => Promise.resolve(null),
       });
       const result = await finder.resolve(
         path.join(structure.root, "worktree"),
@@ -69,7 +69,7 @@ describe("RepoFinder", () => {
 
     try {
       const finder = createRepoFinder({
-        runGitRevParse: async () => null,
+        runGitRevParse: () => Promise.resolve(null),
       });
       const result = await finder.resolve(path.join(structure.root, "sandbox"));
       assertEquals(result, null);

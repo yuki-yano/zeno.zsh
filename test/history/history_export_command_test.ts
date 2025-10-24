@@ -31,11 +31,11 @@ const createSettings = () => ({
 describe("history export command", () => {
   it("fails when historyExport payload is missing", async () => {
     const command = createHistoryExportCommand({
-      async getHistoryModule() {
-        throw new Error("should not be called");
+      getHistoryModule() {
+        return Promise.reject(new Error("should not be called"));
       },
-      async loadHistorySettings() {
-        return createSettings();
+      loadHistorySettings() {
+        return Promise.resolve(createSettings());
       },
       now: () => new Date(),
     });
@@ -55,19 +55,19 @@ describe("history export command", () => {
     const patterns: RegExp[][] = [];
     const calls: ExportRequest[] = [];
     const command = createHistoryExportCommand({
-      async getHistoryModule() {
-        return {
+      getHistoryModule() {
+        return Promise.resolve({
           setRedactPatterns(next) {
             patterns.push(next);
           },
-          async exportHistory(request) {
+          exportHistory(request) {
             calls.push(request);
-            return { ok: true as const, value: undefined };
+            return Promise.resolve({ ok: true as const, value: undefined });
           },
-        };
+        });
       },
-      async loadHistorySettings() {
-        return createSettings();
+      loadHistorySettings() {
+        return Promise.resolve(createSettings());
       },
       now: () => new Date("2024-01-05T00:00:00.000Z"),
     });

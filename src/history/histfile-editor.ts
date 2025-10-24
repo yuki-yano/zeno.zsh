@@ -56,8 +56,8 @@ export const createHistfileEditor = (
   const histfilePath = deps.histfilePath ?? Deno.env.get("HISTFILE") ?? null;
   if (!histfilePath) {
     return {
-      async prune() {
-        return success();
+      prune() {
+        return Promise.resolve(success());
       },
     };
   }

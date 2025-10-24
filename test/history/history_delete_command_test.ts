@@ -18,8 +18,8 @@ const createWriter = () => {
 describe("history delete command", () => {
   it("fails when historyDelete payload is missing", async () => {
     const command = createHistoryDeleteCommand({
-      async getHistoryModule() {
-        throw new Error("should not be called");
+      getHistoryModule() {
+        return Promise.reject(new Error("should not be called"));
       },
     });
 
@@ -37,13 +37,13 @@ describe("history delete command", () => {
   it("invokes module with provided id", async () => {
     const calls: Array<{ id: string; hard: boolean }> = [];
     const command = createHistoryDeleteCommand({
-      async getHistoryModule() {
-        return {
-          async deleteHistory(request) {
+      getHistoryModule() {
+        return Promise.resolve({
+          deleteHistory(request) {
             calls.push(request);
-            return { ok: true as const, value: undefined };
+            return Promise.resolve({ ok: true as const, value: undefined });
           },
-        };
+        });
       },
     });
 
@@ -67,13 +67,13 @@ describe("history delete command", () => {
   it("respects hard flag", async () => {
     let receivedHard = false;
     const command = createHistoryDeleteCommand({
-      async getHistoryModule() {
-        return {
-          async deleteHistory(request) {
+      getHistoryModule() {
+        return Promise.resolve({
+          deleteHistory(request) {
             receivedHard = request.hard;
-            return { ok: true as const, value: undefined };
+            return Promise.resolve({ ok: true as const, value: undefined });
           },
-        };
+        });
       },
     });
 

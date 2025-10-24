@@ -46,7 +46,7 @@ export const createSQLiteStore = async (
   const db = new Database(config.databasePath);
   initializeSchema(db);
 
-  const insert = async (record: HistoryRecord) => {
+  const insert = (record: HistoryRecord): Promise<void> => {
     db.exec(
       `
         INSERT INTO history (
@@ -73,9 +73,10 @@ export const createSQLiteStore = async (
         meta: record.meta ? JSON.stringify(record.meta) : null,
       },
     );
+    return Promise.resolve();
   };
 
-  const select = async (filter: QueryFilter): Promise<QueryResult> => {
+  const select = (filter: QueryFilter): Promise<QueryResult> => {
     const whereClauses: string[] = [];
     const params: Record<string, unknown> = {
       limit: filter.limit,
@@ -167,12 +168,12 @@ export const createSQLiteStore = async (
       `,
     ).all(params as BindParameters) as Record<string, unknown>[];
 
-    return {
+    return Promise.resolve({
       items: rows.map(mapRowToRecord),
-    };
+    });
   };
 
-  const selectById = async (id: string): Promise<HistoryRecord | null> => {
+  const selectById = (id: string): Promise<HistoryRecord | null> => {
     const row = db.prepare(
       `
         SELECT ${buildSelectColumns()}
@@ -183,13 +184,13 @@ export const createSQLiteStore = async (
     ).all({ id } as BindParameters)[0] as Record<string, unknown> | undefined;
 
     if (!row) {
-      return null;
+      return Promise.resolve(null);
     }
 
-    return mapRowToRecord(row);
+    return Promise.resolve(mapRowToRecord(row));
   };
 
-  const markDeleted = async (id: string, deletedAt: string) => {
+  const markDeleted = (id: string, deletedAt: string): Promise<void> => {
     db.exec(
       `
         UPDATE history
@@ -198,10 +199,12 @@ export const createSQLiteStore = async (
       `,
       { id, deleted_at: deletedAt },
     );
+    return Promise.resolve();
   };
 
-  const close = async () => {
+  const close = (): Promise<void> => {
     db.close();
+    return Promise.resolve();
   };
 
   return {

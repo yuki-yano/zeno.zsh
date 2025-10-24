@@ -39,29 +39,31 @@ const createSettings = () => ({
 const createModule = (
   overrides: Partial<HistoryModule> = {},
 ): HistoryModule => ({
-  logCommand: async () => ({ ok: true, value: undefined }),
+  logCommand: () => Promise.resolve({ ok: true, value: undefined }),
   setRedactPatterns() {},
-  queryHistory: async () => ({
-    ok: true as const,
-    value: { items: [] as HistoryRecord[] },
-  }),
-  deleteHistory: async () => ({ ok: true as const, value: undefined }),
-  exportHistory: async () => ({ ok: true as const, value: undefined }),
-  importHistory: async () => ({
-    ok: true as const,
-    value: { added: 0, skipped: 0, total: 0 },
-  }),
+  queryHistory: () =>
+    Promise.resolve({
+      ok: true as const,
+      value: { items: [] as HistoryRecord[] },
+    }),
+  deleteHistory: () => Promise.resolve({ ok: true as const, value: undefined }),
+  exportHistory: () => Promise.resolve({ ok: true as const, value: undefined }),
+  importHistory: () =>
+    Promise.resolve({
+      ok: true as const,
+      value: { added: 0, skipped: 0, total: 0 },
+    }),
   ...overrides,
 });
 
 describe("history query command", () => {
   it("fails when historyQuery payload is missing", async () => {
     const command = createHistoryQueryCommand({
-      async getHistoryModule() {
-        return createModule();
+      getHistoryModule() {
+        return Promise.resolve(createModule());
       },
-      async loadHistorySettings() {
-        return createSettings();
+      loadHistorySettings() {
+        return Promise.resolve(createSettings());
       },
       now: () => new Date("2024-01-02T00:00:00Z"),
     });
@@ -79,8 +81,8 @@ describe("history query command", () => {
 
   it("prints formatted lines when format is lines", async () => {
     const module = createModule({
-      async queryHistory() {
-        return {
+      queryHistory() {
+        return Promise.resolve({
           ok: true as const,
           value: {
             items: [
@@ -116,16 +118,16 @@ describe("history query command", () => {
               },
             ],
           },
-        };
+        });
       },
     });
 
     const command = createHistoryQueryCommand({
-      async getHistoryModule() {
-        return module;
+      getHistoryModule() {
+        return Promise.resolve(module);
       },
-      async loadHistorySettings() {
-        return createSettings();
+      loadHistorySettings() {
+        return Promise.resolve(createSettings());
       },
       now: () => new Date("2024-01-02T00:05:00.000Z"),
     });
@@ -160,7 +162,7 @@ describe("history query command", () => {
   it("prints formatted lines for all scopes when scope is all", async () => {
     const calls: HistoryScope[] = [];
     const module = createModule({
-      async queryHistory(request) {
+      queryHistory(request) {
         calls.push(request.scope);
         const base = {
           ts: "2024-01-02T00:00:00.000Z",
@@ -193,16 +195,16 @@ describe("history query command", () => {
               return [];
           }
         })();
-        return { ok: true as const, value: { items } };
+        return Promise.resolve({ ok: true as const, value: { items } });
       },
     });
 
     const command = createHistoryQueryCommand({
-      async getHistoryModule() {
-        return module;
+      getHistoryModule() {
+        return Promise.resolve(module);
       },
-      async loadHistorySettings() {
-        return createSettings();
+      loadHistorySettings() {
+        return Promise.resolve(createSettings());
       },
       now: () => new Date("2024-01-02T00:05:00.000Z"),
     });
@@ -261,17 +263,20 @@ describe("history query command", () => {
       meta: { duration: 120 },
     };
     const module = createModule({
-      async queryHistory() {
-        return { ok: true as const, value: { items: [record] } };
+      queryHistory() {
+        return Promise.resolve({
+          ok: true as const,
+          value: { items: [record] },
+        });
       },
     });
 
     const command = createHistoryQueryCommand({
-      async getHistoryModule() {
-        return module;
+      getHistoryModule() {
+        return Promise.resolve(module);
       },
-      async loadHistorySettings() {
-        return createSettings();
+      loadHistorySettings() {
+        return Promise.resolve(createSettings());
       },
       now: () => new Date("2024-01-02T00:00:00.000Z"),
     });
@@ -297,11 +302,11 @@ describe("history query command", () => {
 
   it("toggles scope and prints next scope", async () => {
     const command = createHistoryQueryCommand({
-      async getHistoryModule() {
-        return createModule();
+      getHistoryModule() {
+        return Promise.resolve(createModule());
       },
-      async loadHistorySettings() {
-        return createSettings();
+      loadHistorySettings() {
+        return Promise.resolve(createSettings());
       },
       now: () => new Date(),
     });

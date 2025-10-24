@@ -19,7 +19,6 @@ import type {
   HistfileEditor,
   HistfileEntry,
   HistfileError,
-  HistfileResult,
 } from "./histfile-editor.ts";
 import type { ExportAllArgs, HistoryIO, ImportOutcome } from "./io.ts";
 

@@ -31,11 +31,11 @@ const createWriter = () => {
 describe("history import command", () => {
   it("fails when historyImport payload is missing", async () => {
     const command = createHistoryImportCommand({
-      async getHistoryModule() {
-        throw new Error("should not be called");
+      getHistoryModule() {
+        return Promise.reject(new Error("should not be called"));
       },
-      async loadHistorySettings() {
-        return createSettings();
+      loadHistorySettings() {
+        return Promise.resolve(createSettings());
       },
     });
 
@@ -53,24 +53,24 @@ describe("history import command", () => {
   it("invokes module with provided options", async () => {
     const calls: ImportRequest[] = [];
     const command = createHistoryImportCommand({
-      async getHistoryModule() {
-        return {
+      getHistoryModule() {
+        return Promise.resolve({
           setRedactPatterns() {},
-          async importHistory(request) {
+          importHistory(request) {
             calls.push(request);
-            return {
+            return Promise.resolve({
               ok: true as const,
               value: {
                 added: 1,
                 skipped: 0,
                 total: 1,
               },
-            };
+            });
           },
-        };
+        });
       },
-      async loadHistorySettings() {
-        return createSettings();
+      loadHistorySettings() {
+        return Promise.resolve(createSettings());
       },
     });
 

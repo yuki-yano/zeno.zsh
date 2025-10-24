@@ -1,4 +1,4 @@
-import { ExportFormat, HistoryRecord, ImportSummary } from "./types.ts";
+import type { ExportFormat, HistoryRecord, ImportSummary } from "./types.ts";
 
 export interface ExportAllArgs {
   format: ExportFormat;

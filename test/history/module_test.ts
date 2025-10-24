@@ -20,15 +20,21 @@ const createStubStore = (
   overrides: Partial<SQLiteStore> = {},
 ): SQLiteStore => {
   const base: SQLiteStore = {
-    async insert() {},
-    async select() {
-      return { items: [] };
+    insert() {
+      return Promise.resolve();
     },
-    async selectById() {
-      return null;
+    select() {
+      return Promise.resolve({ items: [] });
     },
-    async markDeleted() {},
-    async close() {},
+    selectById() {
+      return Promise.resolve(null);
+    },
+    markDeleted() {
+      return Promise.resolve();
+    },
+    close() {
+      return Promise.resolve();
+    },
   };
 
   return { ...base, ...overrides };
@@ -37,8 +43,8 @@ const createStubStore = (
 const createStubHistfileEditor = (
   overrides: Partial<HistfileEditor> = {},
 ): HistfileEditor => ({
-  async prune() {
-    return { ok: true, value: undefined };
+  prune() {
+    return Promise.resolve({ ok: true, value: undefined });
   },
   ...overrides,
 });
@@ -46,8 +52,10 @@ const createStubHistfileEditor = (
 const createStubHistoryIO = (
   overrides: Partial<HistoryIO> = {},
 ): HistoryIO => ({
-  async exportAll() {},
-  async importFile() {
+  exportAll() {
+    return Promise.resolve();
+  },
+  importFile() {
     const outcome: ImportOutcome = {
       records: [],
       summary: {
@@ -56,7 +64,7 @@ const createStubHistoryIO = (
         total: 0,
       },
     };
-    return outcome;
+    return Promise.resolve(outcome);
   },
   ...overrides,
 });
@@ -65,14 +73,15 @@ describe("HistoryModule.logCommand", () => {
   it("redacts command text and resolves repository before persisting", async () => {
     let inserted: HistoryRecord | undefined;
     const store = createStubStore({
-      async insert(record) {
+      insert(record) {
         inserted = record;
+        return Promise.resolve();
       },
     });
 
     const repoFinder: RepoFinder = {
-      async resolve() {
-        return "/repos/example";
+      resolve() {
+        return Promise.resolve("/repos/example");
       },
     };
 
@@ -110,14 +119,14 @@ describe("HistoryModule.logCommand", () => {
 
   it("returns error result when store insertion throws", async () => {
     const store = createStubStore({
-      async insert() {
-        throw new Error("disk full");
+      insert() {
+        return Promise.reject(new Error("disk full"));
       },
     });
 
     const repoFinder: RepoFinder = {
-      async resolve() {
-        return null;
+      resolve() {
+        return Promise.resolve(null);
       },
     };
 
@@ -173,20 +182,20 @@ describe("HistoryModule.queryHistory", () => {
     };
 
     const store = createStubStore({
-      async select() {
+      select() {
         selectCalled = true;
-        return { items: [] };
+        return Promise.resolve({ items: [] });
       },
-      async selectById(id) {
-        return id === target.id ? target : null;
+      selectById(id) {
+        return Promise.resolve(id === target.id ? target : null);
       },
     });
 
     const module = createHistoryModule({
       store,
       repoFinder: {
-        async resolve() {
-          return "/repo";
+        resolve() {
+          return Promise.resolve("/repo");
         },
       },
       redactor: createRedactor([]),
@@ -211,9 +220,9 @@ describe("HistoryModule.queryHistory", () => {
   it("resolves repository when scope is repository", async () => {
     let receivedFilter: unknown;
     const store = createStubStore({
-      async select(filter) {
+      select(filter) {
         receivedFilter = filter;
-        return {
+        return Promise.resolve({
           items: [{
             id: "01REPOREC000000000000000000",
             ts: "2024-01-02T00:00:00.000Z",
@@ -229,13 +238,13 @@ describe("HistoryModule.queryHistory", () => {
             duration_ms: null,
             meta: null,
           }],
-        };
+        });
       },
     });
 
     const repoFinder: RepoFinder = {
-      async resolve(path) {
-        return path === "/work/app" ? "/repo/root" : null;
+      resolve(path) {
+        return Promise.resolve(path === "/work/app" ? "/repo/root" : null);
       },
     };
 
@@ -265,16 +274,16 @@ describe("HistoryModule.queryHistory", () => {
 
   it("returns io error when store select throws", async () => {
     const store = createStubStore({
-      async select() {
-        throw new Error("db down");
+      select() {
+        return Promise.reject(new Error("db down"));
       },
     });
 
     const module = createHistoryModule({
       store,
       repoFinder: {
-        async resolve() {
-          return null;
+        resolve() {
+          return Promise.resolve(null);
         },
       },
       redactor: createRedactor([]),
@@ -314,19 +323,20 @@ describe("HistoryModule.deleteHistory", () => {
   it("marks record as deleted on soft delete", async () => {
     let marked: { id: string; at: string } | undefined;
     const store = createStubStore({
-      async selectById(id) {
-        return id === baseRecord.id ? { ...baseRecord } : null;
+      selectById(id) {
+        return Promise.resolve(id === baseRecord.id ? { ...baseRecord } : null);
       },
-      async markDeleted(id, at) {
+      markDeleted(id, at) {
         marked = { id, at };
+        return Promise.resolve();
       },
     });
 
     const module = createHistoryModule({
       store,
       repoFinder: {
-        async resolve() {
-          return "/repo";
+        resolve() {
+          return Promise.resolve("/repo");
         },
       },
       redactor: createRedactor([]),
@@ -348,23 +358,25 @@ describe("HistoryModule.deleteHistory", () => {
   it("invokes histfile editor for hard delete", async () => {
     let pruneEntry: HistfileEntry | undefined;
     const store = createStubStore({
-      async selectById(id) {
-        return id === baseRecord.id ? { ...baseRecord } : null;
+      selectById(id) {
+        return Promise.resolve(id === baseRecord.id ? { ...baseRecord } : null);
       },
-      async markDeleted() {},
+      markDeleted() {
+        return Promise.resolve();
+      },
     });
     const histfileEditor = createStubHistfileEditor({
-      async prune(entry) {
+      prune(entry) {
         pruneEntry = entry;
-        return { ok: true, value: undefined };
+        return Promise.resolve({ ok: true, value: undefined });
       },
     });
 
     const module = createHistoryModule({
       store,
       repoFinder: {
-        async resolve() {
-          return "/repo";
+        resolve() {
+          return Promise.resolve("/repo");
         },
       },
       redactor: createRedactor([/secret-\d+/g]),
@@ -383,16 +395,16 @@ describe("HistoryModule.deleteHistory", () => {
 
   it("returns validation error when record not found", async () => {
     const store = createStubStore({
-      async selectById() {
-        return null;
+      selectById() {
+        return Promise.resolve(null);
       },
     });
 
     const module = createHistoryModule({
       store,
       repoFinder: {
-        async resolve() {
-          return null;
+        resolve() {
+          return Promise.resolve(null);
         },
       },
       redactor: createRedactor([]),
@@ -414,8 +426,8 @@ describe("HistoryModule.deleteHistory", () => {
 describe("HistoryModule.exportHistory", () => {
   it("passes redacted records to history IO", async () => {
     const store = createStubStore({
-      async select() {
-        return {
+      select() {
+        return Promise.resolve({
           items: [{
             id: "01EXPORT000000000000000000",
             ts: "2024-01-01T00:00:00.000Z",
@@ -431,22 +443,23 @@ describe("HistoryModule.exportHistory", () => {
             duration_ms: null,
             meta: null,
           }],
-        };
+        });
       },
     });
 
     let exportedRecords: HistoryRecord[] | undefined;
     const historyIO = createStubHistoryIO({
-      async exportAll(request) {
+      exportAll(request) {
         exportedRecords = request.records;
+        return Promise.resolve();
       },
     });
 
     const module = createHistoryModule({
       store,
       repoFinder: {
-        async resolve() {
-          return null;
+        resolve() {
+          return Promise.resolve(null);
         },
       },
       redactor: createRedactor([/secret-token/]),
@@ -473,16 +486,17 @@ describe("HistoryModule.importHistory", () => {
   it("inserts redacted records when not dry-run", async () => {
     const inserted: HistoryRecord[] = [];
     const store = createStubStore({
-      async selectById() {
-        return null;
+      selectById() {
+        return Promise.resolve(null);
       },
-      async insert(record) {
+      insert(record) {
         inserted.push(record);
+        return Promise.resolve();
       },
     });
 
     const historyIO = createStubHistoryIO({
-      async importFile(_request) {
+      importFile(_request) {
         const outcome: ImportOutcome = {
           records: [{
             id: "01IMPORT000000000000000000",
@@ -505,15 +519,15 @@ describe("HistoryModule.importHistory", () => {
             total: 1,
           },
         };
-        return outcome;
+        return Promise.resolve(outcome);
       },
     });
 
     const module = createHistoryModule({
       store,
       repoFinder: {
-        async resolve() {
-          return null;
+        resolve() {
+          return Promise.resolve(null);
         },
       },
       redactor: createRedactor([/secret/]),
@@ -539,16 +553,17 @@ describe("HistoryModule.importHistory", () => {
   it("skips insert when dry-run", async () => {
     let inserted = false;
     const store = createStubStore({
-      async selectById() {
-        return null;
+      selectById() {
+        return Promise.resolve(null);
       },
-      async insert() {
+      insert() {
         inserted = true;
+        return Promise.resolve();
       },
     });
 
     const historyIO = createStubHistoryIO({
-      async importFile() {
+      importFile() {
         const outcome: ImportOutcome = {
           records: [{
             id: "01IMPORT000000000000000001",
@@ -571,15 +586,15 @@ describe("HistoryModule.importHistory", () => {
             total: 1,
           },
         };
-        return outcome;
+        return Promise.resolve(outcome);
       },
     });
 
     const module = createHistoryModule({
       store,
       repoFinder: {
-        async resolve() {
-          return null;
+        resolve() {
+          return Promise.resolve(null);
         },
       },
       redactor: createRedactor([]),
