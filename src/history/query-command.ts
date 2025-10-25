@@ -257,7 +257,7 @@ const formatLines = (
       : record.exit === 0
       ? `${color.green}✔${color.reset}`
       : `${color.red}✘${color.reset}`;
-    const statusColumn = `${timePart} ${exitPart}${" ".repeat(3)}`;
+    const statusColumn = `${timePart} ${exitPart} `;
     const commandPart = (record.command ?? "").replaceAll("\t", "    ");
     const rawCommand = (record.command ?? "").replaceAll(
       "\t",
