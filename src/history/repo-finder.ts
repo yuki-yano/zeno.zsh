@@ -1,15 +1,15 @@
 import { path } from "../deps.ts";
 
-export interface RepoFinder {
+export type RepoFinder = {
   resolve(pwd: string): Promise<string | null>;
-}
+};
 
-export interface RepoFinderDeps {
+export type RepoFinderDeps = {
   runGitRevParse?: (cwd: string) => Promise<string | null>;
   realPath?: (value: string) => Promise<string>;
   stat?: (value: string) => Promise<Deno.FileInfo>;
   readTextFile?: (value: string) => Promise<string>;
-}
+};
 
 const textDecoder = new TextDecoder();
 

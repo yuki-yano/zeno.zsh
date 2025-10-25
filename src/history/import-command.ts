@@ -3,20 +3,20 @@ import { createCommand } from "../command/types.ts";
 import type { DedupeStrategy, ExportFormat, HistoryModule } from "./types.ts";
 import type { HistorySettings } from "../type/settings.ts";
 
-export interface HistoryImportCommandDeps {
+export type HistoryImportCommandDeps = {
   getHistoryModule: () => Promise<
     Pick<HistoryModule, "importHistory" | "setRedactPatterns">
   >;
   loadHistorySettings: () => Promise<HistorySettings>;
-}
+};
 
-interface HistoryImportPayload {
+type HistoryImportPayload = {
   format?: unknown;
   inputPath?: unknown;
   dedupe?: unknown;
   dryRun?: unknown;
   redact?: unknown;
-}
+};
 
 const allowedFormats = new Set([
   "ndjson",

@@ -8,12 +8,12 @@ import type {
   Result,
 } from "./types.ts";
 
-export interface HistoryLogCommandDeps {
+export type HistoryLogCommandDeps = {
   getHistoryModule: () => Promise<HistoryModule>;
   loadHistorySettings: () => Promise<HistorySettings>;
   generateId: () => string;
   now: () => string;
-}
+};
 
 type HistoryLogPayload = Record<string, unknown>;
 

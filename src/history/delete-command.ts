@@ -2,9 +2,9 @@ import { writeResult } from "../app-helpers.ts";
 import { createCommand } from "../command/types.ts";
 import type { HistoryModule } from "./types.ts";
 
-export interface HistoryDeleteCommandDeps {
+export type HistoryDeleteCommandDeps = {
   getHistoryModule: () => Promise<Pick<HistoryModule, "deleteHistory">>;
-}
+};
 
 type HistoryDeletePayload = Record<string, unknown>;
 

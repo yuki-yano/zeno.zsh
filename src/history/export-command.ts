@@ -8,15 +8,15 @@ import type {
   HistoryModule,
 } from "./types.ts";
 
-export interface HistoryExportCommandDeps {
+export type HistoryExportCommandDeps = {
   getHistoryModule: () => Promise<
     Pick<HistoryModule, "setRedactPatterns" | "exportHistory">
   >;
   loadHistorySettings: () => Promise<HistorySettings>;
   now: () => Date;
-}
+};
 
-interface HistoryExportPayload {
+type HistoryExportPayload = {
   format?: unknown;
   outputPath?: unknown;
   scope?: unknown;
@@ -31,7 +31,7 @@ interface HistoryExportPayload {
   before?: unknown;
   exit?: unknown;
   redact?: unknown;
-}
+};
 
 const isHistoryExportPayload = (
   value: unknown,

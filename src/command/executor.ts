@@ -5,12 +5,12 @@ import type { CommandContext } from "./types.ts";
 import type { Input } from "../type/shell.ts";
 import type { ArgParserArguments, ArgParserOptions } from "../deps.ts";
 
-interface ParsedArgs extends ArgParserArguments {
+type ParsedArgs = ArgParserArguments & {
   "zeno-mode": string;
   input: Input;
   _: Array<string | number>;
   [key: string]: unknown;
-}
+};
 
 const argsParseOption: Readonly<Partial<ArgParserOptions>> = {
   string: [

@@ -1,7 +1,7 @@
-export interface Redactor {
+export type Redactor = {
   applyAll(input: string): string;
   setPatterns(patterns: RegExp[]): void;
-}
+};
 
 const MASK = "***";
 

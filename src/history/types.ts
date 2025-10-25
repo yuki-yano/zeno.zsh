@@ -1,6 +1,6 @@
 export type HistoryScope = "global" | "repository" | "directory" | "session";
 
-export interface HistoryRecord {
+export type HistoryRecord = {
   id: string;
   ts: string;
   command: string;
@@ -14,9 +14,9 @@ export interface HistoryRecord {
   deleted_at: string | null;
   duration_ms: number | null;
   meta: Record<string, unknown> | null;
-}
+};
 
-export interface LogCommandInput {
+export type LogCommandInput = {
   id: string;
   ts: string;
   command: string;
@@ -29,14 +29,14 @@ export interface LogCommandInput {
   repo_root: string | null;
   duration_ms: number | null;
   meta: Record<string, unknown> | null;
-}
+};
 
 export type DeletedFilter = "exclude" | "include" | "only";
 
-export interface DeleteRequest {
+export type DeleteRequest = {
   id: string;
   hard: boolean;
-}
+};
 
 export type ExportFormat =
   | "ndjson"
@@ -45,27 +45,27 @@ export type ExportFormat =
   | "fish"
   | "atuin-json";
 
-export interface ExportRequest extends HistoryQueryRequest {
+export type ExportRequest = HistoryQueryRequest & {
   format: ExportFormat;
   outputPath: string;
-}
+};
 
 export type DedupeStrategy = "off" | "strict" | "loose";
 
-export interface ImportRequest {
+export type ImportRequest = {
   format: ExportFormat;
   inputPath: string;
   dedupe: DedupeStrategy;
   dryRun: boolean;
-}
+};
 
-export interface ImportSummary {
+export type ImportSummary = {
   added: number;
   skipped: number;
   total: number;
-}
+};
 
-export interface QueryFilter {
+export type QueryFilter = {
   scope: HistoryScope;
   limit: number;
   deleted: DeletedFilter;
@@ -76,11 +76,11 @@ export interface QueryFilter {
   after?: string | null;
   before?: string | null;
   exitCode?: number | null;
-}
+};
 
-export interface QueryResult {
+export type QueryResult = {
   items: HistoryRecord[];
-}
+};
 
 export type Result<T, E> =
   | { ok: true; value: T }
@@ -88,13 +88,13 @@ export type Result<T, E> =
 
 export type HistoryErrorType = "validation" | "io" | "histfile" | "unsupported";
 
-export interface HistoryError {
+export type HistoryError = {
   type: HistoryErrorType;
   message: string;
   cause?: unknown;
-}
+};
 
-export interface HistoryQueryRequest {
+export type HistoryQueryRequest = {
   scope: HistoryScope;
   limit: number;
   deleted: DeletedFilter;
@@ -107,9 +107,9 @@ export interface HistoryQueryRequest {
   before?: string | null;
   exitCode?: number | null;
   id?: string | null;
-}
+};
 
-export interface HistoryModule {
+export type HistoryModule = {
   logCommand(input: LogCommandInput): Promise<Result<void, HistoryError>>;
   setRedactPatterns(patterns: RegExp[]): void;
   queryHistory(
@@ -120,4 +120,4 @@ export interface HistoryModule {
   importHistory(
     request: ImportRequest,
   ): Promise<Result<ImportSummary, HistoryError>>;
-}
+};

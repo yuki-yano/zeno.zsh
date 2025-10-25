@@ -2,17 +2,17 @@ import { type BindParameters, Database } from "../deps.ts";
 import { path } from "../deps.ts";
 import type { HistoryRecord, QueryFilter, QueryResult } from "./types.ts";
 
-export interface SQLiteStore {
+export type SQLiteStore = {
   insert(record: HistoryRecord): Promise<void>;
   select(filter: QueryFilter): Promise<QueryResult>;
   selectById(id: string): Promise<HistoryRecord | null>;
   markDeleted(id: string, deletedAt: string): Promise<void>;
   close(): Promise<void>;
-}
+};
 
-export interface SQLiteStoreConfig {
+export type SQLiteStoreConfig = {
   databasePath: string;
-}
+};
 
 const ensureDirectory = async (databasePath: string) => {
   const dir = path.dirname(databasePath);

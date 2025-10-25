@@ -22,14 +22,14 @@ import type {
 } from "./histfile-editor.ts";
 import type { ExportAllArgs, HistoryIO, ImportOutcome } from "./io.ts";
 
-export interface HistoryModuleDeps {
+export type HistoryModuleDeps = {
   store: SQLiteStore;
   repoFinder: RepoFinder;
   redactor: Redactor;
   histfileEditor: HistfileEditor;
   historyIO: HistoryIO;
   now: () => string;
-}
+};
 
 const ok = <T>(value: T): Result<T, HistoryError> => ({
   ok: true,
