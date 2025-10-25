@@ -309,6 +309,11 @@ export const createHistoryQueryCommand = (
         return;
       }
 
+      const settingsPatterns = settings.redact.map((pattern) =>
+        pattern instanceof RegExp ? pattern : new RegExp(pattern, "g")
+      );
+      module.setRedactPatterns(settingsPatterns);
+
       const results: Array<{ scope: HistoryScope; items: HistoryRecord[] }> =
         [];
       for (const currentScope of scopesToQuery) {
