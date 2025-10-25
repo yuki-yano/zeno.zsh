@@ -3,7 +3,7 @@
 export ZENO_PID=
 
 : ${ZENO_SOCK_DIR:="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}/zeno-${UID}"}
-: ${ZENO_SOCK::="${ZENO_SOCK_DIR}/zeno-${$}.sock"}
+: ${ZENO_SOCK:="${ZENO_SOCK_DIR}/zeno-${$}.sock"}
 export ZENO_SOCK_DIR
 export ZENO_SOCK
 
