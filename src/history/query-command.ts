@@ -168,7 +168,7 @@ const formatTimeAgo = (now: Date, iso: string): string => {
   return `${years}y`;
 };
 
-const formatLines = (
+const formatSmartLines = (
   items: readonly HistoryRecord[],
   now: Date,
 ): string[] => {
@@ -240,6 +240,84 @@ const formatLines = (
   });
 
   return lines;
+};
+
+const formatClassicLines = (
+  items: readonly HistoryRecord[],
+  now: Date,
+  scope: HistoryScope,
+): string[] => {
+  const color = {
+    reset: "\u001b[0m",
+    dim: "\u001b[2m",
+    green: "\u001b[32m",
+    yellow: "\u001b[33m",
+    red: "\u001b[31m",
+  } as const;
+
+  const pickTimeColor = (iso: string): string => {
+    const ts = new Date(iso);
+    const diff = now.getTime() - ts.getTime();
+    if (!Number.isFinite(diff)) {
+      return color.dim;
+    }
+    if (diff < 0) {
+      return color.green;
+    }
+    const hour = 60 * 60 * 1000;
+    const day = 24 * hour;
+    if (diff <= hour) {
+      return color.green;
+    }
+    if (diff <= day) {
+      return color.yellow;
+    }
+    return color.red;
+  };
+
+  const seen = new Set<string>();
+  const deduped: HistoryRecord[] = [];
+  for (const record of items) {
+    const key = (record.command ?? "").trim();
+    if (key.length === 0) {
+      deduped.push(record);
+      continue;
+    }
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    deduped.push(record);
+  }
+
+  const itemsShown = deduped.reduce(
+    (count, record) => count + (record.id === "__empty__" ? 0 : 1),
+    0,
+  );
+
+  const timeStrings = deduped.map((record) => formatTimeAgo(now, record.ts));
+  const maxTimeWidth = timeStrings.reduce((max, value) => {
+    return value.length > max ? value.length : max;
+  }, 0);
+
+  const lines = deduped.map((record, index) => {
+    const rawTime = timeStrings[index];
+    const paddedTime = rawTime.padStart(maxTimeWidth, " ");
+    const timePart = `${pickTimeColor(record.ts)}${paddedTime}${color.reset}`;
+    const exitPart = record.exit == null
+      ? `${color.dim}·${color.reset}`
+      : record.exit === 0
+      ? `${color.green}✔${color.reset}`
+      : `${color.red}✘${color.reset}`;
+    const statusColumn = `${timePart} ${exitPart}${" ".repeat(3)}`;
+    const commandPart = (record.command ?? "").replaceAll("\t", "    ");
+
+    return `${record.id}\t${commandPart}\t${statusColumn}`;
+  });
+
+  const header =
+    `\t${color.dim}command${color.reset}\t${color.dim}scope:${scope} · items:${itemsShown} · toggle:Ctrl-R${color.reset}`;
+  return [header, ...lines];
 };
 
 export const createHistoryQueryCommand = (
@@ -345,13 +423,13 @@ export const createHistoryQueryCommand = (
         results.push({ scope: currentScope, items: scopedResult.value.items });
       }
 
-      const format = typeof queryInput.format === "string"
+      const formatInput = typeof queryInput.format === "string"
         ? queryInput.format
         : "lines";
 
       const now = deps.now();
 
-      if (format === "json") {
+      if (formatInput === "json") {
         if (wantsAllScopes) {
           const body = JSON.stringify(
             {
@@ -380,19 +458,48 @@ export const createHistoryQueryCommand = (
         return;
       }
 
+      if (formatInput === "smart-lines") {
+        if (wantsAllScopes) {
+          const aggregated: string[] = [];
+          for (const { scope: scopeName, items } of results) {
+            const lines = formatSmartLines(items, now);
+            for (const line of lines) {
+              aggregated.push(`${scopeName}\t${line}`);
+            }
+          }
+          await writeResult(
+            writer.write.bind(writer),
+            "success",
+            ...aggregated,
+          );
+          return;
+        }
+        const lines = formatSmartLines(results[0]?.items ?? [], now);
+        await writeResult(writer.write.bind(writer), "success", ...lines);
+        return;
+      }
+
       if (wantsAllScopes) {
         const aggregated: string[] = [];
         for (const { scope: scopeName, items } of results) {
-          const lines = formatLines(items, now);
+          const lines = formatClassicLines(items, now, scopeName);
           for (const line of lines) {
             aggregated.push(`${scopeName}\t${line}`);
           }
         }
-        await writeResult(writer.write.bind(writer), "success", ...aggregated);
+        await writeResult(
+          writer.write.bind(writer),
+          "success",
+          ...aggregated,
+        );
         return;
       }
 
-      const lines = formatLines(results[0]?.items ?? [], now);
+      const lines = formatClassicLines(
+        results[0]?.items ?? [],
+        now,
+        primaryScope,
+      );
       await writeResult(writer.write.bind(writer), "success", ...lines);
     },
   );

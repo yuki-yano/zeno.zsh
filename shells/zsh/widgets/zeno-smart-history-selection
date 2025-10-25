@@ -1,0 +1,306 @@
+#autoload
+
+emulate -L zsh
+setopt typesetsilent
+
+local zeno_root=${ZENO_ROOT:-$PWD}
+local zeno_functions_dir=${zeno_root}/shells/zsh/functions
+path=(${zeno_root}/bin $path)
+typeset -gx PATH
+typeset -gx ZENO_ROOT=$zeno_root
+if [[ -d $zeno_functions_dir ]]; then
+  local functions_index=${fpath[(I)$zeno_functions_dir]}
+  if (( functions_index == 0 )); then
+    fpath=("$zeno_functions_dir" $fpath)
+  fi
+fi
+
+autoload -Uz zeno-enable-sock zeno-call-client-and-fallback 2>/dev/null
+if (( $+functions[zeno-enable-sock] )) && [[ -z ${ZENO_DISABLE_SOCK-} ]]; then
+  zeno-enable-sock
+fi
+
+local scope_file scope_script toggle_script delete_script state_file aggregate_tmp
+local worker_pid=0
+local limit selection preview_cmd exit_code
+
+zeno_history_profile() { :; }
+
+local zeno_client=${zeno_root}/bin/zeno-history-client
+if [[ ! -x $zeno_client ]]; then
+  zeno_client=zeno
+fi
+
+typeset -ga ZENO_HISTORY_FZF_COMMAND_CACHE
+local -a fzf_command
+
+if (( ${#ZENO_HISTORY_FZF_COMMAND_CACHE[@]} > 0 )); then
+  fzf_command=(${ZENO_HISTORY_FZF_COMMAND_CACHE[@]})
+else
+  local config_fzf_command=
+  local -a config_fzf_options
+  config_fzf_options=()
+
+  local fzf_config_raw
+  if fzf_config_raw=$("$zeno_client" history fzf-config 2>/dev/null); then
+    local -a fzf_config_lines
+    fzf_config_lines=(${(f)fzf_config_raw})
+    if [[ ${fzf_config_lines[1]-} == success ]]; then
+      config_fzf_command=${fzf_config_lines[2]-}
+      if [[ ${#fzf_config_lines[@]} -ge 3 && -n ${fzf_config_lines[3]} ]]; then
+        config_fzf_options=(${(s:\t:)fzf_config_lines[3]})
+      fi
+    fi
+  fi
+
+  if [[ -n $config_fzf_command ]]; then
+    fzf_command=(${(z)config_fzf_command})
+  elif [[ -n ${ZENO_FZF_COMMAND-} ]]; then
+    fzf_command=(${(z)ZENO_FZF_COMMAND})
+  elif [[ -n ${TMUX-} ]]; then
+    fzf_command=(fzf-tmux)
+  else
+    fzf_command=(fzf)
+  fi
+
+  local fzf_command_name=${${fzf_command[1]:-}##*/}
+
+  if (( ${#config_fzf_options[@]} > 0 )); then
+    local opt
+    for opt in "${config_fzf_options[@]}"; do
+      fzf_command+=("$opt")
+    done
+  elif [[ -z $config_fzf_command && $fzf_command_name == fzf-tmux && -n ${ZENO_FZF_TMUX_OPTIONS-} ]]; then
+    local -a zeno_fzf_tmux_opts
+    zeno_fzf_tmux_opts=(${(z)ZENO_FZF_TMUX_OPTIONS})
+    if (( ${#zeno_fzf_tmux_opts[@]} > 0 )); then
+      local -i zeno_fzf_tmux_dash_index=${fzf_command[(i)--]}
+      if (( zeno_fzf_tmux_dash_index <= ${#fzf_command[@]} )); then
+        local -a zeno_fzf_tmux_before zeno_fzf_tmux_after
+        if (( zeno_fzf_tmux_dash_index > 1 )); then
+          zeno_fzf_tmux_before=(${(@)fzf_command[1,zeno_fzf_tmux_dash_index-1]})
+        else
+          zeno_fzf_tmux_before=()
+        fi
+        zeno_fzf_tmux_after=(${(@)fzf_command[zeno_fzf_tmux_dash_index,-1]})
+        fzf_command=(${zeno_fzf_tmux_before[@]} ${zeno_fzf_tmux_opts[@]} ${zeno_fzf_tmux_after[@]})
+      else
+        fzf_command+=(${zeno_fzf_tmux_opts[@]})
+      fi
+    fi
+  fi
+
+  ZENO_HISTORY_FZF_COMMAND_CACHE=(${fzf_command[@]})
+fi
+
+zeno_history_profile "setup:determine-fzf"
+
+scope_file=$(mktemp -t zeno-history-scope.XXXXXX) || return 1
+scope_script=${zeno_root}/shells/zsh/scripts/zeno-smart-history-scope.sh
+toggle_script=${zeno_root}/shells/zsh/scripts/zeno-smart-history-toggle.sh
+delete_script=${zeno_root}/shells/zsh/scripts/zeno-smart-history-delete.sh
+
+cleanup() {
+  if (( worker_pid > 0 )); then
+    kill $worker_pid 2>/dev/null || true
+    wait $worker_pid 2>/dev/null || true
+    worker_pid=0
+  fi
+  [[ -n $scope_file && -f $scope_file ]] && command rm -f -- "$scope_file"
+  [[ -n $state_file && -f $state_file ]] && command rm -f -- "$state_file"
+  [[ -n $aggregate_tmp && -f $aggregate_tmp ]] && command rm -f -- "$aggregate_tmp"
+  if [[ ${(t)scope_files} == association* ]]; then
+    for file in ${(v)scope_files}; do
+      [[ -n $file && -f $file ]] && command rm -f -- "$file"
+    done
+  fi
+}
+
+trap 'cleanup' INT TERM EXIT
+
+
+local initial_scope=global
+print -r -- "$initial_scope" >| "$scope_file"
+
+state_file=$(mktemp -t zeno-history-state.XXXXXX) || { cleanup; return 1; }
+print -r -- "$initial_scope" >| "$state_file"
+
+limit=${ZENO_HISTORY_LIMIT:-2000}
+
+local session_id=${ZENO_HISTORY_SESSION_ID-}
+local -i session_created=0
+if [[ -z $session_id ]]; then
+  local random_component
+  random_component=$(printf '%08x%08x' $RANDOM $RANDOM 2>/dev/null)
+  session_id="${EPOCHSECONDS:-0}-${$}-${random_component}"
+  typeset -g ZENO_HISTORY_SESSION_ID=$session_id
+  session_created=1
+fi
+
+export ZENO_HISTORY_SCOPE_FILE="$scope_file"
+export ZENO_HISTORY_CWD="$PWD"
+export ZENO_HISTORY_LIMIT="$limit"
+export ZENO_HISTORY_ROOT="$zeno_root"
+
+local -a scope_order=(global repository directory session)
+local -A scope_files
+
+for scope in ${scope_order[@]}; do
+  local file
+  file=$(mktemp -t zeno-history-${scope}.XXXXXX) || { cleanup; return 1; }
+  : >| "$file"
+  scope_files[$scope]=$file
+done
+
+aggregate_tmp=$(mktemp -t zeno-history-batch.XXXXXX) || { cleanup; return 1; }
+local -a query_args
+query_args=(history query --format smart-lines --scope all --cwd "$PWD" --limit "$limit")
+if [[ -n $session_id ]]; then
+  query_args+=(--session "$session_id")
+fi
+
+(
+  emulate -L zsh
+  setopt no_aliases
+  local query_rc=0
+  "$zeno_client" "${query_args[@]}" >"$aggregate_tmp" 2>/dev/null
+  query_rc=$?
+
+  local status_seen=0
+  local -A scope_buffers
+  for scope in ${scope_order[@]}; do
+    scope_buffers[$scope]=''
+  done
+  if (( query_rc == 0 )); then
+    while IFS= read -r raw_line; do
+      [[ -z $raw_line ]] && continue
+      if [[ $raw_line == success ]]; then
+        status_seen=1
+        continue
+      fi
+      if (( ! status_seen )); then
+        continue
+      fi
+      local scope=${raw_line%%$'\t'*}
+      local rest=${raw_line#*$'\t'}
+      if [[ -z $scope || $scope == $raw_line || -z $rest ]]; then
+        continue
+      fi
+      local trimmed_rest=${rest##$'\t'}
+      if [[ $trimmed_rest == $'\033[2m'scope:* || $trimmed_rest == scope:* ]]; then
+        continue
+      fi
+      scope_buffers[$scope]+="$rest"$'\n'
+    done <"$aggregate_tmp"
+  fi
+
+  for scope in ${scope_order[@]}; do
+    : >| "${scope_files[$scope]}"
+
+    if [[ -n ${scope_buffers[$scope]-} ]]; then
+      print -nr -- "${scope_buffers[$scope]}" >>| "${scope_files[$scope]}"
+    else
+      local empty_dim=$'\033[2m'
+      local empty_reset=$'\033[0m'
+      printf '__empty__\t--\t%s(no entries)%s\t\n' "$empty_dim" "$empty_reset" >>| "${scope_files[$scope]}"
+    fi
+
+    zeno_history_profile "scope:${scope} ready"
+  done
+
+  command rm -f -- "$aggregate_tmp"
+) &!
+worker_pid=$!
+aggregate_tmp=
+
+zeno_history_profile "setup:scope-script"
+zeno_history_profile "setup:toggle-script"
+zeno_history_profile "setup:delete-script"
+
+local -a scope_cmd toggle_cmd delete_cmd
+scope_cmd=("${scope_script}" "${state_file}" "${scope_files[global]}" "${scope_files[repository]}" "${scope_files[directory]}" "${scope_files[session]}")
+toggle_cmd=("${toggle_script}" "${state_file}")
+delete_cmd=("${delete_script}" "${zeno_client}" "$PWD" "$limit" "${session_id}" "${state_file}" "${scope_files[global]}" "${scope_files[repository]}" "${scope_files[directory]}" "${scope_files[session]}")
+local scope_cmd_str=$(printf '%q ' "${scope_cmd[@]}"); scope_cmd_str=${scope_cmd_str% }
+local toggle_cmd_str=$(printf '%q ' "${toggle_cmd[@]}"); toggle_cmd_str=${toggle_cmd_str% }
+local delete_cmd_str=$(printf '%q ' "${delete_cmd[@]}"); delete_cmd_str=${delete_cmd_str% }; delete_cmd_str+=" {1}"
+
+preview_cmd='if [ "{1}" = "__empty__" ]; then printf "\033[2mNo entries\033[0m\n"; else '"$zeno_client"' history query --format json --id {1} | tail -n +2; fi'
+
+local -a fzf_opts
+fzf_opts=(
+  "--no-sort"
+  "--exact"
+  "--query=$LBUFFER"
+  "--nth=2"
+  "--prompt=History> "
+  "--with-nth=3,2"
+  $'--delimiter=	'
+  "--ansi"
+  "--header-lines=1"
+  "--bind"
+  "start:reload(:)+reload(${scope_cmd_str})"
+  "--bind"
+  "ctrl-r:execute-silent(${toggle_cmd_str})+reload(:)+reload(${scope_cmd_str})"
+  "--bind"
+  "ctrl-d:execute-silent(${delete_cmd_str})+reload(:)+reload(${scope_cmd_str})"
+  "--preview"
+  "$preview_cmd"
+  "--preview-window"
+  "right"
+)
+
+selection=$(printf '' | "${fzf_command[@]}" "${fzf_opts[@]}")
+exit_code=$?
+
+zeno_history_profile "fzf:completed"
+
+if (( worker_pid > 0 )); then
+  wait $worker_pid 2>/dev/null || true
+  worker_pid=0
+fi
+
+cleanup
+trap - INT TERM EXIT
+unset ZENO_HISTORY_SCOPE_FILE ZENO_HISTORY_CWD ZENO_HISTORY_LIMIT ZENO_HISTORY_ROOT
+
+if [[ $exit_code -ne 0 || -z $selection ]]; then
+  zeno_history_profile "widget:abort"
+  zle reset-prompt
+  return
+fi
+
+local selected_id display_command status_column raw_command
+selected_id=${selection%%$'\t'*}
+display_command=
+status_column=
+raw_command=
+
+if [[ $selection == *$'\t'* ]]; then
+  local remainder=${selection#*$'\t'}
+  display_command=${remainder%%$'\t'*}
+  if [[ $remainder == *$'\t'* ]]; then
+    local after_display=${remainder#*$'\t'}
+    status_column=${after_display%%$'\t'*}
+    if [[ $after_display == *$'\t'* ]]; then
+      raw_command=${after_display#*$'\t'}
+    fi
+  fi
+fi
+
+if [[ -n $raw_command ]]; then
+  raw_command=${raw_command//$'\x1f'/$'\t'}
+fi
+
+if [[ $selected_id == __empty__ ]]; then
+  zle reset-prompt
+  return
+fi
+
+if [[ -n $selected_id ]]; then
+  BUFFER=${raw_command:-$display_command}
+  CURSOR=${#BUFFER}
+fi
+
+zeno_history_profile "widget:completed"
+zle reset-prompt

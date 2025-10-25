@@ -31,7 +31,7 @@ scope_files[session]=$session_file
 
 local tmp
 tmp=$(mktemp -t zeno-history-refresh.XXXXXX)
-local -a query_args=(history query --format lines --scope all --cwd "$cwd" --limit "$limit")
+local -a query_args=(history query --format smart-lines --scope all --cwd "$cwd" --limit "$limit")
 [[ -n $session ]] && query_args+=(--session "$session")
 if ! "$cmd" "${query_args[@]}" >"$tmp" 2>/dev/null; then
   rm -f -- "$tmp"
