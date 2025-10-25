@@ -9,13 +9,13 @@ import type {
   HistoryScope,
 } from "./types.ts";
 
-export interface HistoryQueryCommandDeps {
+export type HistoryQueryCommandDeps = {
   getHistoryModule: () => Promise<HistoryModule>;
   loadHistorySettings: () => Promise<HistorySettings>;
   now: () => Date;
-}
+};
 
-export interface HistoryQueryInput {
+export type HistoryQueryInput = {
   scope?: unknown;
   cwd?: unknown;
   repoRoot?: unknown;
@@ -30,7 +30,7 @@ export interface HistoryQueryInput {
   format?: unknown;
   deleted?: unknown;
   toggleScope?: unknown;
-}
+};
 
 const SCOPE_ORDER: readonly HistoryScope[] = [
   "global",
