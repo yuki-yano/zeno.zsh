@@ -168,34 +168,6 @@ const formatTimeAgo = (now: Date, iso: string): string => {
   return `${years}y`;
 };
 
-const createProfiler = () => {
-  if (!Deno.env.get("ZENO_HISTORY_PROFILE")) {
-    return {
-      mark: (_label: string) => {},
-      flush: (_prefix: string) => {},
-    };
-  }
-  const origin = performance.now();
-  let last = origin;
-  const lines: string[] = [];
-  return {
-    mark: (label: string) => {
-      const now = performance.now();
-      lines.push(
-        `${label}\t+${(now - last).toFixed(1)}ms\t${
-          (now - origin).toFixed(1)
-        }ms`,
-      );
-      last = now;
-    },
-    flush: (prefix: string) => {
-      for (const line of lines) {
-        console.error(`${prefix}${line}`);
-      }
-    },
-  };
-};
-
 const formatLines = (
   items: readonly HistoryRecord[],
   now: Date,
@@ -276,8 +248,6 @@ export const createHistoryQueryCommand = (
   createCommand(
     "history-query",
     async ({ input, writer }) => {
-      const profiler = createProfiler();
-      profiler.mark("start");
 
       const payload = (input as Record<string, unknown>).historyQuery;
       if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
@@ -286,8 +256,6 @@ export const createHistoryQueryCommand = (
           "failure",
           "historyQuery payload is required",
         );
-        profiler.mark("invalid-payload");
-        profiler.flush("history-query: ");
         return;
       }
 
@@ -296,7 +264,6 @@ export const createHistoryQueryCommand = (
       let settings: HistorySettings;
       try {
         settings = await deps.loadHistorySettings();
-        profiler.mark("load-settings");
       } catch (error) {
         await writeResult(
           writer.write.bind(writer),
@@ -305,8 +272,6 @@ export const createHistoryQueryCommand = (
             ? `failed to load history settings: ${error.message}`
             : "failed to load history settings",
         );
-        profiler.mark("load-settings-failed");
-        profiler.flush("history-query: ");
         return;
       }
 
@@ -317,8 +282,6 @@ export const createHistoryQueryCommand = (
       const primaryScope = wantsAllScopes
         ? settings.defaultScope
         : parseScope(queryInput.scope, settings.defaultScope);
-      profiler.mark("parse-scope");
-
       if (queryInput.toggleScope) {
         const next = nextScope(primaryScope);
         await writeResult(
@@ -326,8 +289,6 @@ export const createHistoryQueryCommand = (
           "success",
           next,
         );
-        profiler.mark("toggle-scope");
-        profiler.flush("history-query: ");
         return;
       }
 
@@ -335,12 +296,9 @@ export const createHistoryQueryCommand = (
       const deleted = parseDeleted(queryInput.deleted);
       const hasExplicitId = sanitizeString(queryInput.id) !== null;
       const scopesToQuery = wantsAllScopes ? [...SCOPE_ORDER] : [primaryScope];
-      profiler.mark("build-request");
-
       let module: HistoryModule;
       try {
         module = await deps.getHistoryModule();
-        profiler.mark("get-module");
       } catch (error) {
         await writeResult(
           writer.write.bind(writer),
@@ -349,8 +307,6 @@ export const createHistoryQueryCommand = (
             ? `failed to initialize history module: ${error.message}`
             : "failed to initialize history module",
         );
-        profiler.mark("get-module-failed");
-        profiler.flush("history-query: ");
         return;
       }
 
@@ -374,12 +330,6 @@ export const createHistoryQueryCommand = (
               ? `history query failed: ${error.message}`
               : "history query failed",
           );
-          profiler.mark(
-            wantsAllScopes
-              ? `query-history-throw:${currentScope}`
-              : "query-history-throw",
-          );
-          profiler.flush("history-query: ");
           return;
         }
 
@@ -389,25 +339,15 @@ export const createHistoryQueryCommand = (
             "failure",
             scopedResult.error.message,
           );
-          profiler.mark(
-            wantsAllScopes
-              ? `query-history-error:${currentScope}`
-              : "query-history-error",
-          );
-          profiler.flush("history-query: ");
           return;
         }
 
         results.push({ scope: currentScope, items: scopedResult.value.items });
-        profiler.mark(
-          wantsAllScopes ? `query-history:${currentScope}` : "query-history",
-        );
       }
 
       const format = typeof queryInput.format === "string"
         ? queryInput.format
         : "lines";
-      profiler.mark("determine-format");
 
       const now = deps.now();
 
@@ -423,8 +363,6 @@ export const createHistoryQueryCommand = (
             2,
           );
           await writeResult(writer.write.bind(writer), "success", body);
-          profiler.mark("write-json:all");
-          profiler.flush("history-query: ");
           return;
         }
 
@@ -439,8 +377,6 @@ export const createHistoryQueryCommand = (
             2,
           );
         await writeResult(writer.write.bind(writer), "success", body);
-        profiler.mark("write-json");
-        profiler.flush("history-query: ");
         return;
       }
 
@@ -448,21 +384,15 @@ export const createHistoryQueryCommand = (
         const aggregated: string[] = [];
         for (const { scope: scopeName, items } of results) {
           const lines = formatLines(items, now);
-          profiler.mark(`format-lines:${scopeName}`);
           for (const line of lines) {
             aggregated.push(`${scopeName}\t${line}`);
           }
         }
         await writeResult(writer.write.bind(writer), "success", ...aggregated);
-        profiler.mark("write-lines:all");
-        profiler.flush("history-query: ");
         return;
       }
 
       const lines = formatLines(results[0]?.items ?? [], now);
-      profiler.mark("format-lines");
       await writeResult(writer.write.bind(writer), "success", ...lines);
-      profiler.mark("write-lines");
-      profiler.flush("history-query: ");
     },
   );

@@ -24,28 +24,7 @@ local scope_file scope_script toggle_script delete_script state_file aggregate_t
 local worker_pid=0
 local limit selection preview_cmd exit_code
 
-local profile_log_file=
-local -i profile_enabled=0
-if [[ -n ${ZENO_HISTORY_PROFILE-} ]]; then
-  profile_enabled=1
-  zmodload zsh/datetime 2>/dev/null
-  typeset -gF ZENO_HISTORY_PROFILE_START=0 ZENO_HISTORY_PROFILE_LAST=0
-  ZENO_HISTORY_PROFILE_START=${EPOCHREALTIME:-0}
-  ZENO_HISTORY_PROFILE_LAST=$ZENO_HISTORY_PROFILE_START
-  profile_log_file=${ZENO_HISTORY_PROFILE_LOG:-${TMPDIR:-/tmp}/zeno-history-profile.log}
-  : >| "$profile_log_file"
-  zeno_history_profile() {
-    local label=$1
-    local now=${EPOCHREALTIME:-0}
-    local delta=$(( now - ZENO_HISTORY_PROFILE_LAST ))
-    local total=$(( now - ZENO_HISTORY_PROFILE_START ))
-    printf '%s\t+%.3fms\t%.3fms\n' "$label" $(( delta * 1000 )) $(( total * 1000 )) >> "$profile_log_file"
-    ZENO_HISTORY_PROFILE_LAST=$now
-  }
-  zeno_history_profile "widget:start"
-else
-  zeno_history_profile() { :; }
-fi
+zeno_history_profile() { :; }
 
 local zeno_client=${zeno_root}/bin/zeno-history-client
 if [[ ! -x $zeno_client ]]; then
@@ -184,13 +163,8 @@ fi
   emulate -L zsh
   setopt no_aliases
   local query_rc=0
-  if (( profile_enabled )); then
-    ZENO_HISTORY_PROFILE=1 "$zeno_client" "${query_args[@]}" >"$aggregate_tmp" 2>>"$profile_log_file"
-    query_rc=$?
-  else
-    "$zeno_client" "${query_args[@]}" >"$aggregate_tmp" 2>/dev/null
-    query_rc=$?
-  fi
+  "$zeno_client" "${query_args[@]}" >"$aggregate_tmp" 2>/dev/null
+  query_rc=$?
 
   local status_seen=0
   local -A scope_buffers
@@ -275,13 +249,6 @@ fzf_opts=(
   "--preview-window"
   "right"
 )
-
-if (( profile_enabled )) && [[ -n ${ZENO_HISTORY_PROFILE_NO_FZF-} ]]; then
-  zeno_history_profile "profile:skip-fzf"
-  cleanup
-  trap - INT TERM EXIT
-  return
-fi
 
 selection=$(printf '' | "${fzf_command[@]}" "${fzf_opts[@]}")
 exit_code=$?
