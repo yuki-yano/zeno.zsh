@@ -1,7 +1,7 @@
 #autoload
 
 local -a args deno_flags
-# NOTE: Same auto-snippet workaround as bin/zeno: silence first-run dependency downloads to avoid wiping the prompt
+# NOTE: Same workaround as bin/zeno: silence first-run dependency downloads to avoid wiping the prompt
 local -i quiet=0
 
 args=("$@")
@@ -17,14 +17,18 @@ deno_flags=(
 
 for (( i = 1; i <= $#args; ++i )); do
   case ${args[i]} in
-    --zeno-mode=auto-snippet)
+    --zeno-mode=auto-snippet|--zeno-mode=completion)
       quiet=1
       break
       ;;
     --zeno-mode)
-      if (( i + 1 <= $#args )) && [[ ${args[i+1]} == auto-snippet ]]; then
-        quiet=1
-        break
+      if (( i + 1 <= $#args )); then
+        case ${args[i+1]} in
+          auto-snippet|completion)
+            quiet=1
+            break
+            ;;
+        esac
       fi
       ;;
   esac
