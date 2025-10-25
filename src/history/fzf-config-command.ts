@@ -2,9 +2,9 @@ import { writeResult } from "../app-helpers.ts";
 import { createCommand } from "../command/types.ts";
 import type { HistorySettings } from "../type/settings.ts";
 
-interface HistoryFzfConfigDeps {
+type HistoryFzfConfigDeps = {
   loadHistorySettings: () => Promise<HistorySettings>;
-}
+};
 
 export const createHistoryFzfConfigCommand = (
   deps: HistoryFzfConfigDeps,

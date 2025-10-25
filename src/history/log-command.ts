@@ -220,6 +220,14 @@ export const createHistoryLogCommand = (
         deps,
         payload as HistoryLogPayload,
       );
+      if (!logInput.command || logInput.command.trim().length === 0) {
+        await writeResult(
+          writer.write.bind(writer),
+          "failure",
+          "command is required",
+        );
+        return;
+      }
       let result: Result<void, HistoryError>;
       try {
         result = await module.logCommand(logInput);
