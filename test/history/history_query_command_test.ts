@@ -411,6 +411,36 @@ describe("history query command", () => {
     assertStrictEquals(sessionLine, undefined);
   });
 
+  it("fails when settings include invalid redact patterns", async () => {
+    const module = createModule();
+    const command = createHistoryQueryCommand({
+      getHistoryModule() {
+        return Promise.resolve(module);
+      },
+      loadHistorySettings() {
+        return Promise.resolve({
+          ...createSettings(),
+          redact: ["[unclosed"],
+        });
+      },
+      now: () => new Date("2024-01-02T00:00:00.000Z"),
+    });
+
+    const { writer, lines } = createWriter();
+
+    await command.execute({
+      input: {
+        historyQuery: {
+          scope: "global",
+        },
+      },
+      writer,
+    });
+
+    assertStrictEquals(lines[0], "failure");
+    assertStringIncludes(lines[1], "invalid redact pattern");
+  });
+
   it("prints pretty JSON when id is specified", async () => {
     const record: HistoryRecord = {
       id: "01HISTORYA00000000000000000",

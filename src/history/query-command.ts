@@ -309,9 +309,27 @@ export const createHistoryQueryCommand = (
         return;
       }
 
-      const settingsPatterns = settings.redact.map((pattern) =>
-        pattern instanceof RegExp ? pattern : new RegExp(pattern, "g")
-      );
+      let settingsPatterns: RegExp[];
+      try {
+        settingsPatterns = settings.redact.map((pattern, index) => {
+          if (pattern instanceof RegExp) {
+            return pattern;
+          }
+          if (typeof pattern === "string" && pattern.length > 0) {
+            return new RegExp(pattern, "g");
+          }
+          throw new Error(`history.redact[${index}] must be string or RegExp`);
+        });
+      } catch (error) {
+        await writeResult(
+          writer.write.bind(writer),
+          "failure",
+          error instanceof Error
+            ? `invalid redact pattern: ${error.message}`
+            : "invalid redact pattern",
+        );
+        return;
+      }
       module.setRedactPatterns(settingsPatterns);
 
       const results: Array<{ scope: HistoryScope; items: HistoryRecord[] }> =
