@@ -78,7 +78,7 @@ describe("HistoryIO", () => {
 
     assertEquals(outcome.records.length, 2);
     assertEquals(outcome.records[0].command, "echo secret");
-    assertEquals(outcome.records[0].duration_ms, 12);
+    assertEquals(outcome.records[0].duration_ms, 12_000);
     assertEquals(outcome.records[0].shell, "zsh");
   });
 

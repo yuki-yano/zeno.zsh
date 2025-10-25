@@ -49,4 +49,40 @@ describe("createHistfileEditor", () => {
     assertStrictEquals(result.ok, false);
     assertEquals(result.error.type, "lock");
   });
+
+  it("removes the most recent matching entry", async () => {
+    const histfile = await writeHistfile([
+      ": 1700000000:0;echo foo",
+      ": 1700000001:0;echo bar",
+      ": 1700000002:0;echo foo",
+    ].join("\n"));
+
+    const editor = createHistfileEditor({ histfilePath: histfile });
+    const result = await editor.prune({ command: "echo foo" });
+    assertStrictEquals(result.ok, true);
+
+    const remaining = await Deno.readTextFile(histfile);
+    assertEquals(
+      remaining.trim(),
+      [
+        ": 1700000000:0;echo foo",
+        ": 1700000001:0;echo bar",
+      ].join("\n"),
+    );
+  });
+
+  it("uses the normalizer when comparing commands", async () => {
+    const histfile = await writeHistfile(": 1700000000:0;echo password\n");
+
+    const editor = createHistfileEditor({
+      histfilePath: histfile,
+      normalizeForMatch: (value) => value.replace("password", "***"),
+    });
+
+    const result = await editor.prune({ command: "echo ***" });
+    assertStrictEquals(result.ok, true);
+
+    const remaining = await Deno.readTextFile(histfile);
+    assertEquals(remaining.trim(), "");
+  });
 });

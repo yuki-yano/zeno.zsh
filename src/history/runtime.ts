@@ -26,6 +26,7 @@ const createRuntime = async (): Promise<HistoryRuntime> => {
   const redactor = createRedactor([]);
   const histfileEditor = createHistfileEditor({
     histfilePath: Deno.env.get("HISTFILE") ?? null,
+    normalizeForMatch: (value) => redactor.applyAll(value),
   });
   const historyIO = createHistoryIO({});
 

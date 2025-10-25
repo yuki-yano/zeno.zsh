@@ -44,7 +44,7 @@ const formatEpoch = (iso: string): number => {
 const serializeZshLine = (record: HistoryRecord): string => {
   const epoch = formatEpoch(record.ts);
   const duration = record.duration_ms != null
-    ? Math.max(record.duration_ms, 0)
+    ? Math.max(Math.floor(record.duration_ms / 1000), 0)
     : 0;
   return `: ${epoch}:${duration};${record.command}`;
 };
@@ -117,7 +117,9 @@ const parseZshLine = (line: string): HistoryRecord | null => {
     shell: "zsh",
     repo_root: null,
     deleted_at: null,
-    duration_ms: Number.isFinite(duration) ? duration : null,
+    duration_ms: Number.isFinite(duration)
+      ? Math.max(duration, 0) * 1000
+      : null,
     meta: null,
   };
 };

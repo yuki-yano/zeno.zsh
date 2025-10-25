@@ -21,16 +21,22 @@ export interface HistfileEditor {
 interface HistfileEditorDeps {
   histfilePath?: string | null;
   lockPath?: string;
+  normalizeForMatch?: (value: string) => string;
   readTextFile?: (path: string) => Promise<string>;
   writeTextFile?: (path: string, data: string) => Promise<void>;
   rename?: (from: string, to: string) => Promise<void>;
   remove?: (path: string) => Promise<void>;
   openLock?: (path: string) => Promise<Deno.FsFile>;
+  stat?: (path: string) => Promise<Deno.FileInfo>;
+  chmod?: (path: string, mode: number) => Promise<void>;
   runReload?: () => Promise<void>;
 }
 
 const defaultDeps = (): Required<
-  Omit<HistfileEditorDeps, "histfilePath" | "lockPath" | "runReload">
+  Omit<
+    HistfileEditorDeps,
+    "histfilePath" | "lockPath" | "runReload" | "normalizeForMatch"
+  >
 > => ({
   readTextFile: async (path) => await Deno.readTextFile(path),
   writeTextFile: async (path, data) => await Deno.writeTextFile(path, data),
@@ -41,6 +47,8 @@ const defaultDeps = (): Required<
       write: true,
       createNew: true,
     }),
+  stat: async (path) => await Deno.stat(path),
+  chmod: async (path, mode) => await Deno.chmod(path, mode),
 });
 
 const success = (): HistfileResult => ({ ok: true, value: undefined });
@@ -69,7 +77,25 @@ export const createHistfileEditor = (
   const rename = deps.rename ?? defaults.rename;
   const remove = deps.remove ?? defaults.remove;
   const openLock = deps.openLock ?? defaults.openLock;
+  const stat = deps.stat ?? defaults.stat;
+  const chmod = deps.chmod ?? defaults.chmod;
+  const normalize = deps.normalizeForMatch ??
+    ((value: string): string => value);
   const runReload = deps.runReload;
+
+  const extractCommand = (line: string): string | null => {
+    const trimmed = line.trim();
+    if (!trimmed.length) {
+      return null;
+    }
+    if (trimmed.startsWith(":")) {
+      const separator = trimmed.indexOf(";");
+      if (separator >= 0) {
+        return trimmed.slice(separator + 1);
+      }
+    }
+    return trimmed;
+  };
 
   const withLock = async <T>(
     fn: () => Promise<T>,
@@ -129,17 +155,18 @@ export const createHistfileEditor = (
       }
 
       const lines = text.split("\n");
-      const targetIndex = lines.findIndex((line) => {
-        const trimmed = line.trim();
-        if (!trimmed.length) {
-          return false;
+      const target = normalize(entry.command);
+      let targetIndex = -1;
+      for (let index = lines.length - 1; index >= 0; index--) {
+        const candidate = extractCommand(lines[index]);
+        if (candidate == null) {
+          continue;
         }
-        const delimiter = trimmed.lastIndexOf(";");
-        if (delimiter >= 0) {
-          return trimmed.slice(delimiter + 1) === entry.command;
+        if (normalize(candidate) === target) {
+          targetIndex = index;
+          break;
         }
-        return trimmed === entry.command;
-      });
+      }
 
       if (targetIndex >= 0) {
         lines.splice(targetIndex, 1);
@@ -148,6 +175,22 @@ export const createHistfileEditor = (
       const updated = lines.join("\n");
       const tempPath = `${histfilePath}.tmp-${crypto.randomUUID()}`;
       await writeTextFile(tempPath, updated);
+      let desiredMode = 0o600;
+      try {
+        const info = await stat(histfilePath);
+        if (info.mode != null) {
+          desiredMode = info.mode;
+        }
+      } catch (error) {
+        if (!(error instanceof Deno.errors.NotFound)) {
+          throw error;
+        }
+      }
+      try {
+        await chmod(tempPath, desiredMode);
+      } catch (_error) {
+        // chmod が未対応の環境でも処理を継続する
+      }
       await rename(tempPath, histfilePath);
 
       if (runReload) {
