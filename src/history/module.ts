@@ -400,6 +400,11 @@ export const createHistoryModule = (
         command: sanitizeCommand(redactor, record.command ?? ""),
       };
 
+      if (!toInsert.command || toInsert.command.length === 0) {
+        skipped += 1;
+        continue;
+      }
+
       try {
         await store.insert(toInsert);
         added += 1;

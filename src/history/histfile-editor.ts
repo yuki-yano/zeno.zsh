@@ -22,6 +22,7 @@ type HistfileEditorDeps = {
   histfilePath?: string | null;
   lockPath?: string;
   normalizeForMatch?: (value: string) => string;
+  generateId?: () => string;
   readTextFile?: (path: string) => Promise<string>;
   writeTextFile?: (path: string, data: string) => Promise<void>;
   rename?: (from: string, to: string) => Promise<void>;
@@ -38,6 +39,7 @@ const defaultDeps = (): Required<
     "histfilePath" | "lockPath" | "runReload" | "normalizeForMatch"
   >
 > => ({
+  generateId: () => crypto.randomUUID(),
   readTextFile: async (path) => await Deno.readTextFile(path),
   writeTextFile: async (path, data) => await Deno.writeTextFile(path, data),
   rename: async (from, to) => await Deno.rename(from, to),
@@ -77,6 +79,7 @@ export const createHistfileEditor = (
   const rename = deps.rename ?? defaults.rename;
   const remove = deps.remove ?? defaults.remove;
   const openLock = deps.openLock ?? defaults.openLock;
+  const generateId = deps.generateId ?? defaults.generateId;
   const stat = deps.stat ?? defaults.stat;
   const chmod = deps.chmod ?? defaults.chmod;
   const normalize = deps.normalizeForMatch ??
@@ -173,7 +176,7 @@ export const createHistfileEditor = (
       }
 
       const updated = lines.join("\n");
-      const tempPath = `${histfilePath}.tmp-${crypto.randomUUID()}`;
+      const tempPath = `${histfilePath}.tmp-${generateId()}`;
       await writeTextFile(tempPath, updated);
       let desiredMode = 0o600;
       try {

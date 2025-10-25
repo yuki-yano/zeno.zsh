@@ -5,7 +5,9 @@ setopt typesetsilent
 
 local zeno_root=${ZENO_ROOT:-$PWD}
 local zeno_functions_dir=${zeno_root}/shells/zsh/functions
-path=(${zeno_root}/bin $path)
+if (( ${path[(I)$zeno_root/bin]} == 0 )); then
+  path=("$zeno_root/bin" $path)
+fi
 typeset -gx PATH
 typeset -gx ZENO_ROOT=$zeno_root
 if [[ -d $zeno_functions_dir ]]; then

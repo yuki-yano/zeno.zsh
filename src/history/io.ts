@@ -51,7 +51,12 @@ const serializeZshLine = (record: HistoryRecord): string => {
 
 const serializeFishEntry = (record: HistoryRecord): string => {
   const epoch = formatEpoch(record.ts);
-  const escaped = record.command.replace(/"/g, '\\"');
+  const escaped = record.command
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r")
+    .replace(/\t/g, "\\t");
   return `- cmd: "${escaped}"\n  when: ${epoch}`;
 };
 
@@ -84,7 +89,9 @@ const toHistoryRecord = (
   duration_ms: candidate.duration_ms == null
     ? null
     : Number(candidate.duration_ms),
-  meta: candidate.meta && typeof candidate.meta === "object"
+  meta: candidate.meta &&
+      typeof candidate.meta === "object" &&
+      !Array.isArray(candidate.meta)
     ? candidate.meta as Record<string, unknown>
     : null,
 });
@@ -125,7 +132,26 @@ const parseZshLine = (line: string): HistoryRecord | null => {
 };
 
 const parseAtuinJsonLine = (line: string): HistoryRecord => {
-  const data = JSON.parse(line) as Record<string, unknown>;
+  let data: Record<string, unknown>;
+  try {
+    data = JSON.parse(line) as Record<string, unknown>;
+  } catch (_error) {
+    return {
+      id: crypto.randomUUID(),
+      ts: new Date().toISOString(),
+      command: line,
+      exit: null,
+      pwd: null,
+      session: null,
+      host: null,
+      user: null,
+      shell: "zsh",
+      repo_root: null,
+      deleted_at: null,
+      duration_ms: null,
+      meta: null,
+    };
+  }
   const timestamp = typeof data.timestamp === "string"
     ? data.timestamp
     : new Date().toISOString();

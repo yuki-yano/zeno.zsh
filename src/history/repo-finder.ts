@@ -7,8 +7,8 @@ export type RepoFinder = {
 export type RepoFinderDeps = {
   runGitRevParse?: (cwd: string) => Promise<string | null>;
   realPath?: (value: string) => Promise<string>;
-  stat?: (value: string) => Promise<Deno.FileInfo>;
-  readTextFile?: (value: string) => Promise<string>;
+  stat?: (value: string) => Promise<Deno.FileInfo | null>;
+  readTextFile?: (value: string) => Promise<string | null>;
 };
 
 const textDecoder = new TextDecoder();
