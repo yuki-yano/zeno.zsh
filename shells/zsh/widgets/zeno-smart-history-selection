@@ -20,10 +20,8 @@ if (( $+functions[zeno-enable-sock] )) && [[ -z ${ZENO_DISABLE_SOCK-} ]]; then
   zeno-enable-sock
 fi
 
-local scope_file scope_script toggle_script delete_script state_file aggregate_tmp
-local worker_pid=0
+local scope_script toggle_script delete_script state_file
 local limit selection preview_cmd exit_code
-
 zeno_history_profile() { :; }
 
 local zeno_client=${zeno_root}/bin/zeno-history-client
@@ -95,32 +93,18 @@ fi
 
 zeno_history_profile "setup:determine-fzf"
 
-scope_file=$(mktemp -t zeno-history-scope.XXXXXX) || return 1
 scope_script=${zeno_root}/shells/zsh/scripts/zeno-smart-history-scope.sh
 toggle_script=${zeno_root}/shells/zsh/scripts/zeno-smart-history-toggle.sh
 delete_script=${zeno_root}/shells/zsh/scripts/zeno-smart-history-delete.sh
 
 cleanup() {
-  if (( worker_pid > 0 )); then
-    kill $worker_pid 2>/dev/null || true
-    wait $worker_pid 2>/dev/null || true
-    worker_pid=0
-  fi
-  [[ -n $scope_file && -f $scope_file ]] && command rm -f -- "$scope_file"
   [[ -n $state_file && -f $state_file ]] && command rm -f -- "$state_file"
-  [[ -n $aggregate_tmp && -f $aggregate_tmp ]] && command rm -f -- "$aggregate_tmp"
-  if [[ ${(t)scope_files} == association* ]]; then
-    for file in ${(v)scope_files}; do
-      [[ -n $file && -f $file ]] && command rm -f -- "$file"
-    done
-  fi
 }
 
 trap 'cleanup' INT TERM EXIT
 
 
 local initial_scope=global
-print -r -- "$initial_scope" >| "$scope_file"
 
 state_file=$(mktemp -t zeno-history-state.XXXXXX) || { cleanup; return 1; }
 print -r -- "$initial_scope" >| "$state_file"
@@ -137,90 +121,14 @@ if [[ -z $session_id ]]; then
   session_created=1
 fi
 
-export ZENO_HISTORY_SCOPE_FILE="$scope_file"
-export ZENO_HISTORY_CWD="$PWD"
-export ZENO_HISTORY_LIMIT="$limit"
-export ZENO_HISTORY_ROOT="$zeno_root"
-
-local -a scope_order=(global repository directory session)
-local -A scope_files
-
-for scope in ${scope_order[@]}; do
-  local file
-  file=$(mktemp -t zeno-history-${scope}.XXXXXX) || { cleanup; return 1; }
-  : >| "$file"
-  scope_files[$scope]=$file
-done
-
-aggregate_tmp=$(mktemp -t zeno-history-batch.XXXXXX) || { cleanup; return 1; }
-local -a query_args
-query_args=(history query --format smart-lines --scope all --cwd "$PWD" --limit "$limit")
-if [[ -n $session_id ]]; then
-  query_args+=(--session "$session_id")
-fi
-
-(
-  emulate -L zsh
-  setopt no_aliases
-  local query_rc=0
-  "$zeno_client" "${query_args[@]}" >"$aggregate_tmp" 2>/dev/null
-  query_rc=$?
-
-  local status_seen=0
-  local -A scope_buffers
-  for scope in ${scope_order[@]}; do
-    scope_buffers[$scope]=''
-  done
-  if (( query_rc == 0 )); then
-    while IFS= read -r raw_line; do
-      [[ -z $raw_line ]] && continue
-      if [[ $raw_line == success ]]; then
-        status_seen=1
-        continue
-      fi
-      if (( ! status_seen )); then
-        continue
-      fi
-      local scope=${raw_line%%$'\t'*}
-      local rest=${raw_line#*$'\t'}
-      if [[ -z $scope || $scope == $raw_line || -z $rest ]]; then
-        continue
-      fi
-      local trimmed_rest=${rest##$'\t'}
-      if [[ $trimmed_rest == $'\033[2m'scope:* || $trimmed_rest == scope:* ]]; then
-        continue
-      fi
-      scope_buffers[$scope]+="$rest"$'\n'
-    done <"$aggregate_tmp"
-  fi
-
-  for scope in ${scope_order[@]}; do
-    : >| "${scope_files[$scope]}"
-
-    if [[ -n ${scope_buffers[$scope]-} ]]; then
-      print -nr -- "${scope_buffers[$scope]}" >>| "${scope_files[$scope]}"
-    else
-      local empty_dim=$'\033[2m'
-      local empty_reset=$'\033[0m'
-      printf '__empty__\t--\t%s(no entries)%s\t\n' "$empty_dim" "$empty_reset" >>| "${scope_files[$scope]}"
-    fi
-
-    zeno_history_profile "scope:${scope} ready"
-  done
-
-  command rm -f -- "$aggregate_tmp"
-) &!
-worker_pid=$!
-aggregate_tmp=
-
 zeno_history_profile "setup:scope-script"
 zeno_history_profile "setup:toggle-script"
 zeno_history_profile "setup:delete-script"
 
 local -a scope_cmd toggle_cmd delete_cmd
-scope_cmd=("${scope_script}" "${state_file}" "${scope_files[global]}" "${scope_files[repository]}" "${scope_files[directory]}" "${scope_files[session]}")
+scope_cmd=("${scope_script}" "${state_file}" "${zeno_client}" "$PWD" "$limit" "${session_id}")
 toggle_cmd=("${toggle_script}" "${state_file}")
-delete_cmd=("${delete_script}" "${zeno_client}" "$PWD" "$limit" "${session_id}" "${state_file}" "${scope_files[global]}" "${scope_files[repository]}" "${scope_files[directory]}" "${scope_files[session]}")
+delete_cmd=("${delete_script}" "${zeno_client}")
 local scope_cmd_str=$(printf '%q ' "${scope_cmd[@]}"); scope_cmd_str=${scope_cmd_str% }
 local toggle_cmd_str=$(printf '%q ' "${toggle_cmd[@]}"); toggle_cmd_str=${toggle_cmd_str% }
 local delete_cmd_str=$(printf '%q ' "${delete_cmd[@]}"); delete_cmd_str=${delete_cmd_str% }; delete_cmd_str+=" {1}"
@@ -253,14 +161,8 @@ exit_code=$?
 
 zeno_history_profile "fzf:completed"
 
-if (( worker_pid > 0 )); then
-  wait $worker_pid 2>/dev/null || true
-  worker_pid=0
-fi
-
 cleanup
 trap - INT TERM EXIT
-unset ZENO_HISTORY_SCOPE_FILE ZENO_HISTORY_CWD ZENO_HISTORY_LIMIT ZENO_HISTORY_ROOT
 
 if [[ $exit_code -ne 0 || -z $selection ]]; then
   zeno_history_profile "widget:abort"
