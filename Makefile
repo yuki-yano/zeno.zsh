@@ -25,6 +25,7 @@ lint: ## Lint code
 precommit: fmt
 
 test: ## Test
+	deno run ${FLAG} ${ALLOW} -- ./scripts/preload_sqlite.ts
 	deno test --no-check ${TEST_FLAG} ${ALLOW} --parallel
 
 type-check: ## Type check
