@@ -229,8 +229,6 @@ preview_cmd='if [ "{1}" = "__empty__" ]; then printf "\033[2mNo entries\033[0m\n
 
 local -a fzf_opts
 fzf_opts=(
-  "--no-sort"
-  "--exact"
   "--query=$LBUFFER"
   "--nth=2"
   "--prompt=History> "
