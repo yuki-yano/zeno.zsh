@@ -344,13 +344,14 @@ export const createHistoryQueryCommand = (
         results.push({ scope: currentScope, items: scopedResult.value.items });
       }
 
-      const formatInput = typeof queryInput.format === "string"
+      const rawFormat = typeof queryInput.format === "string"
         ? queryInput.format
-        : "smart-lines";
+        : "";
+      const wantsJson = rawFormat === "json";
 
       const now = deps.now();
 
-      if (formatInput === "json") {
+      if (wantsJson) {
         if (wantsAllScopes) {
           const body = JSON.stringify(
             {

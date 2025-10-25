@@ -161,7 +161,7 @@ describe("history query command", () => {
     assertEquals(parts2[3], "npm test");
   });
 
-  it("prints smart lines when format is smart-lines", async () => {
+  it("prints canonical lines when format is omitted", async () => {
     const module = createModule({
       queryHistory() {
         return Promise.resolve({
@@ -221,7 +221,6 @@ describe("history query command", () => {
         historyQuery: {
           scope: "repository",
           cwd: "/repo/app",
-          format: "smart-lines",
         },
       },
       writer,
@@ -326,7 +325,7 @@ describe("history query command", () => {
     assertEquals(repoParts[4], "npm test");
   });
 
-  it("prints smart lines for all scopes when format is smart-lines", async () => {
+  it("prints canonical lines for all scopes when format is omitted", async () => {
     const calls: HistoryScope[] = [];
     const module = createModule({
       queryHistory(request) {
@@ -383,7 +382,6 @@ describe("history query command", () => {
         historyQuery: {
           scope: "all",
           cwd: "/repo/app",
-          format: "smart-lines",
         },
       },
       writer,
