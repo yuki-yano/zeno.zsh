@@ -146,17 +146,19 @@ describe("history query command", () => {
     });
 
     assertStrictEquals(lines[0], "success");
-    assertStringIncludes(lines[1], "scope:repository");
-    assertStringIncludes(lines[1], "items:2");
-    assertStringIncludes(lines[2], "01HISTORYA00000000000000000");
-    assertStringIncludes(lines[2], "git status");
-    assertEquals(lines[2].includes("repo"), false);
-    assertEquals(lines[2].includes("./"), false);
-    assertStringIncludes(lines[3], "01HISTORYB00000000000000000");
-    assertStringIncludes(lines[3], "npm test");
-    assertStringIncludes(lines[3], "✘");
-    assertEquals(lines[3].includes("repo"), false);
-    assertEquals(lines[3].includes("./"), false);
+    assertEquals(lines.length, 3);
+    const parts1 = lines[1].split("\t");
+    const parts2 = lines[2].split("\t");
+    assertEquals(parts1.length, 4);
+    assertEquals(parts2.length, 4);
+    assertEquals(parts1[0], "01HISTORYA00000000000000000");
+    assertEquals(parts1[1], "git status");
+    assertStringIncludes(parts1[2], "✔");
+    assertEquals(parts1[3], "git status");
+    assertEquals(parts2[0], "01HISTORYB00000000000000000");
+    assertEquals(parts2[1], "npm test");
+    assertStringIncludes(parts2[2], "✘");
+    assertEquals(parts2[3], "npm test");
   });
 
   it("prints smart lines when format is smart-lines", async () => {
@@ -306,26 +308,22 @@ describe("history query command", () => {
 
     assertStrictEquals(lines[0], "success");
     assertEquals(calls, ["global", "repository", "directory", "session"]);
-    const hasGlobalHeader = lines.some((line) =>
-      line.startsWith("global\t") && line.includes("scope:global")
-    );
-    assertStrictEquals(hasGlobalHeader, true);
-    const hasGlobalCommand = lines.some((line) =>
-      line.includes("01GLOBAL0000000000000000000")
-    );
-    assertStrictEquals(hasGlobalCommand, true);
-    const hasRepositoryHeader = lines.some((line) =>
-      line.startsWith("repository\t") && line.includes("scope:repository")
-    );
-    assertStrictEquals(hasRepositoryHeader, true);
-    const hasDirectoryHeader = lines.some((line) =>
-      line.startsWith("directory\t") && line.includes("scope:directory")
-    );
-    assertStrictEquals(hasDirectoryHeader, true);
-    const hasSessionHeader = lines.some((line) =>
-      line.startsWith("session\t") && line.includes("scope:session")
-    );
-    assertStrictEquals(hasSessionHeader, true);
+    const globalLine = lines.find((line) => line.startsWith("global\t"));
+    const repoLine = lines.find((line) => line.startsWith("repository\t"));
+    assertEquals(globalLine !== undefined, true);
+    assertEquals(repoLine !== undefined, true);
+    const globalParts = (globalLine ?? "").split("\t");
+    const repoParts = (repoLine ?? "").split("\t");
+    assertEquals(globalParts.length, 5);
+    assertEquals(repoParts.length, 5);
+    assertEquals(globalParts[1], "01GLOBAL0000000000000000000");
+    assertEquals(globalParts[2], "git status");
+    assertStringIncludes(globalParts[3], "✔");
+    assertEquals(globalParts[4], "git status");
+    assertEquals(repoParts[1], "01REPO00000000000000000000");
+    assertEquals(repoParts[2], "npm test");
+    assertStringIncludes(repoParts[3], "✔");
+    assertEquals(repoParts[4], "npm test");
   });
 
   it("prints smart lines for all scopes when format is smart-lines", async () => {
