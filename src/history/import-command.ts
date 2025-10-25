@@ -40,19 +40,39 @@ const normalizeStringArray = (value: unknown): string[] => {
   return [];
 };
 
-const buildCliPatterns = (value: unknown): Result<RegExp[], string> => {
-  const errors: string[] = [];
-  const patterns = normalizeStringArray(value).map((entry) => {
-    try {
-      return new RegExp(entry, "g");
-    } catch (error) {
-      errors.push(error instanceof Error ? error.message : String(error));
-      return null;
-    }
-  }).filter((entry): entry is RegExp => entry != null);
+const MAX_PATTERN_LENGTH = 512;
 
-  if (errors.length > 0) {
-    return { ok: false, error: errors.join(", ") };
+const escapeForLiteral = (value: string): string =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const compileLiteralPattern = (pattern: string, label: string): RegExp => {
+  if (pattern.length > MAX_PATTERN_LENGTH) {
+    throw new Error(`${label} is too long`);
+  }
+  return new RegExp(escapeForLiteral(pattern), "g");
+};
+
+const compileConfigPattern = (pattern: string, label: string): RegExp => {
+  if (pattern.length > MAX_PATTERN_LENGTH) {
+    throw new Error(`${label} is too long`);
+  }
+  return new RegExp(pattern, "g");
+};
+
+const buildCliPatterns = (value: unknown): Result<RegExp[], string> => {
+  const normalized = normalizeStringArray(value);
+  const patterns: RegExp[] = [];
+
+  for (let index = 0; index < normalized.length; index++) {
+    const entry = normalized[index];
+    try {
+      patterns.push(compileLiteralPattern(entry, `pattern[${index}]`));
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
   }
 
   return { ok: true, value: patterns };
@@ -126,10 +146,38 @@ export const createHistoryImportCommand = (
 
       try {
         const module = await deps.getHistoryModule();
-        const basePatterns = settings.redact.map((pattern) =>
-          pattern instanceof RegExp ? pattern : new RegExp(pattern, "g")
-        );
-        module.setRedactPatterns([...basePatterns, ...cliPatterns.value]);
+        const basePatternsResult = (() => {
+          try {
+            return {
+              ok: true as const,
+              value: settings.redact.map((pattern, index) =>
+                pattern instanceof RegExp ? pattern : compileConfigPattern(
+                  pattern,
+                  `history.redact[${index}]`,
+                )
+              ),
+            };
+          } catch (error) {
+            return {
+              ok: false as const,
+              error: error instanceof Error ? error.message : String(error),
+            };
+          }
+        })();
+
+        if (!basePatternsResult.ok) {
+          await writeResult(
+            writer.write.bind(writer),
+            "failure",
+            basePatternsResult.error,
+          );
+          return;
+        }
+
+        module.setRedactPatterns([
+          ...basePatternsResult.value,
+          ...cliPatterns.value,
+        ]);
 
         const result = await module.importHistory({
           format,

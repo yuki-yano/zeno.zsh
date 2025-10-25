@@ -1,24 +1,24 @@
-export interface HistfileEntry {
+export type HistfileEntry = {
   command: string;
-}
+};
 
 export type HistfileErrorType = "lock" | "io";
 
-export interface HistfileError {
+export type HistfileError = {
   type: HistfileErrorType;
   message: string;
   cause?: unknown;
-}
+};
 
 export type HistfileResult =
   | { ok: true; value: void }
   | { ok: false; error: HistfileError };
 
-export interface HistfileEditor {
+export type HistfileEditor = {
   prune(entry: HistfileEntry): Promise<HistfileResult>;
-}
+};
 
-interface HistfileEditorDeps {
+type HistfileEditorDeps = {
   histfilePath?: string | null;
   lockPath?: string;
   normalizeForMatch?: (value: string) => string;
@@ -30,7 +30,7 @@ interface HistfileEditorDeps {
   stat?: (path: string) => Promise<Deno.FileInfo>;
   chmod?: (path: string, mode: number) => Promise<void>;
   runReload?: () => Promise<void>;
-}
+};
 
 const defaultDeps = (): Required<
   Omit<

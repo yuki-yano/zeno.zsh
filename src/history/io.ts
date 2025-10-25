@@ -1,33 +1,33 @@
 import type { ExportFormat, HistoryRecord, ImportSummary } from "./types.ts";
 
-export interface ExportAllArgs {
+export type ExportAllArgs = {
   format: ExportFormat;
   outputPath: string;
   records: HistoryRecord[];
   options?: {
     redacted?: boolean;
   };
-}
+};
 
-export interface ImportFileArgs {
+export type ImportFileArgs = {
   format: ExportFormat;
   inputPath: string;
-}
+};
 
-export interface ImportOutcome {
+export type ImportOutcome = {
   records: HistoryRecord[];
   summary: ImportSummary;
-}
+};
 
-export interface HistoryIO {
+export type HistoryIO = {
   exportAll(args: ExportAllArgs): Promise<void>;
   importFile(args: ImportFileArgs): Promise<ImportOutcome>;
-}
+};
 
-interface HistoryIODependencies {
+type HistoryIODependencies = {
   readTextFile?: (path: string) => Promise<string>;
   writeTextFile?: (path: string, data: string) => Promise<void>;
-}
+};
 
 const defaults = (): Required<HistoryIODependencies> => ({
   readTextFile: async (path: string) => await Deno.readTextFile(path),

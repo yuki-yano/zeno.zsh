@@ -60,31 +60,40 @@ const parseMeta = (value: unknown): Record<string, unknown> | null => {
   return null;
 };
 
+const MAX_PATTERN_LENGTH = 512;
+
+const escapeForLiteral = (value: string): string =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const compileConfigPattern = (pattern: string, index: number): RegExp => {
+  if (pattern.length > MAX_PATTERN_LENGTH) {
+    throw new Error(`history.redact[${index}] is too long`);
+  }
+  return new RegExp(pattern, "g");
+};
+
+const compileCliPattern = (pattern: string, index: number): RegExp => {
+  if (pattern.length > MAX_PATTERN_LENGTH) {
+    throw new Error(`pattern[${index}] is too long`);
+  }
+  return new RegExp(escapeForLiteral(pattern), "g");
+};
+
 const buildRedactPatterns = (
   settings: HistorySettings,
 ): Result<RegExp[], HistoryError> => {
-  const patterns: RegExp[] = [];
-
-  for (const entry of settings.redact) {
-    if (entry instanceof RegExp) {
-      patterns.push(entry);
-      continue;
-    }
-
-    if (typeof entry === "string" && entry.length > 0) {
-      try {
-        patterns.push(new RegExp(entry, "g"));
-      } catch (error) {
-        return err({
-          type: "validation",
-          message: `invalid redact pattern: ${entry}`,
-          cause: error,
-        });
-      }
-    }
+  try {
+    const patterns = settings.redact.map((entry, index) =>
+      entry instanceof RegExp ? entry : compileConfigPattern(entry, index)
+    );
+    return ok(patterns);
+  } catch (error) {
+    return err({
+      type: "validation",
+      message: error instanceof Error ? error.message : String(error),
+      cause: error,
+    });
   }
-
-  return ok(patterns);
 };
 
 const buildCliPatterns = (
@@ -97,16 +106,19 @@ const buildCliPatterns = (
   const items = Array.isArray(source) ? source : [source];
   const patterns: RegExp[] = [];
 
-  for (const item of items) {
+  for (let index = 0; index < items.length; index++) {
+    const item = items[index];
     if (typeof item !== "string" || item.length === 0) {
       continue;
     }
     try {
-      patterns.push(new RegExp(item, "g"));
+      patterns.push(compileCliPattern(item, index));
     } catch (error) {
       return err({
         type: "validation",
-        message: `invalid --redact pattern: ${item}`,
+        message: error instanceof Error
+          ? error.message
+          : `invalid --redact pattern: ${item}`,
         cause: error,
       });
     }
