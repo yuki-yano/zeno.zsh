@@ -24,8 +24,7 @@ local scope_file scope_script toggle_script delete_script state_file aggregate_t
 local worker_pid=0
 local limit selection preview_cmd exit_code
 
-local debug_log=${TMPDIR:-/tmp}/zeno-history-widget.log
-local profile_log_file=$debug_log
+local profile_log_file=
 local -i profile_enabled=0
 if [[ -n ${ZENO_HISTORY_PROFILE-} ]]; then
   profile_enabled=1
@@ -33,7 +32,7 @@ if [[ -n ${ZENO_HISTORY_PROFILE-} ]]; then
   typeset -gF ZENO_HISTORY_PROFILE_START=0 ZENO_HISTORY_PROFILE_LAST=0
   ZENO_HISTORY_PROFILE_START=${EPOCHREALTIME:-0}
   ZENO_HISTORY_PROFILE_LAST=$ZENO_HISTORY_PROFILE_START
-  profile_log_file=${ZENO_HISTORY_PROFILE_LOG:-$debug_log}
+  profile_log_file=${ZENO_HISTORY_PROFILE_LOG:-${TMPDIR:-/tmp}/zeno-history-profile.log}
   : >| "$profile_log_file"
   zeno_history_profile() {
     local label=$1
@@ -162,7 +161,6 @@ fi
 export ZENO_HISTORY_SCOPE_FILE="$scope_file"
 export ZENO_HISTORY_CWD="$PWD"
 export ZENO_HISTORY_LIMIT="$limit"
-export ZENO_HISTORY_DEBUG_LOG="$debug_log"
 export ZENO_HISTORY_ROOT="$zeno_root"
 
 local -a scope_order=(global repository directory session)
@@ -246,9 +244,9 @@ zeno_history_profile "setup:toggle-script"
 zeno_history_profile "setup:delete-script"
 
 local -a scope_cmd toggle_cmd delete_cmd
-scope_cmd=("${scope_script}" "${state_file}" "${debug_log}" "${scope_files[global]}" "${scope_files[repository]}" "${scope_files[directory]}" "${scope_files[session]}")
-toggle_cmd=("${toggle_script}" "${state_file}" "${debug_log}")
-delete_cmd=("${delete_script}" "${zeno_client}" "${debug_log}" "$PWD" "$limit" "${session_id}" "${state_file}" "${scope_files[global]}" "${scope_files[repository]}" "${scope_files[directory]}" "${scope_files[session]}")
+scope_cmd=("${scope_script}" "${state_file}" "${scope_files[global]}" "${scope_files[repository]}" "${scope_files[directory]}" "${scope_files[session]}")
+toggle_cmd=("${toggle_script}" "${state_file}")
+delete_cmd=("${delete_script}" "${zeno_client}" "$PWD" "$limit" "${session_id}" "${state_file}" "${scope_files[global]}" "${scope_files[repository]}" "${scope_files[directory]}" "${scope_files[session]}")
 local scope_cmd_str=$(printf '%q ' "${scope_cmd[@]}"); scope_cmd_str=${scope_cmd_str% }
 local toggle_cmd_str=$(printf '%q ' "${toggle_cmd[@]}"); toggle_cmd_str=${toggle_cmd_str% }
 local delete_cmd_str=$(printf '%q ' "${delete_cmd[@]}"); delete_cmd_str=${delete_cmd_str% }; delete_cmd_str+=" {1}"
@@ -297,7 +295,7 @@ fi
 
 cleanup
 trap - INT TERM EXIT
-unset ZENO_HISTORY_SCOPE_FILE ZENO_HISTORY_CWD ZENO_HISTORY_LIMIT   ZENO_HISTORY_DEBUG_LOG ZENO_HISTORY_ROOT
+unset ZENO_HISTORY_SCOPE_FILE ZENO_HISTORY_CWD ZENO_HISTORY_LIMIT ZENO_HISTORY_ROOT
 
 if [[ $exit_code -ne 0 || -z $selection ]]; then
   zeno_history_profile "widget:abort"

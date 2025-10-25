@@ -3,16 +3,15 @@ emulate -L zsh
 setopt errexit no_aliases pipefail
 
 local cmd=${1:-zeno}
-local debug_log=${2:-}
-local cwd=${3:-$PWD}
-local limit=${4:-2000}
-local session=${5:-}
-local state_file=${6:?state file required}
-local global_file=${7:?}
-local repository_file=${8:?}
-local directory_file=${9:?}
-local session_file=${10:?}
-shift 10 || true
+local cwd=${2:-$PWD}
+local limit=${3:-2000}
+local session=${4:-}
+local state_file=${5:?state file required}
+local global_file=${6:?}
+local repository_file=${7:?}
+local directory_file=${8:?}
+local session_file=${9:?}
+shift 9 || true
 local id=${1:-}
 [[ -z $id ]] && exit 0
 [[ $id == __empty__ ]] && exit 0
@@ -71,7 +70,3 @@ for scope in ${scope_order[@]}; do
     printf '__empty__\t--\t%s(no entries)%s\n' "$empty_dim" "$empty_reset" >>| "$file"
   fi
 done
-
-if [[ -n $debug_log ]]; then
-  printf '[%d] delete %s\n' $$ "$id" >> "$debug_log" 2>&1 || true
-fi

@@ -2,11 +2,10 @@
 set -eu
 
 state_file=${1:?state file required}
-debug_log=${2:-}
-global_file=${3:?global file required}
-repository_file=${4:?repository file required}
-directory_file=${5:?directory file required}
-session_file=${6:?session file required}
+global_file=${2:?global file required}
+repository_file=${3:?repository file required}
+directory_file=${4:?directory file required}
+session_file=${5:?session file required}
 
 scope=$(cat "$state_file" 2>/dev/null || true)
 [ -z "$scope" ] && scope=global
