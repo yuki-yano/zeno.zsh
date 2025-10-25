@@ -259,8 +259,12 @@ const formatLines = (
       : `${color.red}✘${color.reset}`;
     const statusColumn = `${timePart} ${exitPart}${" ".repeat(3)}`;
     const commandPart = (record.command ?? "").replaceAll("\t", "    ");
+    const rawCommand = (record.command ?? "").replaceAll(
+      "\t",
+      "\u001f",
+    );
 
-    return `${record.id}\t${commandPart}\t${statusColumn}`;
+    return `${record.id}\t${commandPart}\t${statusColumn}\t${rawCommand}`;
   });
 
   return lines;

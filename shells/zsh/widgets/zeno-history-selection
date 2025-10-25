@@ -228,7 +228,7 @@ fi
     else
       local empty_dim=$'\033[2m'
       local empty_reset=$'\033[0m'
-      printf '\t%s(no entries)%s\n' "$empty_dim" "$empty_reset" >>| "${scope_files[$scope]}"
+      printf '__empty__\t--\t%s(no entries)%s\t\n' "$empty_dim" "$empty_reset" >>| "${scope_files[$scope]}"
     fi
 
     zeno_history_profile "scope:${scope} ready"
@@ -303,20 +303,26 @@ if [[ $exit_code -ne 0 || -z $selection ]]; then
   return
 fi
 
-local selected_id remainder raw_command display_command
+local selected_id display_command status_column raw_command
 selected_id=${selection%%$'\t'*}
-remainder=
-raw_command=
 display_command=
+status_column=
+raw_command=
 
 if [[ $selection == *$'\t'* ]]; then
-  remainder=${selection#*$'\t'}
+  local remainder=${selection#*$'\t'}
   display_command=${remainder%%$'\t'*}
   if [[ $remainder == *$'\t'* ]]; then
-    raw_command=${remainder##*$'\t'}
-  else
-    raw_command=
+    local after_display=${remainder#*$'\t'}
+    status_column=${after_display%%$'\t'*}
+    if [[ $after_display == *$'\t'* ]]; then
+      raw_command=${after_display#*$'\t'}
+    fi
   fi
+fi
+
+if [[ -n $raw_command ]]; then
+  raw_command=${raw_command//$'\x1f'/$'\t'}
 fi
 
 if [[ $selected_id == __empty__ ]]; then
@@ -325,10 +331,7 @@ if [[ $selected_id == __empty__ ]]; then
 fi
 
 if [[ -n $selected_id ]]; then
-  BUFFER=$raw_command
-  if [[ -z $BUFFER ]]; then
-    BUFFER=$display_command
-  fi
+  BUFFER=${raw_command:-$display_command}
   CURSOR=${#BUFFER}
 fi
 

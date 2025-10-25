@@ -67,6 +67,6 @@ for scope in ${scope_order[@]}; do
   else
     local empty_dim=$'\033[2m'
     local empty_reset=$'\033[0m'
-    printf '__empty__\t--\t%s(no entries)%s\n' "$empty_dim" "$empty_reset" >>| "$file"
+    printf '__empty__\t--\t%s(no entries)%s\t\n' "$empty_dim" "$empty_reset" >>| "$file"
   fi
 done
