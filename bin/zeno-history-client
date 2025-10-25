@@ -31,7 +31,14 @@ main() {
     args=( "${@//\\/\\\\}" )
     args=( "${(@)args//$'\n'/\\n}" )
     args=( "${(@)args//\"/\\\"}" )
-    args=( "\"${(@)^args}\"" )
+
+    local -a quoted_args
+    local arg
+    quoted_args=()
+    for arg in "${args[@]}"; do
+      quoted_args+=("\"$arg\"")
+    done
+    args=("${quoted_args[@]}")
 
     printf '{"args":[%s]}' "${(j:,:)args}" >&$fd
     cat <&$fd
