@@ -195,10 +195,16 @@ export ZENO_GIT_TREE="tree"
 
 # History settings example (zeno.config.yml)
 # history:
-#   fzf_command: "fzf-tmux"
-#   fzf_options:
-#     - "-p"
-#     - "80%"
+#   defaultScope: global
+#   fzfCommand: fzf-tmux
+#   fzfOptions:
+#     - "-p 50%,50%"
+#   redact:
+#     - "<string to hide from the picker>"
+#   keymap:
+#     deleteSoft: ctrl-d
+#     deleteHard: alt-d
+#     toggleScope: ctrl-r
 
 if [[ -n $ZENO_LOADED ]]; then
   bindkey ' '  zeno-auto-snippet
@@ -221,6 +227,24 @@ if [[ -n $ZENO_LOADED ]]; then
   # (default: fzf-completion if exists; otherwise expand-or-complete)
   # export ZENO_COMPLETION_FALLBACK=expand-or-complete
 fi
+```
+
+### History settings (YAML)
+
+Configure the SQLite-backed history subsystem with a `history` block in your
+`zeno.config.yml`:
+
+```yaml
+history:
+  defaultScope: global        # "global" | "repository" | "directory" | "session"
+  fzfCommand: fzf-tmux        # Override the command that spawns the picker
+  fzfOptions:
+    - "-p 50%,50%"            # Additional arguments passed to the picker command
+  redact: []                  # Strings to hide from the History+ view
+  keymap:
+    deleteSoft: ctrl-d        # Soft delete (logical delete)
+    deleteHard: alt-d         # Hard delete (edits HISTFILE)
+    toggleScope: ctrl-r       # Cycle through scopes within the widget
 ```
 
 ### ZLE widget
