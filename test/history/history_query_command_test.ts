@@ -146,17 +146,18 @@ describe("history query command", () => {
     });
 
     assertStrictEquals(lines[0], "success");
-    assertStringIncludes(lines[1], "scope:repository");
-    assertStringIncludes(lines[1], "items:2");
-    assertStringIncludes(lines[2], "01HISTORYA00000000000000000");
-    assertStringIncludes(lines[2], "git status");
+    assertEquals(lines.length, 3);
+    assertStringIncludes(lines[1], "01HISTORYA00000000000000000");
+    assertStringIncludes(lines[1], "git status");
+    assertEquals(lines[1].includes("scope:"), false);
+    assertEquals(lines[1].includes("repo"), false);
+    assertEquals(lines[1].includes("./"), false);
+    assertStringIncludes(lines[2], "01HISTORYB00000000000000000");
+    assertStringIncludes(lines[2], "npm test");
+    assertStringIncludes(lines[2], "✘");
+    assertEquals(lines[2].includes("scope:"), false);
     assertEquals(lines[2].includes("repo"), false);
     assertEquals(lines[2].includes("./"), false);
-    assertStringIncludes(lines[3], "01HISTORYB00000000000000000");
-    assertStringIncludes(lines[3], "npm test");
-    assertStringIncludes(lines[3], "✘");
-    assertEquals(lines[3].includes("repo"), false);
-    assertEquals(lines[3].includes("./"), false);
   });
 
   it("prints formatted lines for all scopes when scope is all", async () => {
@@ -224,26 +225,20 @@ describe("history query command", () => {
 
     assertStrictEquals(lines[0], "success");
     assertEquals(calls, ["global", "repository", "directory", "session"]);
-    const hasGlobalHeader = lines.some((line) =>
-      line.startsWith("global\t") && line.includes("scope:global")
+    const globalLine = lines.find((line) => line.startsWith("global\t"));
+    const repositoryLine = lines.find((line) =>
+      line.startsWith("repository\t")
     );
-    assertStrictEquals(hasGlobalHeader, true);
-    const hasGlobalCommand = lines.some((line) =>
-      line.includes("01GLOBAL0000000000000000000")
-    );
-    assertStrictEquals(hasGlobalCommand, true);
-    const hasRepositoryHeader = lines.some((line) =>
-      line.startsWith("repository\t") && line.includes("scope:repository")
-    );
-    assertStrictEquals(hasRepositoryHeader, true);
-    const hasDirectoryHeader = lines.some((line) =>
-      line.startsWith("directory\t") && line.includes("scope:directory")
-    );
-    assertStrictEquals(hasDirectoryHeader, true);
-    const hasSessionHeader = lines.some((line) =>
-      line.startsWith("session\t") && line.includes("scope:session")
-    );
-    assertStrictEquals(hasSessionHeader, true);
+    assertEquals(globalLine !== undefined, true);
+    assertEquals(repositoryLine !== undefined, true);
+    assertStringIncludes(globalLine ?? "", "01GLOBAL0000000000000000000");
+    assertStringIncludes(repositoryLine ?? "", "01REPO00000000000000000000");
+    const hasScopeMeta = lines.some((line) => line.includes("scope:"));
+    assertStrictEquals(hasScopeMeta, false);
+    const directoryLine = lines.find((line) => line.startsWith("directory\t"));
+    const sessionLine = lines.find((line) => line.startsWith("session\t"));
+    assertStrictEquals(directoryLine, undefined);
+    assertStrictEquals(sessionLine, undefined);
   });
 
   it("prints pretty JSON when id is specified", async () => {

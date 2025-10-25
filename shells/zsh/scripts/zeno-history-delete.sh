@@ -39,10 +39,9 @@ if ! "$cmd" "${query_args[@]}" >"$tmp" 2>/dev/null; then
   return
 fi
 
-local -A buffers first_seen
+local -A buffers
 for scope in ${scope_order[@]}; do
   buffers[$scope]=''
-  first_seen[$scope]=0
 done
 
 while IFS=$'\n' read -r line; do
@@ -50,10 +49,6 @@ while IFS=$'\n' read -r line; do
   local scope=${line%%$'\t'*}
   local rest=${line#*$'\t'}
   [[ -z $scope || -z $rest ]] && continue
-  if (( ! first_seen[$scope] )); then
-    first_seen[$scope]=1
-    continue
-  fi
   local trimmed_rest=${rest##$'\t'}
   case "$trimmed_rest" in
     $'\033[2m'scope:*|scope:*)

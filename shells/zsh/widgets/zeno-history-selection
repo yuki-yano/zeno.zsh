@@ -195,10 +195,9 @@ fi
   fi
 
   local status_seen=0
-  local -A scope_buffers scope_first_seen
+  local -A scope_buffers
   for scope in ${scope_order[@]}; do
     scope_buffers[$scope]=''
-    scope_first_seen[$scope]=0
   done
   if (( query_rc == 0 )); then
     while IFS= read -r raw_line; do
@@ -213,10 +212,6 @@ fi
       local scope=${raw_line%%$'\t'*}
       local rest=${raw_line#*$'\t'}
       if [[ -z $scope || $scope == $raw_line || -z $rest ]]; then
-        continue
-      fi
-      if (( scope_first_seen[$scope] == 0 )); then
-        scope_first_seen[$scope]=1
         continue
       fi
       local trimmed_rest=${rest##$'\t'}
@@ -235,7 +230,7 @@ fi
     else
       local empty_dim=$'\033[2m'
       local empty_reset=$'\033[0m'
-      printf '__empty__\t--\t%s(no entries)%s\n' "$empty_dim" "$empty_reset" >>| "${scope_files[$scope]}"
+      printf '\t%s(no entries)%s\n' "$empty_dim" "$empty_reset" >>| "${scope_files[$scope]}"
     fi
 
     zeno_history_profile "scope:${scope} ready"

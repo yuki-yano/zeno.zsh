@@ -199,7 +199,6 @@ const createProfiler = () => {
 const formatLines = (
   items: readonly HistoryRecord[],
   now: Date,
-  scope: HistoryScope,
 ): string[] => {
   const color = {
     reset: "\u001b[0m",
@@ -244,11 +243,6 @@ const formatLines = (
     deduped.push(record);
   }
 
-  const itemsShown = deduped.reduce(
-    (count, record) => count + (record.id === "__empty__" ? 0 : 1),
-    0,
-  );
-
   const timeStrings = deduped.map((record) => formatTimeAgo(now, record.ts));
   const maxTimeWidth = timeStrings.reduce((max, value) => {
     return value.length > max ? value.length : max;
@@ -269,9 +263,7 @@ const formatLines = (
     return `${record.id}\t${commandPart}\t${statusColumn}`;
   });
 
-  const header =
-    `\t${color.dim}command${color.reset}\t${color.dim}scope:${scope} · items:${itemsShown} · toggle:Ctrl-R${color.reset}`;
-  return [header, ...lines];
+  return lines;
 };
 
 export const createHistoryQueryCommand = (
@@ -451,7 +443,7 @@ export const createHistoryQueryCommand = (
       if (wantsAllScopes) {
         const aggregated: string[] = [];
         for (const { scope: scopeName, items } of results) {
-          const lines = formatLines(items, now, scopeName);
+          const lines = formatLines(items, now);
           profiler.mark(`format-lines:${scopeName}`);
           for (const line of lines) {
             aggregated.push(`${scopeName}\t${line}`);
@@ -463,7 +455,7 @@ export const createHistoryQueryCommand = (
         return;
       }
 
-      const lines = formatLines(results[0]?.items ?? [], now, primaryScope);
+      const lines = formatLines(results[0]?.items ?? [], now);
       profiler.mark("format-lines");
       await writeResult(writer.write.bind(writer), "success", ...lines);
       profiler.mark("write-lines");
