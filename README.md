@@ -390,7 +390,7 @@ history:
     toggleScope: ctrl-r       # Cycle through scopes within the widget
 ```
 
-##  Fish usage
+## Fish usage
 
 ### Installation for Fish
 
@@ -406,9 +406,9 @@ and set up the necessary paths.
 #### Manual installation
 
 ```fish
-$ git clone https://github.com/yuki-yano/zeno.zsh.git /path/to/zeno.zsh
-$ echo "set -gx ZENO_ROOT /path/to/zeno.zsh" >> ~/.config/fish/config.fish
-$ ln -s /path/to/zeno.zsh/shells/fish/conf.d/zeno.fish ~/.config/fish/conf.d/
+git clone https://github.com/yuki-yano/zeno.zsh.git /path/to/zeno.zsh
+echo "set -gx ZENO_ROOT /path/to/zeno.zsh" >> ~/.config/fish/config.fish
+ln -s /path/to/zeno.zsh/shells/fish/conf.d/zeno.fish ~/.config/fish/conf.d/
 ```
 
 Note: Setting `ZENO_ROOT` explicitly is recommended for manual installations to
@@ -419,7 +419,7 @@ avoid path resolution issues.
 Copy the example key bindings:
 
 ```fish
-$ cp /path/to/zeno.zsh/shells/fish/conf.d/zeno-keybindings.fish.example ~/.config/fish/conf.d/zeno-keybindings.fish
+cp /path/to/zeno.zsh/shells/fish/conf.d/zeno-keybindings.fish.example ~/.config/fish/conf.d/zeno-keybindings.fish
 ```
 
 Or manually set up key bindings in your `config.fish`:

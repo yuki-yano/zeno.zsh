@@ -15,30 +15,8 @@ import {
   loadConfigFile,
   setSettings,
 } from "../src/settings.ts";
-import type {
-  HistorySettings,
-  Snippet,
-  UserCompletionSource,
-} from "../src/type/settings.ts";
-
-const createDefaultHistory = (): HistorySettings => ({
-  defaultScope: "global",
-  redact: [],
-  keymap: {
-    deleteSoft: "ctrl-d",
-    deleteHard: "alt-d",
-    toggleScope: "ctrl-r",
-  },
-  fzfCommand: undefined,
-  fzfOptions: undefined,
-});
-
-const withDefaultHistory = <T extends Record<string, unknown>>(
-  value: T,
-): T & { history: HistorySettings } => ({
-  ...value,
-  history: createDefaultHistory(),
-});
+import type { Snippet, UserCompletionSource } from "../src/type/settings.ts";
+import { withHistoryDefaults } from "./helpers.ts";
 
 describe("settings", () => {
   const context = new Helper();
@@ -146,7 +124,7 @@ describe("settings", () => {
 
       assertEquals(
         settings,
-        withDefaultHistory({
+        withHistoryDefaults({
           snippets: [],
           completions: [],
         }),
@@ -201,7 +179,7 @@ completions:
 
       assertEquals(
         settings,
-        withDefaultHistory({
+        withHistoryDefaults({
           snippets: expectedSnippets,
           completions: expectedCompletions,
         }),
@@ -231,7 +209,7 @@ completions:
 
       assertEquals(
         settings,
-        withDefaultHistory({
+        withHistoryDefaults({
           snippets: [],
           completions: [],
         }),
@@ -267,7 +245,7 @@ snippets:
 
       assertEquals(
         settings,
-        withDefaultHistory({
+        withHistoryDefaults({
           snippets: expectedSnippets,
           completions: [],
         }),
@@ -287,7 +265,7 @@ snippets:
       const settings = await getSettings();
       assertEquals(
         settings,
-        withDefaultHistory({
+        withHistoryDefaults({
           snippets: [],
           completions: [],
         }),
@@ -301,7 +279,7 @@ snippets:
         },
       ];
       setSettings(
-        withDefaultHistory({
+        withHistoryDefaults({
           snippets: expectedSnippets,
           completions: [],
         }),
@@ -312,7 +290,7 @@ snippets:
 
       assertEquals(
         cachedSettings,
-        withDefaultHistory({
+        withHistoryDefaults({
           snippets: expectedSnippets,
           completions: [],
         }),
@@ -328,7 +306,7 @@ snippets:
           snippet: "git status",
         },
       ];
-      const expectedSettings = withDefaultHistory({
+      const expectedSettings = withHistoryDefaults({
         snippets: expectedSnippets,
         completions: [],
       });
@@ -358,7 +336,7 @@ snippets:
         },
       ];
       setSettings(
-        withDefaultHistory({
+        withHistoryDefaults({
           snippets: expectedSnippets,
           completions: [],
         }),
@@ -373,7 +351,7 @@ snippets:
       // It should not return the cached value
       assertEquals(
         settings,
-        withDefaultHistory({
+        withHistoryDefaults({
           snippets: [],
           completions: [],
         }),

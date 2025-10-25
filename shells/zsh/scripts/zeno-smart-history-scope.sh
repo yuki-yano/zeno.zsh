@@ -33,10 +33,13 @@ header=${header# }
 
 printf '\t%s\n' "$header"
 
+tab=$(printf '\t')
+esc=$(printf '\033')
+
 filter_stream() {
   while IFS= read -r line; do
     case "$line" in
-      $'\t'scope:*)
+      "${tab}scope:"*|"${tab}${esc}[2m"scope:*|"${esc}[2m"scope:*|scope:*)
         continue
         ;;
     esac

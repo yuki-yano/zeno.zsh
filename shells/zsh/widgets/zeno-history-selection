@@ -22,7 +22,7 @@ local -a fzf_cmd=(${(z)raw_command})
 
 local -a fzf_args
 
-if [[ $fzf_cmd[1] == fzf-tmux || -n ${ZENO_ENABLE_FZF_TMUX-} ]]; then
+if [[ $fzf_cmd[1] == fzf-tmux ]]; then
   if [[ -n ${ZENO_FZF_TMUX_OPTIONS-} ]]; then
     local -a tmux_opts=(${(z)ZENO_FZF_TMUX_OPTIONS})
     fzf_args+=("${tmux_opts[@]}")

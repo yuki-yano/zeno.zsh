@@ -13,7 +13,7 @@ function zeno-history-hooks() {
 
   if [[ -z ${ZENO_HISTORY_SESSION_ID-} ]]; then
     local random_component
-    random_component=$(printf '%08x' $RANDOM $RANDOM 2>/dev/null)
+    random_component=$(printf '%04x%04x' $RANDOM $RANDOM 2>/dev/null)
     ZENO_HISTORY_SESSION_ID="${EPOCHSECONDS}-${$}-${random_component}"
   fi
 
@@ -62,10 +62,6 @@ function zeno-history-hooks() {
     if [[ -z $iso ]]; then
       local TZ=UTC
       iso=$(strftime "%Y-%m-%dT%H:%M:%S" "$seconds" 2>/dev/null || true)
-    fi
-
-    if [[ -z $iso ]]; then
-      iso=$(command date -u "+%Y-%m-%dT%H:%M:%S" 2>/dev/null || true)
     fi
 
     part_fraction="${part_fraction%%[!0-9]*}"
