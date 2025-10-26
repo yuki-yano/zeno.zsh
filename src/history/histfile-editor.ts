@@ -176,25 +176,37 @@ export const createHistfileEditor = (
       }
 
       const updated = lines.join("\n");
-      const tempPath = `${histfilePath}.tmp-${generateId()}`;
-      await writeTextFile(tempPath, updated);
-      let desiredMode = 0o600;
+      let tempPath: string | null = null;
       try {
-        const info = await stat(histfilePath);
-        if (info.mode != null) {
-          desiredMode = info.mode;
+        tempPath = `${histfilePath}.tmp-${generateId()}`;
+        await writeTextFile(tempPath, updated);
+        let desiredMode = 0o600;
+        try {
+          const info = await stat(histfilePath);
+          if (info.mode != null) {
+            desiredMode = info.mode;
+          }
+        } catch (error) {
+          if (!(error instanceof Deno.errors.NotFound)) {
+            throw error;
+          }
         }
-      } catch (error) {
-        if (!(error instanceof Deno.errors.NotFound)) {
-          throw error;
+        try {
+          await chmod(tempPath, desiredMode);
+        } catch (_error) {
+          // chmod が未対応の環境でも処理を継続する
+        }
+        await rename(tempPath, histfilePath);
+        tempPath = null;
+      } finally {
+        if (tempPath != null) {
+          try {
+            await remove(tempPath);
+          } catch (_error) {
+            // 後始末でのエラーは無視する
+          }
         }
       }
-      try {
-        await chmod(tempPath, desiredMode);
-      } catch (_error) {
-        // chmod が未対応の環境でも処理を継続する
-      }
-      await rename(tempPath, histfilePath);
 
       if (runReload) {
         await runReload();

@@ -64,7 +64,9 @@ const serializeAtuin = (record: HistoryRecord): string => {
   const payload = {
     id: record.id,
     timestamp: record.ts,
-    duration: record.duration_ms ?? 0,
+    duration: record.duration_ms == null
+      ? 0
+      : Math.max(Math.floor(record.duration_ms * 1_000_000), 0),
     exit: record.exit ?? 0,
     command: record.command,
     cwd: record.pwd,
@@ -156,6 +158,11 @@ const parseAtuinJsonLine = (line: string): HistoryRecord => {
     ? data.timestamp
     : new Date().toISOString();
 
+  const rawDuration = data.duration == null ? null : Number(data.duration);
+  const durationMs = rawDuration == null || Number.isNaN(rawDuration)
+    ? null
+    : rawDuration / 1_000_000;
+
   return {
     id: typeof data.id === "string" ? data.id : crypto.randomUUID(),
     ts: timestamp,
@@ -168,7 +175,7 @@ const parseAtuinJsonLine = (line: string): HistoryRecord => {
     shell: typeof data.shell === "string" ? data.shell : "zsh",
     repo_root: null,
     deleted_at: null,
-    duration_ms: data.duration == null ? null : Number(data.duration),
+    duration_ms: durationMs,
     meta: null,
   };
 };
