@@ -89,7 +89,7 @@ describe("HistoryIO", () => {
       id: "01ATUIN000000000000000000",
       timestamp: "2024-01-03T00:00:00.000Z",
       command: "git status",
-      duration: 42,
+      duration: 42_000_000,
       exit: 0,
       cwd: "/repo",
     });
