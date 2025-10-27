@@ -108,7 +108,7 @@ trap 'cleanup' INT TERM EXIT
 
 local initial_scope=global
 
-state_file=$(mktemp -t zeno-history-state.XXXXXX) || { cleanup; return 1; }
+state_file=$(mktemp "${TMPDIR:-/tmp}/zeno-history-state.XXXXXX") || { cleanup; return 1; }
 print -r -- "$initial_scope" >| "$state_file"
 
 limit=${ZENO_HISTORY_LIMIT:-2000}
@@ -135,7 +135,7 @@ local scope_cmd_str=$(printf '%q ' "${scope_cmd[@]}"); scope_cmd_str=${scope_cmd
 local toggle_cmd_str=$(printf '%q ' "${toggle_cmd[@]}"); toggle_cmd_str=${toggle_cmd_str% }
 local delete_cmd_str=$(printf '%q ' "${delete_cmd[@]}"); delete_cmd_str=${delete_cmd_str% }; delete_cmd_str+=" {1}"
 
-preview_cmd='if [ "{1}" = "__empty__" ]; then printf "\033[2mNo entries\033[0m\n"; else '"$zeno_client"' history query --format json --id {1} | tail -n +2; fi'
+preview_cmd='if [ "{1}" = "__empty__" ]; then printf "\033[2mNo entries\033[0m\n"; else '"${(q)zeno_client}"' history query --format json --id {1} | tail -n +2; fi'
 
 local -a fzf_opts
 fzf_opts=(

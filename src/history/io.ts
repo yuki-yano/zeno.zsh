@@ -101,7 +101,26 @@ const toHistoryRecord = (
 const parseZshLine = (line: string): HistoryRecord | null => {
   const match = line.match(/^:\s*(\d+):(\d+);(.*)$/);
   if (!match) {
-    return null;
+    const trimmed = line.trim();
+    if (trimmed.length === 0) {
+      return null;
+    }
+
+    return {
+      id: crypto.randomUUID(),
+      ts: new Date(0).toISOString(),
+      command: trimmed,
+      exit: null,
+      pwd: null,
+      session: null,
+      host: null,
+      user: null,
+      shell: "zsh",
+      repo_root: null,
+      deleted_at: null,
+      duration_ms: null,
+      meta: null,
+    };
   }
 
   const [, epochRaw, durationRaw, command] = match;
@@ -222,7 +241,15 @@ export const createHistoryIO = (
 
     switch (format) {
       case "ndjson": {
-        records = lines.map((line) => toHistoryRecord(JSON.parse(line)));
+        records = lines
+          .map((line) => {
+            try {
+              return toHistoryRecord(JSON.parse(line));
+            } catch (_error) {
+              return null;
+            }
+          })
+          .filter((record): record is HistoryRecord => record != null);
         break;
       }
       case "zsh":
@@ -240,10 +267,14 @@ export const createHistoryIO = (
         throw new Error(`unsupported import format: ${format}`);
     }
 
+    const total = lines.length;
+    const added = records.length;
+    const skipped = Math.max(total - added, 0);
+
     const summary: ImportSummary = {
-      added: records.length,
-      skipped: 0,
-      total: records.length,
+      added,
+      skipped,
+      total,
     };
 
     return { records, summary };

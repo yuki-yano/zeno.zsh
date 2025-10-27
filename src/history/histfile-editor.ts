@@ -194,7 +194,7 @@ export const createHistfileEditor = (
         try {
           await chmod(tempPath, desiredMode);
         } catch (_error) {
-          // chmod が未対応の環境でも処理を継続する
+          // Continue even if chmod is not supported in the runtime environment.
         }
         await rename(tempPath, histfilePath);
         tempPath = null;
@@ -203,7 +203,7 @@ export const createHistfileEditor = (
           try {
             await remove(tempPath);
           } catch (_error) {
-            // 後始末でのエラーは無視する
+            // Ignore cleanup errors and leave removal to the host environment.
           }
         }
       }

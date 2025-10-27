@@ -41,7 +41,7 @@ printf '\t%s\n' "$header"
 status_seen=0
 printed=0
 
-cmd_output_tmp=$(mktemp -t zeno-history-scope.XXXXXX)
+cmd_output_tmp=$(mktemp "${TMPDIR:-/tmp}/zeno-history-scope.XXXXXX")
 trap 'rm -f -- "$cmd_output_tmp"' EXIT INT TERM
 
 if [ -n "$session" ]; then
