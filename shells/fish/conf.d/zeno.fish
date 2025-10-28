@@ -42,9 +42,10 @@ end
 
 # Add functions to fish_function_path
 # This is needed for both manual and Fisher installations since functions are in shells/fish/
+# Do not add `--export` option to avoid conflicts with other plugins (like tide)
 if set -q ZENO_ROOT; and test -d $ZENO_ROOT/shells/fish/functions
     if not contains $ZENO_ROOT/shells/fish/functions $fish_function_path
-        set -gx fish_function_path $ZENO_ROOT/shells/fish/functions $fish_function_path
+        set -g fish_function_path $ZENO_ROOT/shells/fish/functions $fish_function_path
     end
 end
 
@@ -94,5 +95,5 @@ set -gx ZENO_LOADED 1
 
 # Add Fish functions directory to function path (safety check)
 if set -q ZENO_ROOT; and not contains $ZENO_ROOT/shells/fish/functions $fish_function_path
-    set -gx fish_function_path $ZENO_ROOT/shells/fish/functions $fish_function_path
+    set -g fish_function_path $ZENO_ROOT/shells/fish/functions $fish_function_path
 end
