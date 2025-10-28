@@ -13,6 +13,7 @@ deno_flags=(
   --allow-run
   --allow-write
   --allow-ffi
+  --allow-net
 )
 
 for (( i = 1; i <= $#args; ++i )); do
