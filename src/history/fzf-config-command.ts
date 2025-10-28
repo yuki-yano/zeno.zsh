@@ -15,7 +15,7 @@ export const createHistoryFzfConfigCommand = (
       try {
         const settings = await deps.loadHistorySettings();
         const command = settings.fzfCommand ?? "";
-        const options = settings.fzfOptions?.join("\t") ?? "";
+        const options = settings.fzfOptions?.join(" ") ?? "";
         await writeResult(
           writer.write.bind(writer),
           "success",

@@ -39,7 +39,7 @@ describe("history-fzf-config command", () => {
     assertEquals(writer.lines, [
       "success",
       "fzf-tmux",
-      "-p\t80%",
+      "-p 80%",
     ]);
   });
 

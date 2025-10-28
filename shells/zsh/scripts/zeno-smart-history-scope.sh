@@ -6,6 +6,7 @@ client=${2:-}
 cwd=${3:-}
 limit=${4:-}
 session=${5:-}
+delimiter=$(printf '\302\240')
 
 [ -n "$client" ] || client=zeno
 if ! command -v -- "$client" >/dev/null 2>&1; then
@@ -36,7 +37,7 @@ for name in global repository directory session; do
 done
 header=${header# }
 
-printf '\t%s\n' "$header"
+printf '%s\n' "${delimiter}${header}${delimiter}${delimiter}${delimiter}${delimiter}${delimiter}"
 
 status_seen=0
 printed=0
@@ -69,5 +70,5 @@ trap - EXIT INT TERM
 if [ "$printed" -eq 0 ]; then
   empty_dim=$(printf '\033[2m')
   empty_reset=$(printf '\033[0m')
-  printf '__empty__\t--\t%s(no entries)%s\t\n' "$empty_dim" "$empty_reset"
+  printf '%s\n' "__empty__${delimiter}--${delimiter}--${delimiter}${empty_dim}(no entries)${empty_reset}${delimiter}${delimiter}${delimiter}"
 fi

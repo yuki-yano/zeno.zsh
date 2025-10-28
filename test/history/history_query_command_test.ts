@@ -56,6 +56,10 @@ const createModule = (
   ...overrides,
 });
 
+const NBSP = "\u00a0";
+
+const splitSmartLine = (line: string) => line.split(NBSP);
+
 describe("history query command", () => {
   it("fails when historyQuery payload is missing", async () => {
     const command = createHistoryQueryCommand({
@@ -80,335 +84,396 @@ describe("history query command", () => {
   });
 
   it("prints formatted lines when format is lines", async () => {
-    const module = createModule({
-      queryHistory() {
-        return Promise.resolve({
-          ok: true as const,
-          value: {
-            items: [
-              {
-                id: "01HISTORYA00000000000000000",
-                ts: "2024-01-02T00:00:00.000Z",
-                command: "git status",
-                exit: 0,
-                pwd: "/repo/app",
-                session: "sess-1",
-                host: "host",
-                user: "user",
-                shell: "zsh",
-                repo_root: "/repo",
-                deleted_at: null,
-                duration_ms: null,
-                meta: null,
-              },
-              {
-                id: "01HISTORYB00000000000000000",
-                ts: "2024-01-01T23:00:00.000Z",
-                command: "npm test",
-                exit: 1,
-                pwd: "/repo/app",
-                session: "sess-1",
-                host: "host",
-                user: "user",
-                shell: "zsh",
-                repo_root: "/repo",
-                deleted_at: null,
-                duration_ms: 1234,
-                meta: null,
-              },
-            ],
-          },
-        });
-      },
-    });
+    const originalHome = Deno.env.get("HOME");
+    try {
+      Deno.env.set("HOME", "/repo");
 
-    const command = createHistoryQueryCommand({
-      getHistoryModule() {
-        return Promise.resolve(module);
-      },
-      loadHistorySettings() {
-        return Promise.resolve(createSettings());
-      },
-      now: () => new Date("2024-01-02T00:05:00.000Z"),
-    });
-
-    const { writer, lines } = createWriter();
-
-    await command.execute({
-      input: {
-        historyQuery: {
-          scope: "repository",
-          cwd: "/repo/app",
-          format: "lines",
+      const module = createModule({
+        queryHistory() {
+          return Promise.resolve({
+            ok: true as const,
+            value: {
+              items: [
+                {
+                  id: "01HISTORYA00000000000000000",
+                  ts: "2024-01-02T00:00:00.000Z",
+                  command: "git status",
+                  exit: 0,
+                  pwd: "/repo/app",
+                  session: "sess-1",
+                  host: "host",
+                  user: "user",
+                  shell: "zsh",
+                  repo_root: "/repo",
+                  deleted_at: null,
+                  duration_ms: null,
+                  meta: null,
+                },
+                {
+                  id: "01HISTORYB00000000000000000",
+                  ts: "2024-01-01T23:00:00.000Z",
+                  command: "npm test",
+                  exit: 1,
+                  pwd: "/repo/app",
+                  session: "sess-1",
+                  host: "host",
+                  user: "user",
+                  shell: "zsh",
+                  repo_root: "/repo",
+                  deleted_at: null,
+                  duration_ms: 1234,
+                  meta: null,
+                },
+              ],
+            },
+          });
         },
-      },
-      writer,
-    });
+      });
 
-    assertStrictEquals(lines[0], "success");
-    assertEquals(lines.length, 3);
-    const parts1 = lines[1].split("\t");
-    const parts2 = lines[2].split("\t");
-    assertEquals(parts1.length, 4);
-    assertEquals(parts2.length, 4);
-    assertEquals(parts1[0], "01HISTORYA00000000000000000");
-    assertEquals(parts1[1], "git status");
-    assertStringIncludes(parts1[2], "✔");
-    assertEquals(parts1[3], "git status");
-    assertEquals(parts2[0], "01HISTORYB00000000000000000");
-    assertEquals(parts2[1], "npm test");
-    assertStringIncludes(parts2[2], "✘");
-    assertEquals(parts2[3], "npm test");
+      const command = createHistoryQueryCommand({
+        getHistoryModule() {
+          return Promise.resolve(module);
+        },
+        loadHistorySettings() {
+          return Promise.resolve(createSettings());
+        },
+        now: () => new Date("2024-01-02T00:05:00.000Z"),
+      });
+
+      const { writer, lines } = createWriter();
+
+      await command.execute({
+        input: {
+          historyQuery: {
+            scope: "repository",
+            cwd: "/repo/app",
+            format: "lines",
+          },
+        },
+        writer,
+      });
+
+      assertStrictEquals(lines[0], "success");
+      assertEquals(lines.length, 3);
+      const parts1 = splitSmartLine(lines[1]);
+      const parts2 = splitSmartLine(lines[2]);
+      assertEquals(parts1.length, 7);
+      assertEquals(parts2.length, 7);
+      assertEquals(parts1[0], "01HISTORYA00000000000000000");
+      assertStringIncludes(parts1[1], "5m");
+      assertStringIncludes(parts1[2], "✔");
+      assertEquals(parts1[3], "  git status");
+      assertStringIncludes(parts1[4], "~/app");
+      assertEquals(parts1[5], "");
+      assertEquals(parts1[6], "git status");
+      assertEquals(parts2[0], "01HISTORYB00000000000000000");
+      assertStringIncludes(parts2[1], "1h");
+      assertStringIncludes(parts2[2], "✘");
+      assertEquals(parts2[3], "  npm test");
+      assertStringIncludes(parts2[4], "~/app");
+      assertStringIncludes(parts2[5], "1.2s");
+      assertStringIncludes(parts2[5], "\u001b[33m");
+      assertEquals(parts2[6], "npm test");
+    } finally {
+      if (originalHome === undefined) {
+        Deno.env.delete("HOME");
+      } else {
+        Deno.env.set("HOME", originalHome);
+      }
+    }
   });
 
   it("prints canonical lines when format is omitted", async () => {
-    const module = createModule({
-      queryHistory() {
-        return Promise.resolve({
-          ok: true as const,
-          value: {
-            items: [
-              {
-                id: "01HISTORYA00000000000000000",
-                command: "git status",
-                ts: "2024-01-02T00:00:00.000Z",
-                exit: 0,
-                pwd: "/repo/app",
-                session: "sess-1",
-                host: "host",
-                user: "user",
-                shell: "zsh",
-                repo_root: "/repo",
-                deleted_at: null,
-                duration_ms: null,
-                meta: null,
-              },
-              {
-                id: "01HISTORYB00000000000000000",
-                command: "npm test",
-                ts: "2024-01-01T23:58:30.000Z",
-                exit: 1,
-                pwd: "/repo/app",
-                session: "sess-1",
-                host: "host",
-                user: "user",
-                shell: "zsh",
-                repo_root: "/repo",
-                deleted_at: null,
-                duration_ms: null,
-                meta: null,
-              },
-            ],
-          },
-        });
-      },
-    });
+    const originalHome = Deno.env.get("HOME");
+    try {
+      Deno.env.set("HOME", "/repo");
 
-    const command = createHistoryQueryCommand({
-      getHistoryModule() {
-        return Promise.resolve(module);
-      },
-      loadHistorySettings() {
-        return Promise.resolve(createSettings());
-      },
-      now: () => new Date("2024-01-02T00:05:00.000Z"),
-    });
-
-    const { writer, lines } = createWriter();
-
-    await command.execute({
-      input: {
-        historyQuery: {
-          scope: "repository",
-          cwd: "/repo/app",
+      const module = createModule({
+        queryHistory() {
+          return Promise.resolve({
+            ok: true as const,
+            value: {
+              items: [
+                {
+                  id: "01HISTORYA00000000000000000",
+                  command: "git status",
+                  ts: "2024-01-02T00:00:00.000Z",
+                  exit: 0,
+                  pwd: "/repo/app",
+                  session: "sess-1",
+                  host: "host",
+                  user: "user",
+                  shell: "zsh",
+                  repo_root: "/repo",
+                  deleted_at: null,
+                  duration_ms: null,
+                  meta: null,
+                },
+                {
+                  id: "01HISTORYB00000000000000000",
+                  command: "npm test",
+                  ts: "2024-01-01T23:58:30.000Z",
+                  exit: 1,
+                  pwd: "/repo/app",
+                  session: "sess-1",
+                  host: "host",
+                  user: "user",
+                  shell: "zsh",
+                  repo_root: "/repo",
+                  deleted_at: null,
+                  duration_ms: null,
+                  meta: null,
+                },
+              ],
+            },
+          });
         },
-      },
-      writer,
-    });
+      });
 
-    assertStrictEquals(lines[0], "success");
-    assertEquals(lines.length, 3);
-    const first = lines[1].split("\t");
-    const second = lines[2].split("\t");
-    assertEquals(first.length, 4);
-    assertEquals(second.length, 4);
-    assertEquals(first[0], "01HISTORYA00000000000000000");
-    assertEquals(first[1], "git status");
-    assertStringIncludes(first[2], "✔");
-    assertEquals(first[3], "git status");
-    assertEquals(second[0], "01HISTORYB00000000000000000");
-    assertEquals(second[1], "npm test");
-    assertStringIncludes(second[2], "✘");
-    assertEquals(second[3], "npm test");
+      const command = createHistoryQueryCommand({
+        getHistoryModule() {
+          return Promise.resolve(module);
+        },
+        loadHistorySettings() {
+          return Promise.resolve(createSettings());
+        },
+        now: () => new Date("2024-01-02T00:05:00.000Z"),
+      });
+
+      const { writer, lines } = createWriter();
+
+      await command.execute({
+        input: {
+          historyQuery: {
+            scope: "repository",
+            cwd: "/repo/app",
+          },
+        },
+        writer,
+      });
+
+      assertStrictEquals(lines[0], "success");
+      assertEquals(lines.length, 3);
+      const first = splitSmartLine(lines[1]);
+      const second = splitSmartLine(lines[2]);
+      assertEquals(first.length, 7);
+      assertEquals(second.length, 7);
+      assertEquals(first[0], "01HISTORYA00000000000000000");
+      assertStringIncludes(first[1], "5m");
+      assertStringIncludes(first[2], "✔");
+      assertEquals(first[3], "  git status");
+      assertStringIncludes(first[4], "~/app");
+      assertEquals(first[5], "");
+      assertEquals(first[6], "git status");
+      assertEquals(second[0], "01HISTORYB00000000000000000");
+      assertStringIncludes(second[1], "6m");
+      assertStringIncludes(second[2], "✘");
+      assertEquals(second[3], "  npm test");
+      assertStringIncludes(second[4], "~/app");
+      assertEquals(second[5], "");
+      assertEquals(second[6], "npm test");
+    } finally {
+      if (originalHome === undefined) {
+        Deno.env.delete("HOME");
+      } else {
+        Deno.env.set("HOME", originalHome);
+      }
+    }
   });
 
   it("prints formatted lines for all scopes when scope is all", async () => {
-    const calls: HistoryScope[] = [];
-    const module = createModule({
-      queryHistory(request) {
-        calls.push(request.scope);
-        const base = {
-          ts: "2024-01-02T00:00:00.000Z",
-          exit: 0,
-          pwd: "/repo/app",
-          session: "sess-1",
-          host: "host",
-          user: "user",
-          shell: "zsh",
-          repo_root: "/repo",
-          deleted_at: null,
-          duration_ms: null,
-          meta: null,
-        };
-        const items: HistoryRecord[] = (() => {
-          switch (request.scope) {
-            case "global":
-              return [{
-                id: "01GLOBAL0000000000000000000",
-                command: "git status",
-                ...base,
-              }];
-            case "repository":
-              return [{
-                id: "01REPO00000000000000000000",
-                command: "npm test",
-                ...base,
-              }];
-            default:
-              return [];
-          }
-        })();
-        return Promise.resolve({ ok: true as const, value: { items } });
-      },
-    });
+    const originalHome = Deno.env.get("HOME");
+    try {
+      Deno.env.set("HOME", "/repo");
 
-    const command = createHistoryQueryCommand({
-      getHistoryModule() {
-        return Promise.resolve(module);
-      },
-      loadHistorySettings() {
-        return Promise.resolve(createSettings());
-      },
-      now: () => new Date("2024-01-02T00:05:00.000Z"),
-    });
-
-    const { writer, lines } = createWriter();
-
-    await command.execute({
-      input: {
-        historyQuery: {
-          scope: "all",
-          cwd: "/repo/app",
-          format: "lines",
+      const calls: HistoryScope[] = [];
+      const module = createModule({
+        queryHistory(request) {
+          calls.push(request.scope);
+          const base = {
+            ts: "2024-01-02T00:00:00.000Z",
+            exit: 0,
+            pwd: "/repo/app",
+            session: "sess-1",
+            host: "host",
+            user: "user",
+            shell: "zsh",
+            repo_root: "/repo",
+            deleted_at: null,
+            duration_ms: null,
+            meta: null,
+          };
+          const items: HistoryRecord[] = (() => {
+            switch (request.scope) {
+              case "global":
+                return [{
+                  id: "01GLOBAL0000000000000000000",
+                  command: "git status",
+                  ...base,
+                }];
+              case "repository":
+                return [{
+                  id: "01REPO00000000000000000000",
+                  command: "npm test",
+                  ...base,
+                }];
+              default:
+                return [];
+            }
+          })();
+          return Promise.resolve({ ok: true as const, value: { items } });
         },
-      },
-      writer,
-    });
+      });
 
-    assertStrictEquals(lines[0], "success");
-    assertEquals(calls, ["global", "repository", "directory", "session"]);
-    const globalLine = lines.find((line) => line.startsWith("global\t"));
-    const repoLine = lines.find((line) => line.startsWith("repository\t"));
-    assertEquals(globalLine !== undefined, true);
-    assertEquals(repoLine !== undefined, true);
-    const globalParts = (globalLine ?? "").split("\t");
-    const repoParts = (repoLine ?? "").split("\t");
-    assertEquals(globalParts.length, 5);
-    assertEquals(repoParts.length, 5);
-    assertEquals(globalParts[1], "01GLOBAL0000000000000000000");
-    assertEquals(globalParts[2], "git status");
-    assertStringIncludes(globalParts[3], "✔");
-    assertEquals(globalParts[4], "git status");
-    assertEquals(repoParts[1], "01REPO00000000000000000000");
-    assertEquals(repoParts[2], "npm test");
-    assertStringIncludes(repoParts[3], "✔");
-    assertEquals(repoParts[4], "npm test");
+      const command = createHistoryQueryCommand({
+        getHistoryModule() {
+          return Promise.resolve(module);
+        },
+        loadHistorySettings() {
+          return Promise.resolve(createSettings());
+        },
+        now: () => new Date("2024-01-02T00:05:00.000Z"),
+      });
+
+      const { writer, lines } = createWriter();
+
+      await command.execute({
+        input: {
+          historyQuery: {
+            scope: "all",
+            cwd: "/repo/app",
+            format: "lines",
+          },
+        },
+        writer,
+      });
+
+      assertStrictEquals(lines[0], "success");
+      assertEquals(calls, ["global", "repository", "directory", "session"]);
+      const globalLine = lines.find((line) => line.includes("[global]"));
+      const repoLine = lines.find((line) => line.includes("[repository]"));
+      assertEquals(globalLine !== undefined, true);
+      assertEquals(repoLine !== undefined, true);
+      const globalParts = splitSmartLine(globalLine ?? "");
+      const repoParts = splitSmartLine(repoLine ?? "");
+      assertEquals(globalParts.length, 7);
+      assertEquals(repoParts.length, 7);
+      assertEquals(globalParts[0], "01GLOBAL0000000000000000000");
+      assertStringIncludes(globalParts[1], "[global]");
+      assertStringIncludes(globalParts[2], "✔");
+      assertStringIncludes(globalParts[3], "git status");
+      assertStringIncludes(globalParts[4], "~/app");
+      assertEquals(globalParts[5], "");
+      assertEquals(globalParts[6], "git status");
+      assertEquals(repoParts[0], "01REPO00000000000000000000");
+      assertStringIncludes(repoParts[1], "[repository]");
+      assertStringIncludes(repoParts[2], "✔");
+      assertStringIncludes(repoParts[3], "npm test");
+      assertStringIncludes(repoParts[4], "~/app");
+      assertEquals(repoParts[5], "");
+      assertEquals(repoParts[6], "npm test");
+    } finally {
+      if (originalHome === undefined) {
+        Deno.env.delete("HOME");
+      } else {
+        Deno.env.set("HOME", originalHome);
+      }
+    }
   });
 
   it("prints canonical lines for all scopes when format is omitted", async () => {
-    const calls: HistoryScope[] = [];
-    const module = createModule({
-      queryHistory(request) {
-        calls.push(request.scope);
-        const base = {
-          ts: "2024-01-02T00:00:00.000Z",
-          exit: 0,
-          pwd: "/repo/app",
-          session: "sess-1",
-          host: "host",
-          user: "user",
-          shell: "zsh",
-          repo_root: "/repo",
-          deleted_at: null,
-          duration_ms: null,
-          meta: null,
-        };
-        const items: HistoryRecord[] = (() => {
-          switch (request.scope) {
-            case "global":
-              return [{
-                id: "01GLOBAL0000000000000000000",
-                command: "git status",
-                ...base,
-              }];
-            case "repository":
-              return [{
-                id: "01REPO00000000000000000000",
-                command: "npm test",
-                ...base,
-              }];
-            default:
-              return [];
-          }
-        })();
-        return Promise.resolve({ ok: true as const, value: { items } });
-      },
-    });
+    const originalHome = Deno.env.get("HOME");
+    try {
+      Deno.env.set("HOME", "/repo");
 
-    const command = createHistoryQueryCommand({
-      getHistoryModule() {
-        return Promise.resolve(module);
-      },
-      loadHistorySettings() {
-        return Promise.resolve(createSettings());
-      },
-      now: () => new Date("2024-01-02T00:05:00.000Z"),
-    });
-
-    const { writer, lines } = createWriter();
-
-    await command.execute({
-      input: {
-        historyQuery: {
-          scope: "all",
-          cwd: "/repo/app",
+      const calls: HistoryScope[] = [];
+      const module = createModule({
+        queryHistory(request) {
+          calls.push(request.scope);
+          const base = {
+            ts: "2024-01-02T00:00:00.000Z",
+            exit: 0,
+            pwd: "/repo/app",
+            session: "sess-1",
+            host: "host",
+            user: "user",
+            shell: "zsh",
+            repo_root: "/repo",
+            deleted_at: null,
+            duration_ms: null,
+            meta: null,
+          };
+          const items: HistoryRecord[] = (() => {
+            switch (request.scope) {
+              case "global":
+                return [{
+                  id: "01GLOBAL0000000000000000000",
+                  command: "git status",
+                  ...base,
+                }];
+              case "repository":
+                return [{
+                  id: "01REPO00000000000000000000",
+                  command: "npm test",
+                  ...base,
+                }];
+              default:
+                return [];
+            }
+          })();
+          return Promise.resolve({ ok: true as const, value: { items } });
         },
-      },
-      writer,
-    });
+      });
 
-    assertStrictEquals(lines[0], "success");
-    assertEquals(calls, ["global", "repository", "directory", "session"]);
-    const globalLine = lines.find((line) => line.startsWith("global\t"));
-    const repositoryLine = lines.find((line) =>
-      line.startsWith("repository\t")
-    );
-    assertEquals(globalLine !== undefined, true);
-    assertEquals(repositoryLine !== undefined, true);
-    assertStringIncludes(globalLine ?? "", "01GLOBAL0000000000000000000");
-    assertStringIncludes(repositoryLine ?? "", "01REPO00000000000000000000");
-    const hasScopeMeta = lines.some((line) => line.includes("scope:"));
-    assertStrictEquals(hasScopeMeta, false);
-    const globalParts = (globalLine ?? "").split("\t");
-    const repoParts = (repositoryLine ?? "").split("\t");
-    assertEquals(globalParts.length, 5);
-    assertEquals(repoParts.length, 5);
-    assertEquals(globalParts[4], "git status");
-    assertEquals(repoParts[4], "npm test");
-    const directoryLine = lines.find((line) => line.startsWith("directory\t"));
-    const sessionLine = lines.find((line) => line.startsWith("session\t"));
-    assertStrictEquals(directoryLine, undefined);
-    assertStrictEquals(sessionLine, undefined);
+      const command = createHistoryQueryCommand({
+        getHistoryModule() {
+          return Promise.resolve(module);
+        },
+        loadHistorySettings() {
+          return Promise.resolve(createSettings());
+        },
+        now: () => new Date("2024-01-02T00:05:00.000Z"),
+      });
+
+      const { writer, lines } = createWriter();
+
+      await command.execute({
+        input: {
+          historyQuery: {
+            scope: "all",
+            cwd: "/repo/app",
+          },
+        },
+        writer,
+      });
+
+      assertStrictEquals(lines[0], "success");
+      assertEquals(calls, ["global", "repository", "directory", "session"]);
+      const globalLine = lines.find((line) => line.includes("[global]"));
+      const repositoryLine = lines.find((line) => line.includes("[repository]"));
+      assertEquals(globalLine !== undefined, true);
+      assertEquals(repositoryLine !== undefined, true);
+      assertStringIncludes(globalLine ?? "", "01GLOBAL0000000000000000000");
+      assertStringIncludes(repositoryLine ?? "", "01REPO00000000000000000000");
+      const hasScopeMeta = lines.some((line) => line.includes("scope:"));
+      assertStrictEquals(hasScopeMeta, false);
+      const globalParts = splitSmartLine(globalLine ?? "");
+      const repoParts = splitSmartLine(repositoryLine ?? "");
+      assertEquals(globalParts.length, 7);
+      assertEquals(repoParts.length, 7);
+      assertEquals(globalParts[6], "git status");
+      assertEquals(repoParts[6], "npm test");
+      const directoryLine = lines.find((line) => line.includes("[directory]"));
+      const sessionLine = lines.find((line) => line.includes("[session]"));
+      assertStrictEquals(directoryLine, undefined);
+      assertStrictEquals(sessionLine, undefined);
+    } finally {
+      if (originalHome === undefined) {
+        Deno.env.delete("HOME");
+      } else {
+        Deno.env.set("HOME", originalHome);
+      }
+    }
   });
 
   it("fails when settings include invalid redact patterns", async () => {

@@ -110,6 +110,73 @@ const sanitizeString = (value: unknown): string | null => {
   return null;
 };
 
+const SMART_HISTORY_DELIMITER = "\u00a0";
+const HOME_DIRECTORY = (() => {
+  try {
+    return typeof Deno !== "undefined" ? Deno.env.get("HOME") ?? null : null;
+  } catch {
+    return null;
+  }
+})();
+
+const getHomeDirectory = (): string | null => {
+  try {
+    return typeof Deno !== "undefined"
+      ? Deno.env.get("HOME") ?? HOME_DIRECTORY
+      : HOME_DIRECTORY;
+  } catch {
+    return HOME_DIRECTORY;
+  }
+};
+
+const sanitizeDisplayField = (value: string): string =>
+  value.replaceAll("\t", "    ").replaceAll(SMART_HISTORY_DELIMITER, " ");
+
+const sanitizeRawCommand = (value: string): string =>
+  value.replaceAll("\t", "\u001f").replaceAll(SMART_HISTORY_DELIMITER, " ");
+
+const formatPath = (pwd: string | null): string => {
+  if (!pwd) {
+    return "";
+  }
+  const homeDir = getHomeDirectory();
+  if (homeDir && homeDir.length > 0) {
+    if (pwd === homeDir) {
+      return "~";
+    }
+    if (pwd.startsWith(`${homeDir}/`)) {
+      return `~/${pwd.slice(homeDir.length + 1)}`;
+    }
+  }
+  return pwd;
+};
+
+const formatDurationValue = (durationMs: number | null): string => {
+  if (
+    durationMs == null || !Number.isFinite(durationMs) || durationMs <= 0
+  ) {
+    return "";
+  }
+  if (durationMs < 1000) {
+    return `${Math.round(durationMs)}ms`;
+  }
+  const seconds = durationMs / 1000;
+  if (seconds < 60) {
+    const rounded = Math.round(seconds * 10) / 10;
+    return `${String(rounded)}s`;
+  }
+  const minutes = seconds / 60;
+  if (minutes < 60) {
+    return `${Math.round(minutes)}m`;
+  }
+  const hours = minutes / 60;
+  if (hours < 24) {
+    return `${Math.round(hours)}h`;
+  }
+  const days = hours / 24;
+  return `${Math.round(days)}d`;
+};
+
 const toHistoryQueryRequest = (
   payload: HistoryQueryInput,
   scope: HistoryScope,
@@ -180,6 +247,19 @@ const formatSmartLines = (
     red: "\u001b[31m",
   } as const;
 
+  const pickDurationColor = (durationMs: number | null): string => {
+    if (durationMs == null || !Number.isFinite(durationMs) || durationMs <= 0) {
+      return color.dim;
+    }
+    if (durationMs <= 1000) {
+      return color.green;
+    }
+    if (durationMs <= 10000) {
+      return color.yellow;
+    }
+    return color.red;
+  };
+
   const pickTimeColor = (iso: string): string => {
     const ts = new Date(iso);
     const diff = now.getTime() - ts.getTime();
@@ -229,14 +309,32 @@ const formatSmartLines = (
       : record.exit === 0
       ? `${color.green}✔${color.reset}`
       : `${color.red}✘${color.reset}`;
-    const statusColumn = `${timePart} ${exitPart} `;
-    const commandPart = (record.command ?? "").replaceAll("\t", "    ");
-    const rawCommand = (record.command ?? "").replaceAll(
-      "\t",
-      "\u001f",
+    const commandValue = sanitizeDisplayField(record.command ?? "");
+    const commandDisplay = commandValue.length > 0
+      ? `  ${commandValue}`
+      : "";
+    const rawCommand = sanitizeRawCommand(record.command ?? "");
+    const pathValue = sanitizeDisplayField(
+      formatPath(record.pwd ?? null),
     );
+    const durationValue = formatDurationValue(record.duration_ms);
+    const durationColor = pickDurationColor(record.duration_ms);
+    const pathDisplay = pathValue.length > 0
+      ? `  ${color.dim}${pathValue}${color.reset}`
+      : "";
+    const durationDisplay = durationValue.length > 0
+      ? `  ${durationColor}${durationValue}${color.reset}`
+      : "";
 
-    return `${record.id}\t${commandPart}\t${statusColumn}\t${rawCommand}`;
+    return [
+      record.id,
+      timePart,
+      exitPart,
+      commandDisplay,
+      pathDisplay,
+      durationDisplay,
+      rawCommand,
+    ].join(SMART_HISTORY_DELIMITER);
   });
 
   return lines;
@@ -408,7 +506,11 @@ export const createHistoryQueryCommand = (
         for (const { scope: scopeName, items } of results) {
           const lines = formatSmartLines(items, now);
           for (const line of lines) {
-            aggregated.push(`${scopeName}\t${line}`);
+            const parts = line.split(SMART_HISTORY_DELIMITER);
+            if (parts.length >= 2) {
+              parts[1] = `[${scopeName}] ${parts[1]}`;
+            }
+            aggregated.push(parts.join(SMART_HISTORY_DELIMITER));
           }
         }
         await writeResult(

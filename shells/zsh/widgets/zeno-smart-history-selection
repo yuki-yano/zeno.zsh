@@ -32,10 +32,13 @@ if [[ ! -x $zeno_client ]]; then
 fi
 
 typeset -ga ZENO_HISTORY_FZF_COMMAND_CACHE
-local -a fzf_command
+typeset -ga ZENO_HISTORY_FZF_OPTIONS_CACHE
+local -a fzf_command config_fzf_runtime_options
+config_fzf_runtime_options=()
 
 if (( ${#ZENO_HISTORY_FZF_COMMAND_CACHE[@]} > 0 )); then
   fzf_command=(${ZENO_HISTORY_FZF_COMMAND_CACHE[@]})
+  config_fzf_runtime_options=(${ZENO_HISTORY_FZF_OPTIONS_CACHE[@]})
 else
   local config_fzf_command=
   local -a config_fzf_options
@@ -48,49 +51,70 @@ else
     if [[ ${fzf_config_lines[1]-} == success ]]; then
       config_fzf_command=${fzf_config_lines[2]-}
       if [[ ${#fzf_config_lines[@]} -ge 3 && -n ${fzf_config_lines[3]} ]]; then
-        config_fzf_options=(${(s:\t:)fzf_config_lines[3]})
+        config_fzf_options=(${(z)fzf_config_lines[3]})
       fi
+    fi
+  fi
+
+  local -a config_fzf_command_options
+  config_fzf_command_options=()
+  if (( ${#config_fzf_options[@]} > 0 )); then
+    local -i config_fzf_split_index=${config_fzf_options[(i)--]}
+    if (( config_fzf_split_index <= ${#config_fzf_options[@]} )); then
+      if (( config_fzf_split_index > 1 )); then
+        config_fzf_command_options=(${(@)config_fzf_options[1,config_fzf_split_index-1]})
+      fi
+      if (( config_fzf_split_index < ${#config_fzf_options[@]} )); then
+        config_fzf_runtime_options=(${(@)config_fzf_options[config_fzf_split_index+1,-1]})
+      fi
+    else
+      config_fzf_runtime_options=(${(@)config_fzf_options[@]})
     fi
   fi
 
   if [[ -n $config_fzf_command ]]; then
     fzf_command=(${(z)config_fzf_command})
-  elif [[ -n ${ZENO_FZF_COMMAND-} ]]; then
-    fzf_command=(${(z)ZENO_FZF_COMMAND})
-  elif [[ -n ${TMUX-} ]]; then
-    fzf_command=(fzf-tmux)
+    if (( ${#config_fzf_command_options[@]} > 0 )); then
+      fzf_command+=("${config_fzf_command_options[@]}")
+    fi
   else
-    fzf_command=(fzf)
-  fi
+    if [[ -n ${ZENO_FZF_COMMAND-} ]]; then
+      fzf_command=(${(z)ZENO_FZF_COMMAND})
+    elif [[ -n ${TMUX-} ]]; then
+      fzf_command=(fzf-tmux)
+    else
+      fzf_command=(fzf)
+    fi
 
-  local fzf_command_name=${${fzf_command[1]:-}##*/}
+    local fzf_command_name=${${fzf_command[1]:-}##*/}
 
-  if (( ${#config_fzf_options[@]} > 0 )); then
-    local opt
-    for opt in "${config_fzf_options[@]}"; do
-      fzf_command+=("$opt")
-    done
-  elif [[ -z $config_fzf_command && $fzf_command_name == fzf-tmux && -n ${ZENO_FZF_TMUX_OPTIONS-} ]]; then
-    local -a zeno_fzf_tmux_opts
-    zeno_fzf_tmux_opts=(${(z)ZENO_FZF_TMUX_OPTIONS})
-    if (( ${#zeno_fzf_tmux_opts[@]} > 0 )); then
-      local -i zeno_fzf_tmux_dash_index=${fzf_command[(i)--]}
-      if (( zeno_fzf_tmux_dash_index > 0 && zeno_fzf_tmux_dash_index <= ${#fzf_command[@]} )); then
-        local -a zeno_fzf_tmux_before zeno_fzf_tmux_after
-        if (( zeno_fzf_tmux_dash_index > 1 )); then
-          zeno_fzf_tmux_before=(${(@)fzf_command[1,zeno_fzf_tmux_dash_index-1]})
+    if (( ${#config_fzf_command_options[@]} > 0 )); then
+      fzf_command+=("${config_fzf_command_options[@]}")
+    fi
+
+    if (( ${#config_fzf_command_options[@]} == 0 )) && [[ $fzf_command_name == fzf-tmux && -n ${ZENO_FZF_TMUX_OPTIONS-} ]]; then
+      local -a zeno_fzf_tmux_opts
+      zeno_fzf_tmux_opts=(${(z)ZENO_FZF_TMUX_OPTIONS})
+      if (( ${#zeno_fzf_tmux_opts[@]} > 0 )); then
+        local -i zeno_fzf_tmux_dash_index=${fzf_command[(i)--]}
+        if (( zeno_fzf_tmux_dash_index > 0 && zeno_fzf_tmux_dash_index <= ${#fzf_command[@]} )); then
+          local -a zeno_fzf_tmux_before zeno_fzf_tmux_after
+          if (( zeno_fzf_tmux_dash_index > 1 )); then
+            zeno_fzf_tmux_before=(${(@)fzf_command[1,zeno_fzf_tmux_dash_index-1]})
+          else
+            zeno_fzf_tmux_before=()
+          fi
+          zeno_fzf_tmux_after=(${(@)fzf_command[zeno_fzf_tmux_dash_index,-1]})
+          fzf_command=(${zeno_fzf_tmux_before[@]} ${zeno_fzf_tmux_opts[@]} ${zeno_fzf_tmux_after[@]})
         else
-          zeno_fzf_tmux_before=()
+          fzf_command+=(${zeno_fzf_tmux_opts[@]})
         fi
-        zeno_fzf_tmux_after=(${(@)fzf_command[zeno_fzf_tmux_dash_index,-1]})
-        fzf_command=(${zeno_fzf_tmux_before[@]} ${zeno_fzf_tmux_opts[@]} ${zeno_fzf_tmux_after[@]})
-      else
-        fzf_command+=(${zeno_fzf_tmux_opts[@]})
       fi
     fi
   fi
 
   ZENO_HISTORY_FZF_COMMAND_CACHE=(${fzf_command[@]})
+  ZENO_HISTORY_FZF_OPTIONS_CACHE=(${config_fzf_runtime_options[@]})
 fi
 
 zeno_history_profile "setup:determine-fzf"
@@ -135,15 +159,17 @@ local scope_cmd_str=$(printf '%q ' "${scope_cmd[@]}"); scope_cmd_str=${scope_cmd
 local toggle_cmd_str=$(printf '%q ' "${toggle_cmd[@]}"); toggle_cmd_str=${toggle_cmd_str% }
 local delete_cmd_str=$(printf '%q ' "${delete_cmd[@]}"); delete_cmd_str=${delete_cmd_str% }; delete_cmd_str+=" {1}"
 
-preview_cmd='if [ "{1}" = "__empty__" ]; then printf "\033[2mNo entries\033[0m\n"; else '"${(q)zeno_client}"' history query --format json --id {1} | tail -n +2; fi'
+preview_cmd='if [ "{1}" = "__empty__" ]; then printf "No entries\n"; else '"${(q)zeno_client}"' history query --format json --id {1} | tail -n +2; fi'
 
 local -a fzf_opts
+local fzf_delimiter=$'\u00a0'
+local fzf_delimiter_opt=$'--delimiter=\u00a0'
 fzf_opts=(
   "--query=$LBUFFER"
-  "--nth=2"
+  "--nth=3"
   "--prompt=History> "
-  "--with-nth=3,2"
-  $'--delimiter=	'
+  "--with-nth=2..6"
+  "$fzf_delimiter_opt"
   "--ansi"
   "--header-lines=1"
   "--bind"
@@ -157,6 +183,10 @@ fzf_opts=(
   "--preview-window"
   "right"
 )
+
+if (( ${#config_fzf_runtime_options[@]} > 0 )); then
+  fzf_opts=("${config_fzf_runtime_options[@]}" "${fzf_opts[@]}")
+fi
 
 selection=$(printf '' | "${fzf_command[@]}" "${fzf_opts[@]}")
 exit_code=$?
@@ -172,22 +202,22 @@ if [[ $exit_code -ne 0 || -z $selection ]]; then
   return
 fi
 
-local selected_id display_command status_column raw_command
-selected_id=${selection%%$'\t'*}
-display_command=
-status_column=
-raw_command=
+local selected_id display_command raw_command
+local -a selection_fields
+selection_fields=()
 
-if [[ $selection == *$'\t'* ]]; then
-  local remainder=${selection#*$'\t'}
-  display_command=${remainder%%$'\t'*}
-  if [[ $remainder == *$'\t'* ]]; then
-    local after_display=${remainder#*$'\t'}
-    status_column=${after_display%%$'\t'*}
-    if [[ $after_display == *$'\t'* ]]; then
-      raw_command=${after_display#*$'\t'}
-    fi
-  fi
+if [[ -n $selection ]]; then
+  selection_fields=(${(s:$fzf_delimiter:)selection})
+fi
+
+if (( ${#selection_fields[@]} >= 1 )); then
+  selected_id=${selection_fields[1]}
+fi
+if (( ${#selection_fields[@]} >= 4 )); then
+  display_command=${selection_fields[4]}
+fi
+if (( ${#selection_fields[@]} >= 7 )); then
+  raw_command=${selection_fields[7]}
 fi
 
 if [[ -n $raw_command ]]; then
