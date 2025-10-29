@@ -220,7 +220,7 @@ local -a selection_fields
 selection_fields=()
 
 if [[ -n $selection ]]; then
-  selection_fields=(${(s:$fzf_delimiter:)selection})
+  selection_fields=("${(@ps:\u00a0:)selection}")
 fi
 
 if (( ${#selection_fields[@]} >= 1 )); then
