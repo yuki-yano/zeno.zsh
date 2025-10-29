@@ -23,6 +23,7 @@ describe("history-fzf-config command", () => {
             deleteSoft: "ctrl-d",
             deleteHard: "alt-d",
             toggleScope: "ctrl-r",
+            togglePreview: "alt-p",
           },
           fzfCommand: "fzf-tmux",
           fzfOptions: ["-p", "80%"],
@@ -40,6 +41,7 @@ describe("history-fzf-config command", () => {
       "success",
       "fzf-tmux",
       "-p 80%",
+      "alt-p",
     ]);
   });
 
@@ -53,6 +55,7 @@ describe("history-fzf-config command", () => {
             deleteSoft: "ctrl-d",
             deleteHard: "alt-d",
             toggleScope: "ctrl-r",
+            togglePreview: "?",
           },
         });
       },
@@ -64,7 +67,7 @@ describe("history-fzf-config command", () => {
       writer,
     });
 
-    assertEquals(writer.lines, ["success", "", ""]);
+    assertEquals(writer.lines, ["success", "", "", "?"]);
   });
 
   it("reports errors", async () => {

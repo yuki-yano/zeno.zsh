@@ -33,12 +33,17 @@ fi
 
 typeset -ga ZENO_HISTORY_FZF_COMMAND_CACHE
 typeset -ga ZENO_HISTORY_FZF_OPTIONS_CACHE
+typeset -g ZENO_HISTORY_FZF_TOGGLE_PREVIEW_KEY
 local -a fzf_command config_fzf_runtime_options
+local preview_toggle_key='?'
 config_fzf_runtime_options=()
 
 if (( ${#ZENO_HISTORY_FZF_COMMAND_CACHE[@]} > 0 )); then
   fzf_command=(${ZENO_HISTORY_FZF_COMMAND_CACHE[@]})
   config_fzf_runtime_options=(${ZENO_HISTORY_FZF_OPTIONS_CACHE[@]})
+  if [[ -n ${ZENO_HISTORY_FZF_TOGGLE_PREVIEW_KEY-} ]]; then
+    preview_toggle_key=${ZENO_HISTORY_FZF_TOGGLE_PREVIEW_KEY}
+  fi
 else
   local config_fzf_command=
   local -a config_fzf_options
@@ -52,6 +57,9 @@ else
       config_fzf_command=${fzf_config_lines[2]-}
       if [[ ${#fzf_config_lines[@]} -ge 3 && -n ${fzf_config_lines[3]} ]]; then
         config_fzf_options=(${(z)fzf_config_lines[3]})
+      fi
+      if [[ ${#fzf_config_lines[@]} -ge 4 && -n ${fzf_config_lines[4]} ]]; then
+        preview_toggle_key=${fzf_config_lines[4]}
       fi
     fi
   fi
@@ -115,6 +123,7 @@ else
 
   ZENO_HISTORY_FZF_COMMAND_CACHE=(${fzf_command[@]})
   ZENO_HISTORY_FZF_OPTIONS_CACHE=(${config_fzf_runtime_options[@]})
+  ZENO_HISTORY_FZF_TOGGLE_PREVIEW_KEY=$preview_toggle_key
 fi
 
 zeno_history_profile "setup:determine-fzf"
@@ -183,6 +192,10 @@ fzf_opts=(
   "--preview-window"
   "right"
 )
+
+if [[ -n $preview_toggle_key ]]; then
+  fzf_opts+=("--bind" "${preview_toggle_key}:toggle-preview")
+fi
 
 if (( ${#config_fzf_runtime_options[@]} > 0 )); then
   fzf_opts=("${config_fzf_runtime_options[@]}" "${fzf_opts[@]}")

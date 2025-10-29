@@ -44,6 +44,7 @@ export const createDefaultHistorySettings = (): HistorySettings => ({
     deleteSoft: "ctrl-d",
     deleteHard: "alt-d",
     toggleScope: "ctrl-r",
+    togglePreview: "?",
   },
   fzfCommand: undefined,
   fzfOptions: undefined,
@@ -83,6 +84,7 @@ export const cloneHistorySettings = (
       deleteSoft: history.keymap.deleteSoft,
       deleteHard: history.keymap.deleteHard,
       toggleScope: history.keymap.toggleScope,
+      togglePreview: history.keymap.togglePreview,
     },
     fzfCommand: history.fzfCommand,
     fzfOptions: history.fzfOptions ? [...history.fzfOptions] : undefined,
@@ -103,6 +105,7 @@ export const parseHistoryConfig = (raw: unknown): HistorySettings => {
     deleteSoft: defaults.keymap.deleteSoft,
     deleteHard: defaults.keymap.deleteHard,
     toggleScope: defaults.keymap.toggleScope,
+    togglePreview: defaults.keymap.togglePreview,
   };
   let redact: (string | RegExp)[] = [];
   let fzfCommand = defaults.fzfCommand;
@@ -125,6 +128,7 @@ export const parseHistoryConfig = (raw: unknown): HistorySettings => {
         "deleteSoft",
         "deleteHard",
         "toggleScope",
+        "togglePreview",
       ];
       for (const key of keys) {
         const value = source[key];
@@ -175,6 +179,7 @@ export const accumulateHistorySettings = (
     deleteSoft: state.settings.keymap.deleteSoft,
     deleteHard: state.settings.keymap.deleteHard,
     toggleScope: state.settings.keymap.toggleScope,
+    togglePreview: state.settings.keymap.togglePreview,
   };
   const nextMeta: HistoryMeta = {
     defaultScopeProvided: state.meta.defaultScopeProvided,
@@ -188,12 +193,13 @@ export const accumulateHistorySettings = (
   }
 
   const keymapFlags = meta?.keymapProvided ?? {};
-  (["deleteSoft", "deleteHard", "toggleScope"] as const).forEach((key) => {
-    if (keymapFlags[key]) {
-      mutableKeymap[key] = incoming.keymap[key];
-      nextMeta.keymapProvided[key] = true;
-    }
-  });
+  (["deleteSoft", "deleteHard", "toggleScope", "togglePreview"] as const)
+    .forEach((key) => {
+      if (keymapFlags[key]) {
+        mutableKeymap[key] = incoming.keymap[key];
+        nextMeta.keymapProvided[key] = true;
+      }
+    });
 
   if (meta?.redactProvided) {
     redactList = redactList.concat(incoming.redact);
@@ -223,6 +229,7 @@ export const finalizeHistorySettings = (
         deleteSoft: state.settings.keymap.deleteSoft,
         deleteHard: state.settings.keymap.deleteHard,
         toggleScope: state.settings.keymap.toggleScope,
+        togglePreview: state.settings.keymap.togglePreview,
       },
       fzfCommand: state.settings.fzfCommand,
       fzfOptions: state.settings.fzfOptions

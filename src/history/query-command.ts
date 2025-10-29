@@ -310,9 +310,7 @@ const formatSmartLines = (
       ? `${color.green}✔${color.reset}`
       : `${color.red}✘${color.reset}`;
     const commandValue = sanitizeDisplayField(record.command ?? "");
-    const commandDisplay = commandValue.length > 0
-      ? `  ${commandValue}`
-      : "";
+    const commandDisplay = commandValue.length > 0 ? `  ${commandValue}` : "";
     const rawCommand = sanitizeRawCommand(record.command ?? "");
     const pathValue = sanitizeDisplayField(
       formatPath(record.pwd ?? null),

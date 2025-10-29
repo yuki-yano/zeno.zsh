@@ -23,6 +23,7 @@ const createSettings = () => ({
     deleteSoft: "ctrl-d",
     deleteHard: "alt-d",
     toggleScope: "ctrl-r",
+    togglePreview: "?",
   },
   fzfCommand: undefined,
   fzfOptions: undefined,

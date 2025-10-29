@@ -31,6 +31,7 @@ const createSettings = () => ({
     deleteSoft: "ctrl-d",
     deleteHard: "alt-d",
     toggleScope: "ctrl-r",
+    togglePreview: "?",
   },
   fzfCommand: undefined,
   fzfOptions: undefined,
@@ -450,7 +451,9 @@ describe("history query command", () => {
       assertStrictEquals(lines[0], "success");
       assertEquals(calls, ["global", "repository", "directory", "session"]);
       const globalLine = lines.find((line) => line.includes("[global]"));
-      const repositoryLine = lines.find((line) => line.includes("[repository]"));
+      const repositoryLine = lines.find((line) =>
+        line.includes("[repository]")
+      );
       assertEquals(globalLine !== undefined, true);
       assertEquals(repositoryLine !== undefined, true);
       assertStringIncludes(globalLine ?? "", "01GLOBAL0000000000000000000");

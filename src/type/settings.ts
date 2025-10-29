@@ -5,6 +5,7 @@ export type HistoryKeymapSettings = Readonly<{
   deleteSoft: string;
   deleteHard: string;
   toggleScope: string;
+  togglePreview: string;
 }>;
 
 export type HistorySettings = Readonly<{

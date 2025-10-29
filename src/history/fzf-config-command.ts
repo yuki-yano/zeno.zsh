@@ -21,6 +21,7 @@ export const createHistoryFzfConfigCommand = (
           "success",
           command,
           options,
+          settings.keymap.togglePreview,
         );
       } catch (error) {
         await writeResult(

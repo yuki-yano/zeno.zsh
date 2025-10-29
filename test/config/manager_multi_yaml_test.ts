@@ -20,6 +20,7 @@ describe("config manager - multi YAML loading", () => {
       deleteSoft: "ctrl-d",
       deleteHard: "alt-d",
       toggleScope: "ctrl-r",
+      togglePreview: "?",
     },
     fzfCommand: undefined,
     fzfOptions: undefined,

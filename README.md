@@ -388,6 +388,7 @@ history:
     deleteSoft: ctrl-d        # Soft delete (logical delete)
     deleteHard: alt-d         # Hard delete (edits HISTFILE)
     toggleScope: ctrl-r       # Cycle through scopes within the widget
+    togglePreview: ?          # Toggle the preview window
 ```
 
 ## Fish usage
