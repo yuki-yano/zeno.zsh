@@ -38,6 +38,9 @@ const HISTORY_COLUMNS = [
 const buildSelectColumns = () =>
   HISTORY_COLUMNS.map((c) => `h.${c}`).join(", ");
 
+const buildSelectColumnsWithAlias = (alias: string) =>
+  HISTORY_COLUMNS.map((c) => `${alias}.${c}`).join(", ");
+
 export const createSQLiteStore = async (
   config: SQLiteStoreConfig,
 ): Promise<SQLiteStore> => {
@@ -160,10 +163,29 @@ export const createSQLiteStore = async (
 
     const rows = db.prepare(
       `
-        SELECT ${buildSelectColumns()}
-        FROM history h
-        ${where}
-        ORDER BY h.ts DESC
+        WITH filtered AS (
+          SELECT
+            ${buildSelectColumns()},
+            CASE
+              WHEN LENGTH(TRIM(COALESCE(h.command, ''))) = 0 THEN h.id
+              ELSE TRIM(COALESCE(h.command, ''))
+            END AS command_key
+          FROM history h
+          ${where}
+        ),
+        ranked AS (
+          SELECT
+            ${buildSelectColumnsWithAlias("f")},
+            ROW_NUMBER() OVER (
+              PARTITION BY command_key
+              ORDER BY f.ts DESC
+            ) AS rn
+          FROM filtered f
+        )
+        SELECT ${buildSelectColumnsWithAlias("r")}
+        FROM ranked r
+        WHERE r.rn = 1
+        ORDER BY r.ts DESC
         LIMIT :limit
       `,
     ).all(params as BindParameters) as Record<string, unknown>[];

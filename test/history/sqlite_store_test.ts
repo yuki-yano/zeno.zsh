@@ -62,10 +62,12 @@ describe("SQLiteStore", () => {
         id: "01REPO" + crypto.randomUUID().slice(0, 20),
         repo_root: "/repos/one",
         pwd: "/repos/one/app",
+        command: "echo repo",
       });
       const deletedRecord = createRecord({
         id: "01DELE" + crypto.randomUUID().slice(0, 20),
         repo_root: "/repos/one",
+        command: "echo deleted",
         deleted_at: new Date().toISOString(),
       });
 
