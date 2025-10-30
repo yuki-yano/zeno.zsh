@@ -11,7 +11,7 @@ function zeno-history-hooks() {
   typeset -g ZENO_HISTORY_LAST_PWD
   typeset -g ZENO_HISTORY_SUPPRESS
 
-  zmodload zsh/datetime 2>/dev/null
+  (( ! $+modules[zsh/datetime] )) && zmodload zsh/datetime
 
   if [[ -z ${ZENO_HISTORY_SESSION_ID-} ]]; then
     local random_component
