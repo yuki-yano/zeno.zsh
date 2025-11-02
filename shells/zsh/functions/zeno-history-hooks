@@ -11,13 +11,13 @@ function zeno-history-hooks() {
   typeset -g ZENO_HISTORY_LAST_PWD
   typeset -g ZENO_HISTORY_SUPPRESS
 
+  (( ! $+modules[zsh/datetime] )) && zmodload zsh/datetime
+
   if [[ -z ${ZENO_HISTORY_SESSION_ID-} ]]; then
     local random_component
     random_component=$(printf '%04x%04x' $RANDOM $RANDOM 2>/dev/null)
     ZENO_HISTORY_SESSION_ID="${EPOCHSECONDS}-${$}-${random_component}"
   fi
-
-  zmodload zsh/datetime 2>/dev/null
 
   function zeno-history-preexec() {
     emulate -L zsh
