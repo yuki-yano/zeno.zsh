@@ -40,5 +40,9 @@ if [[ -z $ZENO_DISABLE_SOCK ]]; then
   fi
 fi
 
+if (( $+functions[zeno-history-hooks] )); then
+  zeno-history-hooks
+fi
+
 export ZENO_ENABLE=1
 export ZENO_LOADED=1

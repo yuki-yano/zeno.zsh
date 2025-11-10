@@ -16,6 +16,7 @@ import {
   setSettings,
 } from "../src/settings.ts";
 import type { Snippet, UserCompletionSource } from "../src/type/settings.ts";
+import { withHistoryDefaults } from "./helpers.ts";
 
 describe("settings", () => {
   const context = new Helper();
@@ -121,10 +122,13 @@ describe("settings", () => {
 
       const settings = await loadConfigFile(existConfigFile);
 
-      assertEquals(settings, {
-        snippets: [],
-        completions: [],
-      });
+      assertEquals(
+        settings,
+        withHistoryDefaults({
+          snippets: [],
+          completions: [],
+        }),
+      );
     });
 
     it("returns parsed Settings", async () => {
@@ -173,10 +177,13 @@ completions:
 
       const settings = await loadConfigFile(existConfigFile);
 
-      assertEquals(settings, {
-        snippets: expectedSnippets,
-        completions: expectedCompletions,
-      });
+      assertEquals(
+        settings,
+        withHistoryDefaults({
+          snippets: expectedSnippets,
+          completions: expectedCompletions,
+        }),
+      );
     });
   });
 
@@ -200,10 +207,13 @@ completions:
 
       const settings = await getSettings();
 
-      assertEquals(settings, {
-        snippets: [],
-        completions: [],
-      });
+      assertEquals(
+        settings,
+        withHistoryDefaults({
+          snippets: [],
+          completions: [],
+        }),
+      );
     });
 
     it("returns Settings from detected config file", async () => {
@@ -233,10 +243,13 @@ snippets:
 
       const settings = await getSettings();
 
-      assertEquals(settings, {
-        snippets: expectedSnippets,
-        completions: [],
-      });
+      assertEquals(
+        settings,
+        withHistoryDefaults({
+          snippets: expectedSnippets,
+          completions: [],
+        }),
+      );
     });
 
     it("returns Settings from cache", async () => {
@@ -250,10 +263,13 @@ snippets:
 
       // Call getSettings to generate cache.
       const settings = await getSettings();
-      assertEquals(settings, {
-        snippets: [],
-        completions: [],
-      });
+      assertEquals(
+        settings,
+        withHistoryDefaults({
+          snippets: [],
+          completions: [],
+        }),
+      );
 
       // Update cache.
       const expectedSnippets: Snippet[] = [
@@ -262,18 +278,23 @@ snippets:
           snippet: "git status",
         },
       ];
-      setSettings({
-        snippets: expectedSnippets,
-        completions: [],
-      });
+      setSettings(
+        withHistoryDefaults({
+          snippets: expectedSnippets,
+          completions: [],
+        }),
+      );
 
       // Call getSettings again
       const cachedSettings = await getSettings();
 
-      assertEquals(cachedSettings, {
-        snippets: expectedSnippets,
-        completions: [],
-      });
+      assertEquals(
+        cachedSettings,
+        withHistoryDefaults({
+          snippets: expectedSnippets,
+          completions: [],
+        }),
+      );
     });
   });
 
@@ -285,10 +306,10 @@ snippets:
           snippet: "git status",
         },
       ];
-      const expectedSettings = {
+      const expectedSettings = withHistoryDefaults({
         snippets: expectedSnippets,
         completions: [],
-      };
+      });
 
       setSettings(expectedSettings);
       const settings = await getSettings();
@@ -314,10 +335,12 @@ snippets:
           snippet: "git status",
         },
       ];
-      setSettings({
-        snippets: expectedSnippets,
-        completions: [],
-      });
+      setSettings(
+        withHistoryDefaults({
+          snippets: expectedSnippets,
+          completions: [],
+        }),
+      );
 
       // Clear cache
       clearCache();
@@ -326,10 +349,13 @@ snippets:
       const settings = await getSettings();
 
       // It should not return the cached value
-      assertEquals(settings, {
-        snippets: [],
-        completions: [],
-      });
+      assertEquals(
+        settings,
+        withHistoryDefaults({
+          snippets: [],
+          completions: [],
+        }),
+      );
     });
   });
 });

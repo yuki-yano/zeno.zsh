@@ -8,10 +8,23 @@ import {
   path,
 } from "../deps.ts";
 import { Helper } from "../helpers.ts";
+import type { HistorySettings } from "../../src/type/settings.ts";
 import { clearCache } from "../../src/settings.ts";
 import { createConfigManager } from "../../src/config/manager.ts";
 
 const modUrl = path.toFileUrl(path.join(Deno.cwd(), "src/mod.ts")).href;
+const defaultHistory: HistorySettings = {
+  defaultScope: "global",
+  redact: [],
+  keymap: {
+    deleteSoft: "ctrl-d",
+    deleteHard: "alt-d",
+    toggleScope: "ctrl-r",
+    togglePreview: "?",
+  },
+  fzfCommand: undefined,
+  fzfOptions: undefined,
+};
 
 describe("config manager - TypeScript configs", () => {
   const helper = new Helper();
@@ -88,6 +101,7 @@ export default defineConfig(async ({ projectRoot, currentDirectory }) => {
     );
     assertEquals(cwdSnippet?.snippet, projectDir);
     assertEquals(rootSnippet?.snippet, projectDir);
+    assertEquals(settings.history, defaultHistory);
   });
 
   it("prioritizes project .zeno configs while merging with user configs", async () => {
@@ -150,6 +164,7 @@ snippets:
     );
     assertEquals(projectSnippet?.snippet, "from-project");
     assertEquals(homeSnippet?.snippet, "from-home");
+    assertEquals(settings.history, defaultHistory);
   });
 
   it("logs errors and continues when defineConfig marker is missing", async () => {
@@ -191,6 +206,7 @@ export default () => ({
       const settings = await manager.getSettings();
       assertEquals(settings.snippets.length, 0);
       assertEquals(settings.completions.length, 0);
+      assertEquals(settings.history, defaultHistory);
       assertEquals(
         errors.some((msg) =>
           msg.includes("TypeScript config must wrap the exported function")
@@ -248,5 +264,6 @@ export default defineConfig(({ currentDirectory }) => ({
     const snippetB = settingsB.snippets.find((s) => s.keyword === "cwd");
     assertEquals(snippetB?.snippet, projectB);
     assertNotStrictEquals(settingsB, settingsA);
+    assertEquals(settingsB.history, defaultHistory);
   });
 });

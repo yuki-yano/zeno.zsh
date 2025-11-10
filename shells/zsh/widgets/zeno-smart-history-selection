@@ -1,0 +1,251 @@
+#autoload
+
+emulate -L zsh
+setopt typesetsilent
+
+local zeno_root=${ZENO_ROOT:-$PWD}
+local zeno_functions_dir=${zeno_root}/shells/zsh/functions
+if (( ${path[(I)$zeno_root/bin]} == 0 )); then
+  path=("$zeno_root/bin" $path)
+fi
+typeset -gx PATH
+typeset -gx ZENO_ROOT=$zeno_root
+if [[ -d $zeno_functions_dir ]]; then
+  local functions_index=${fpath[(I)$zeno_functions_dir]}
+  if (( functions_index == 0 )); then
+    fpath=("$zeno_functions_dir" $fpath)
+  fi
+fi
+
+autoload -Uz zeno-enable-sock zeno-call-client-and-fallback 2>/dev/null
+if (( $+functions[zeno-enable-sock] )) && [[ -z ${ZENO_DISABLE_SOCK-} ]]; then
+  zeno-enable-sock
+fi
+
+local scope_script toggle_script delete_script state_file
+local limit selection preview_cmd exit_code
+zeno_history_profile() { :; }
+
+local zeno_client=${zeno_root}/bin/zeno-history-client
+if [[ ! -x $zeno_client ]]; then
+  zeno_client=zeno
+fi
+
+typeset -ga ZENO_HISTORY_FZF_COMMAND_CACHE
+typeset -ga ZENO_HISTORY_FZF_OPTIONS_CACHE
+typeset -g ZENO_HISTORY_FZF_TOGGLE_PREVIEW_KEY
+local -a fzf_command config_fzf_runtime_options
+local preview_toggle_key='?'
+config_fzf_runtime_options=()
+
+if (( ${#ZENO_HISTORY_FZF_COMMAND_CACHE[@]} > 0 )); then
+  fzf_command=(${ZENO_HISTORY_FZF_COMMAND_CACHE[@]})
+  config_fzf_runtime_options=(${ZENO_HISTORY_FZF_OPTIONS_CACHE[@]})
+  if [[ -n ${ZENO_HISTORY_FZF_TOGGLE_PREVIEW_KEY-} ]]; then
+    preview_toggle_key=${ZENO_HISTORY_FZF_TOGGLE_PREVIEW_KEY}
+  fi
+else
+  local config_fzf_command=
+  local -a config_fzf_options
+  config_fzf_options=()
+
+  local fzf_config_raw
+  if fzf_config_raw=$("$zeno_client" history fzf-config 2>/dev/null); then
+    local -a fzf_config_lines
+    fzf_config_lines=(${(f)fzf_config_raw})
+    if [[ ${fzf_config_lines[1]-} == success ]]; then
+      config_fzf_command=${fzf_config_lines[2]-}
+      if [[ ${#fzf_config_lines[@]} -ge 3 && -n ${fzf_config_lines[3]} ]]; then
+        config_fzf_options=(${(z)fzf_config_lines[3]})
+      fi
+      if [[ ${#fzf_config_lines[@]} -ge 4 && -n ${fzf_config_lines[4]} ]]; then
+        preview_toggle_key=${fzf_config_lines[4]}
+      fi
+    fi
+  fi
+
+  local -a config_fzf_command_options
+  config_fzf_command_options=()
+  if (( ${#config_fzf_options[@]} > 0 )); then
+    local -i config_fzf_split_index=${config_fzf_options[(i)--]}
+    if (( config_fzf_split_index <= ${#config_fzf_options[@]} )); then
+      if (( config_fzf_split_index > 1 )); then
+        config_fzf_command_options=(${(@)config_fzf_options[1,config_fzf_split_index-1]})
+      fi
+      if (( config_fzf_split_index < ${#config_fzf_options[@]} )); then
+        config_fzf_runtime_options=(${(@)config_fzf_options[config_fzf_split_index+1,-1]})
+      fi
+    else
+      config_fzf_runtime_options=(${(@)config_fzf_options[@]})
+    fi
+  fi
+
+  if [[ -n $config_fzf_command ]]; then
+    fzf_command=(${(z)config_fzf_command})
+    if (( ${#config_fzf_command_options[@]} > 0 )); then
+      fzf_command+=("${config_fzf_command_options[@]}")
+    fi
+  else
+    if [[ -n ${ZENO_FZF_COMMAND-} ]]; then
+      fzf_command=(${(z)ZENO_FZF_COMMAND})
+    elif [[ -n ${TMUX-} ]]; then
+      fzf_command=(fzf-tmux)
+    else
+      fzf_command=(fzf)
+    fi
+
+    local fzf_command_name=${${fzf_command[1]:-}##*/}
+
+    if (( ${#config_fzf_command_options[@]} > 0 )); then
+      fzf_command+=("${config_fzf_command_options[@]}")
+    fi
+
+    if (( ${#config_fzf_command_options[@]} == 0 )) && [[ $fzf_command_name == fzf-tmux && -n ${ZENO_FZF_TMUX_OPTIONS-} ]]; then
+      local -a zeno_fzf_tmux_opts
+      zeno_fzf_tmux_opts=(${(z)ZENO_FZF_TMUX_OPTIONS})
+      if (( ${#zeno_fzf_tmux_opts[@]} > 0 )); then
+        local -i zeno_fzf_tmux_dash_index=${fzf_command[(i)--]}
+        if (( zeno_fzf_tmux_dash_index > 0 && zeno_fzf_tmux_dash_index <= ${#fzf_command[@]} )); then
+          local -a zeno_fzf_tmux_before zeno_fzf_tmux_after
+          if (( zeno_fzf_tmux_dash_index > 1 )); then
+            zeno_fzf_tmux_before=(${(@)fzf_command[1,zeno_fzf_tmux_dash_index-1]})
+          else
+            zeno_fzf_tmux_before=()
+          fi
+          zeno_fzf_tmux_after=(${(@)fzf_command[zeno_fzf_tmux_dash_index,-1]})
+          fzf_command=(${zeno_fzf_tmux_before[@]} ${zeno_fzf_tmux_opts[@]} ${zeno_fzf_tmux_after[@]})
+        else
+          fzf_command+=(${zeno_fzf_tmux_opts[@]})
+        fi
+      fi
+    fi
+  fi
+
+  ZENO_HISTORY_FZF_COMMAND_CACHE=(${fzf_command[@]})
+  ZENO_HISTORY_FZF_OPTIONS_CACHE=(${config_fzf_runtime_options[@]})
+  ZENO_HISTORY_FZF_TOGGLE_PREVIEW_KEY=$preview_toggle_key
+fi
+
+zeno_history_profile "setup:determine-fzf"
+
+scope_script=${zeno_root}/shells/zsh/scripts/zeno-smart-history-scope.sh
+toggle_script=${zeno_root}/shells/zsh/scripts/zeno-smart-history-toggle.sh
+delete_script=${zeno_root}/shells/zsh/scripts/zeno-smart-history-delete.sh
+
+cleanup() {
+  [[ -n $state_file && -f $state_file ]] && command rm -f -- "$state_file"
+}
+
+trap 'cleanup' INT TERM EXIT
+
+
+local initial_scope=global
+
+state_file=$(mktemp "${TMPDIR:-/tmp}/zeno-history-state.XXXXXX") || { cleanup; return 1; }
+print -r -- "$initial_scope" >| "$state_file"
+
+limit=${ZENO_HISTORY_LIMIT:-2000}
+
+local session_id=${ZENO_HISTORY_SESSION_ID-}
+local -i session_created=0
+if [[ -z $session_id ]]; then
+  local random_component
+  random_component=$(printf '%08x%08x' $RANDOM $RANDOM 2>/dev/null)
+  session_id="${EPOCHSECONDS:-0}-${$}-${random_component}"
+  typeset -g ZENO_HISTORY_SESSION_ID=$session_id
+  session_created=1
+fi
+
+zeno_history_profile "setup:scope-script"
+zeno_history_profile "setup:toggle-script"
+zeno_history_profile "setup:delete-script"
+
+local -a scope_cmd toggle_cmd delete_cmd
+scope_cmd=("${scope_script}" "${state_file}" "${zeno_client}" "$PWD" "$limit" "${session_id}")
+toggle_cmd=("${toggle_script}" "${state_file}")
+delete_cmd=("${delete_script}" "${zeno_client}")
+local scope_cmd_str=$(printf '%q ' "${scope_cmd[@]}"); scope_cmd_str=${scope_cmd_str% }
+local toggle_cmd_str=$(printf '%q ' "${toggle_cmd[@]}"); toggle_cmd_str=${toggle_cmd_str% }
+local delete_cmd_str=$(printf '%q ' "${delete_cmd[@]}"); delete_cmd_str=${delete_cmd_str% }; delete_cmd_str+=" {1}"
+
+preview_cmd='if [ "{1}" = "__empty__" ]; then printf "No entries\n"; else '"${(q)zeno_client}"' history query --format json --id {1} | tail -n +2; fi'
+
+local -a fzf_opts
+local fzf_delimiter=$'\u00a0'
+local fzf_delimiter_opt=$'--delimiter=\u00a0'
+fzf_opts=(
+  "--query=$LBUFFER"
+  "--nth=3"
+  "--prompt=History> "
+  "--with-nth=2..6"
+  "$fzf_delimiter_opt"
+  "--ansi"
+  "--header-lines=1"
+  "--bind"
+  "start:reload(:)+reload(${scope_cmd_str})"
+  "--bind"
+  "ctrl-r:execute-silent(${toggle_cmd_str})+reload(:)+reload(${scope_cmd_str})"
+  "--bind"
+  "ctrl-d:execute-silent(${delete_cmd_str})+reload(:)+reload(${scope_cmd_str})"
+  "--preview"
+  "$preview_cmd"
+  "--preview-window"
+  "right"
+)
+
+if [[ -n $preview_toggle_key ]]; then
+  fzf_opts+=("--bind" "${preview_toggle_key}:toggle-preview")
+fi
+
+if (( ${#config_fzf_runtime_options[@]} > 0 )); then
+  fzf_opts=("${config_fzf_runtime_options[@]}" "${fzf_opts[@]}")
+fi
+
+selection=$(printf '' | "${fzf_command[@]}" "${fzf_opts[@]}")
+exit_code=$?
+
+zeno_history_profile "fzf:completed"
+
+cleanup
+trap - INT TERM EXIT
+
+if [[ $exit_code -ne 0 || -z $selection ]]; then
+  zeno_history_profile "widget:abort"
+  zle reset-prompt
+  return
+fi
+
+local selected_id display_command raw_command
+local -a selection_fields
+selection_fields=()
+
+if [[ -n $selection ]]; then
+  selection_fields=("${(@ps:\u00a0:)selection}")
+fi
+
+if (( ${#selection_fields[@]} >= 1 )); then
+  selected_id=${selection_fields[1]}
+fi
+if (( ${#selection_fields[@]} >= 4 )); then
+  display_command=${selection_fields[4]}
+fi
+if (( ${#selection_fields[@]} >= 7 )); then
+  raw_command=${selection_fields[7]}
+fi
+
+if [[ -n $raw_command ]]; then
+  raw_command=${raw_command//$'\x1f'/$'\t'}
+fi
+
+if [[ $selected_id == __empty__ ]]; then
+  zle reset-prompt
+  return
+fi
+
+if [[ -n $selected_id ]]; then
+  BUFFER=${raw_command:-$display_command}
+  CURSOR=${#BUFFER}
+fi
+
+zeno_history_profile "widget:completed"
+zle reset-prompt

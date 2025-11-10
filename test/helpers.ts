@@ -1,3 +1,10 @@
+import type {
+  HistorySettings,
+  Settings,
+  Snippet,
+  UserCompletionSource,
+} from "../src/type/settings.ts";
+
 export class Helper {
   _envs: { [index: string]: string } = {};
   _tempDir: string | undefined;
@@ -42,3 +49,27 @@ export const parametrize = <T extends unknown>(
 ) => {
   params.forEach(test);
 };
+
+export const createTestHistorySettings = (): HistorySettings => ({
+  defaultScope: "global",
+  redact: [],
+  keymap: {
+    deleteSoft: "ctrl-d",
+    deleteHard: "alt-d",
+    toggleScope: "ctrl-r",
+    togglePreview: "?",
+  },
+  fzfCommand: undefined,
+  fzfOptions: undefined,
+});
+
+export const withHistoryDefaults = (
+  value: {
+    snippets: readonly Snippet[];
+    completions: readonly UserCompletionSource[];
+  },
+): Settings => ({
+  snippets: value.snippets,
+  completions: value.completions,
+  history: createTestHistorySettings(),
+});

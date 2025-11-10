@@ -1,4 +1,4 @@
-import { assertEquals } from "../deps.ts";
+import { assertEquals, assertExists, assertStrictEquals } from "../deps.ts";
 import {
   createCommandExecutor,
   parseArgs,
@@ -53,6 +53,117 @@ Deno.test("parseArgs", async (t) => {
       snippet: undefined,
       dir: undefined,
     });
+  });
+
+  await t.step("parses history log positional command", () => {
+    const result = parseArgs([
+      "history",
+      "log",
+      "--cmd",
+      "echo hi",
+      "--exit",
+      "0",
+      "--ts",
+      "2024-01-02T03:04:05.000Z",
+    ]);
+
+    assertEquals(result.mode, "history-log");
+    const historyLog = (result.input as Record<string, unknown>).historyLog as
+      | Record<string, unknown>
+      | undefined;
+    assertExists(historyLog);
+    assertEquals(historyLog?.command, "echo hi");
+    assertEquals(historyLog?.ts, "2024-01-02T03:04:05.000Z");
+  });
+
+  await t.step("parses history query positional command", () => {
+    const result = parseArgs([
+      "history",
+      "query",
+      "--scope",
+      "repository",
+      "--format",
+      "lines",
+      "--limit",
+      "100",
+      "--toggle-scope",
+    ]);
+
+    assertEquals(result.mode, "history-query");
+    const historyQuery = (result.input as Record<string, unknown>)
+      .historyQuery as
+        | Record<string, unknown>
+        | undefined;
+    assertExists(historyQuery);
+    assertEquals(historyQuery?.scope, "repository");
+    assertEquals(historyQuery?.format, "lines");
+    assertEquals(historyQuery?.limit, "100");
+    assertStrictEquals(historyQuery?.toggleScope, true);
+  });
+
+  await t.step("parses history delete positional command", () => {
+    const result = parseArgs([
+      "history",
+      "delete",
+      "--id",
+      "01DELETE000000000000000000",
+      "--hard",
+    ]);
+
+    assertEquals(result.mode, "history-delete");
+    const historyDelete = (result.input as Record<string, unknown>)
+      .historyDelete as
+        | Record<string, unknown>
+        | undefined;
+    assertExists(historyDelete);
+    assertEquals(historyDelete?.id, "01DELETE000000000000000000");
+    assertStrictEquals(historyDelete?.hard, true);
+  });
+
+  await t.step("parses history export positional command", () => {
+    const result = parseArgs([
+      "history",
+      "export",
+      "--format",
+      "ndjson",
+      "--out",
+      "/tmp/out.ndjson",
+      "--scope",
+      "global",
+    ]);
+
+    assertEquals(result.mode, "history-export");
+    const historyExport = (result.input as Record<string, unknown>)
+      .historyExport as
+        | Record<string, unknown>
+        | undefined;
+    assertExists(historyExport);
+    assertEquals(historyExport?.format, "ndjson");
+    assertEquals(historyExport?.outputPath, "/tmp/out.ndjson");
+  });
+
+  await t.step("parses history import positional command", () => {
+    const result = parseArgs([
+      "history",
+      "import",
+      "--format",
+      "ndjson",
+      "--in",
+      "/tmp/in.ndjson",
+      "--dedupe",
+      "off",
+      "--dry-run",
+    ]);
+
+    assertEquals(result.mode, "history-import");
+    const historyImport = (result.input as Record<string, unknown>)
+      .historyImport as
+        | Record<string, unknown>
+        | undefined;
+    assertExists(historyImport);
+    assertEquals(historyImport?.format, "ndjson");
+    assertEquals(historyImport?.inputPath, "/tmp/in.ndjson");
+    assertStrictEquals(historyImport?.dryRun, true);
   });
 });
 

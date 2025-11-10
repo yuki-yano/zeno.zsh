@@ -9,6 +9,7 @@ Zsh/Fish fuzzy completion and utility plugin with [Deno](https://deno.land/).
   - Builtin git completion
   - User defined completion
 - ZLE utilities
+- Smart History Selection (global / repository / directory / session scopes, delete, export/import)
 
 ## Demo
 
@@ -43,65 +44,8 @@ $ echo "source /path/to/dir/zeno.zsh" >> ~/.zshrc
 
 ## Fish Shell Support (Experimental)
 
-zeno now has experimental support for [Fish shell](https://fishshell.com/).
-
-### Installation for Fish
-
-#### Using Fisher (Recommended)
-
-```fish
-fisher install yuki-yano/zeno.zsh
-```
-
-Fisher will automatically clone the full repository to `~/.local/share/zeno.zsh`
-and set up the necessary paths.
-
-#### Manual installation
-
-```fish
-$ git clone https://github.com/yuki-yano/zeno.zsh.git /path/to/zeno.zsh
-$ echo "set -gx ZENO_ROOT /path/to/zeno.zsh" >> ~/.config/fish/config.fish
-$ ln -s /path/to/zeno.zsh/shells/fish/conf.d/zeno.fish ~/.config/fish/conf.d/
-```
-
-Note: Setting `ZENO_ROOT` explicitly is recommended for manual installations to
-avoid path resolution issues.
-
-### Configuration for Fish
-
-Copy the example key bindings:
-
-```fish
-$ cp /path/to/zeno.zsh/shells/fish/conf.d/zeno-keybindings.fish.example ~/.config/fish/conf.d/zeno-keybindings.fish
-```
-
-Or manually set up key bindings in your `config.fish`:
-
-```fish
-if test "$ZENO_LOADED" = "1"
-    bind ' ' zeno-auto-snippet
-    bind \r zeno-auto-snippet-and-accept-line
-    bind \t zeno-completion
-    bind \cx\x20 zeno-insert-space
-end
-```
-
-### Available features for Fish
-
-- **Abbrev snippet expansion** - Expand abbreviations with Space key
-- **Auto snippet and accept line** - Expand and execute with Enter key
-- **Fuzzy completion** - Tab completion with fzf
-- **Insert literal space** - Insert space without expansion (Ctrl-X Space)
-- **Snippet placeholder navigation** - Navigate through snippet placeholders
-- **History selection** - Fuzzy search command history (Ctrl-R)
-- **GHQ repository navigation** - Navigate to ghq-managed repositories
-- **Insert snippet** - Select and insert snippets from list
-- **Toggle auto snippet** - Enable/disable automatic snippet expansion
-
-### Current limitations for Fish
-
-- Socket mode is enabled by default (disable with ZENO_DISABLE_SOCK=1)
-- Key binding syntax differs from Zsh
+Fish support is experimental. A quick overview is included here; full
+installation and configuration details are available later in the document.
 
 ## Usage
 
@@ -134,9 +78,19 @@ Git Add Files> ...
 
 Use zeno-insert-snippet zle
 
-### Search history
+### History Selection
 
-Use zeno-history-completion zle
+- Press `Ctrl-R` to open the classic History widget.
+- Fzf searches the command column; press Enter to paste the selected command into the prompt immediately.
+- The classic picker operates directly on your shell history (`HISTFILE`) and does not depend on the SQLite subsystem.
+
+### Smart History Selection (Experimental)
+
+- Press `Ctrl-R` to open the Smart History Search widget; press it again to cycle the scope in the order `global → repository → directory → session`.
+- Search the command column (fzf ignores the time column), and press Enter to paste the raw command into your prompt.
+- Press `Ctrl-D` for a soft delete (logical delete) or `Alt-D` for a hard delete that also edits your `HISTFILE`.
+- Use `zeno history query|log|delete|export|import` to work directly with the SQLite-backed history from scripts.
+- Configure `history.fzf_command` / `history.fzf_options` in your YAML or TypeScript config to override the fzf (or fzf-tmux) command and its options.
 
 ### Change ghq managed repository
 
@@ -205,19 +159,12 @@ if [[ -n $ZENO_LOADED ]]; then
   bindkey '^x^m' accept-line
   bindkey '^x^z' zeno-toggle-auto-snippet
 
+  bindkey '^r' zeno-history-selection         # classic history widget
+  # bindkey '^r' zeno-smart-history-selection # smart history widget
+
   # fallback if completion not matched
   # (default: fzf-completion if exists; otherwise expand-or-complete)
   # export ZENO_COMPLETION_FALLBACK=expand-or-complete
-fi
-```
-
-### ZLE widget
-
-```zsh
-if [[ -n $ZENO_LOADED ]]; then
-  bindkey '^r'   zeno-history-selection
-  bindkey '^x^s' zeno-insert-snippet
-  bindkey '^x^f' zeno-ghq-cd
 fi
 ```
 
@@ -425,6 +372,84 @@ export default defineConfig(({ projectRoot, currentDirectory }) => ({
   ],
 }));
 ```
+
+### Smart History Selection settings (Experimental)
+
+Configure the `zeno-smart-history-selection` and the `zeno history …` CLI—via a `history` block in your `zeno.config.yml`:
+
+```yaml
+history:
+  defaultScope: global        # "global" | "repository" | "directory" | "session"
+  fzfCommand: fzf-tmux        # Override the command that spawns the picker
+  fzfOptions:
+    - "-p 50%,50%"            # Additional arguments passed to the picker command
+  redact: []                  # Strings to hide from the History view
+  keymap:
+    deleteSoft: ctrl-d        # Soft delete (logical delete)
+    deleteHard: alt-d         # Hard delete (edits HISTFILE)
+    toggleScope: ctrl-r       # Cycle through scopes within the widget
+    togglePreview: ?          # Toggle the preview window
+```
+
+## Fish usage
+
+### Installation for Fish
+
+#### Using Fisher (Recommended)
+
+```fish
+fisher install yuki-yano/zeno.zsh
+```
+
+Fisher will automatically clone the full repository to `~/.local/share/zeno.zsh`
+and set up the necessary paths.
+
+#### Manual installation
+
+```fish
+git clone https://github.com/yuki-yano/zeno.zsh.git /path/to/zeno.zsh
+echo "set -gx ZENO_ROOT /path/to/zeno.zsh" >> ~/.config/fish/config.fish
+ln -s /path/to/zeno.zsh/shells/fish/conf.d/zeno.fish ~/.config/fish/conf.d/
+```
+
+Note: Setting `ZENO_ROOT` explicitly is recommended for manual installations to
+avoid path resolution issues.
+
+### Configuration for Fish
+
+Copy the example key bindings:
+
+```fish
+cp /path/to/zeno.zsh/shells/fish/conf.d/zeno-keybindings.fish.example ~/.config/fish/conf.d/zeno-keybindings.fish
+```
+
+Or manually set up key bindings in your `config.fish`:
+
+```fish
+if test "$ZENO_LOADED" = "1"
+    bind ' ' zeno-auto-snippet
+    bind \r zeno-auto-snippet-and-accept-line
+    bind \t zeno-completion
+    bind \cx\x20 zeno-insert-space
+end
+```
+
+### Available features for Fish
+
+- **Abbrev snippet expansion** - Expand abbreviations with Space key
+- **Auto snippet and accept line** - Expand and execute with Enter key
+- **Fuzzy completion** - Tab completion with fzf
+- **Insert literal space** - Insert space without expansion (Ctrl-X Space)
+- **Snippet placeholder navigation** - Navigate through snippet placeholders
+- **History selection** - Fuzzy search command history (Ctrl-R)
+- **GHQ repository navigation** - Navigate to ghq-managed repositories
+- **Insert snippet** - Select and insert snippets from list
+- **Toggle auto snippet** - Enable/disable automatic snippet expansion
+
+### Current limitations for Fish
+
+- Socket mode is enabled by default (disable with ZENO_DISABLE_SOCK=1)
+- Key binding syntax differs from Zsh
 
 ## FAQ
 

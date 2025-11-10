@@ -8,10 +8,23 @@ import {
 } from "../deps.ts";
 import { Helper } from "../helpers.ts";
 import { clearCache } from "../../src/settings.ts";
+import type { HistorySettings } from "../../src/type/settings.ts";
 import { createConfigManager } from "../../src/config/manager.ts";
 
 describe("config manager - multi YAML loading", () => {
   const context = new Helper();
+  const defaultHistory: HistorySettings = {
+    defaultScope: "global",
+    redact: [],
+    keymap: {
+      deleteSoft: "ctrl-d",
+      deleteHard: "alt-d",
+      toggleScope: "ctrl-r",
+      togglePreview: "?",
+    },
+    fzfCommand: undefined,
+    fzfOptions: undefined,
+  };
 
   beforeEach(() => {
     clearCache();
@@ -49,6 +62,14 @@ completions:
     patterns: ["^a "]
     sourceCommand: echo a
     callback: echo a {}
+history:
+  defaultScope: repository
+  redact:
+    - secret
+  keymap:
+    deleteSoft: ctrl-d
+    deleteHard: alt-d
+    toggleScope: ctrl-r
 `,
     );
     Deno.writeTextFileSync(
@@ -62,6 +83,9 @@ completions:
     patterns: ["^b "]
     sourceCommand: echo b
     callback: echo b {}
+history:
+  redact:
+    - token
 `,
     );
 
@@ -79,6 +103,9 @@ completions:
     const settings = await manager.getSettings();
     assertEquals(settings.snippets.map((s) => s.keyword), ["a", "b"]);
     assertEquals(settings.completions.map((c) => c.name), ["comp-a", "comp-b"]);
+    assertEquals(settings.history.defaultScope, "repository");
+    assertEquals(settings.history.redact, ["secret", "token"]);
+    assertEquals(settings.history.keymap.deleteSoft, "ctrl-d");
   });
 
   it("skips broken YAML in $ZENO_HOME and loads the rest", async () => {
@@ -117,6 +144,7 @@ completions:
 
     const settings = await manager.getSettings();
     assertEquals(settings.snippets.map((s) => s.keyword), ["ok"]);
+    assertEquals(settings.history, defaultHistory);
   });
 
   it("merges YAML files under first XDG config dir's zeno/ when $ZENO_HOME has none", async () => {
@@ -139,6 +167,10 @@ completions:
 snippets:
   - keyword: x
     snippet: from-x
+history:
+  defaultScope: directory
+  keymap:
+    toggleScope: alt-r
 `,
     );
     Deno.writeTextFileSync(
@@ -149,6 +181,9 @@ completions:
     patterns: ["^y "]
     sourceCommand: echo y
     callback: echo y {}
+history:
+  redact:
+    - password
 `,
     );
 
@@ -167,6 +202,9 @@ completions:
     const settings = await manager.getSettings();
     assertEquals(settings.snippets.map((s) => s.keyword), ["x"]);
     assertEquals(settings.completions.map((c) => c.name), ["comp-y"]);
+    assertEquals(settings.history.defaultScope, "directory");
+    assertEquals(settings.history.keymap.toggleScope, "alt-r");
+    assertEquals(settings.history.redact, ["password"]);
   });
 
   it("falls back to $ZENO_HOME/config.yml when no YAML groups exist", async () => {
@@ -205,6 +243,7 @@ snippets:
     });
     const settings = await manager.getSettings();
     assertEquals(settings.snippets.map((s) => s.keyword), ["only"]);
+    assertEquals(settings.history, defaultHistory);
   });
 
   it("falls back to XDG zeno/config.yml when $ZENO_HOME has no YAML and no config.yml", async () => {
@@ -245,5 +284,6 @@ snippets:
     });
     const settings = await manager.getSettings();
     assertEquals(settings.snippets.map((s) => s.keyword), ["xdg"]);
+    assertEquals(settings.history, defaultHistory);
   });
 });

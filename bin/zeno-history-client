@@ -1,0 +1,90 @@
+#!/usr/bin/env zsh
+
+main() {
+  emulate -L zsh
+  setopt no_aliases
+
+  local script_dir=${0:A:h}
+  local zeno_root=${ZENO_ROOT:-${script_dir:h}}
+
+  path=(${zeno_root}/bin $path)
+  typeset -gx PATH
+  typeset -gx ZENO_ROOT=$zeno_root
+
+  local functions_dir=${zeno_root}/shells/zsh/functions
+  if [[ -d $functions_dir ]]; then
+    local idx=${fpath[(I)$functions_dir]}
+    if (( idx == 0 )); then
+      fpath=($functions_dir $fpath)
+    fi
+  fi
+
+  zeno_history_client_send() {
+    zmodload zsh/net/socket 2>/dev/null || return 1
+    local REPLY
+    local -i fd
+    local -a args
+
+    zsocket ${ZENO_SOCK} >/dev/null 2>&1 || return 1
+    fd=$REPLY
+
+    args=( "${@//\\/\\\\}" )
+    args=( "${(@)args//$'\n'/\\n}" )
+    args=( "${(@)args//\"/\\\"}" )
+
+    local -a quoted_args
+    local arg
+    quoted_args=()
+    for arg in "${args[@]}"; do
+      quoted_args+=("\"$arg\"")
+    done
+    args=("${quoted_args[@]}")
+
+    printf '{"args":[%s]}' "${(j:,:)args}" >&$fd
+    cat <&$fd
+    exec {fd}>&-
+  }
+
+  zeno_history_client_start_server() {
+    [[ -n ${ZENO_SOCK-} ]] || return 1
+
+    if [[ ! -d ${ZENO_SOCK:h} ]]; then
+      mkdir -p -- "${ZENO_SOCK:h}" || return 1
+    fi
+
+    nohup "${ZENO_SERVER_BIN:-${ZENO_ROOT}/bin/zeno-server}" >/dev/null 2>&1 &!
+  }
+
+  zeno_history_client_wait_for_socket() {
+    [[ -n ${ZENO_SOCK-} ]] || return 1
+    local -i attempt=0 max_attempts=50
+    while (( attempt < max_attempts )); do
+      [[ -S ${ZENO_SOCK} ]] && return 0
+      sleep 0.01
+      (( ++attempt ))
+    done
+    return 1
+  }
+
+  if [[ -z ${ZENO_DISABLE_SOCK-} ]]; then
+    : ${ZENO_SOCK_DIR:="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}/zeno-${UID}"}
+    : ${ZENO_SOCK:="${ZENO_SOCK_DIR}/zeno-${PPID}.sock"}
+    typeset -gx ZENO_SOCK_DIR
+    typeset -gx ZENO_SOCK
+
+    if zeno_history_client_send "$@"; then
+      return 0
+    fi
+
+    if zeno_history_client_start_server && zeno_history_client_wait_for_socket; then
+      if zeno_history_client_send "$@"; then
+        return 0
+      fi
+    fi
+  fi
+
+  zeno "$@"
+}
+
+main "$@"
+exit $?

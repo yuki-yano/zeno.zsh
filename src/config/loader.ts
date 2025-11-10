@@ -1,6 +1,12 @@
 import { exists, path, xdg, yamlParse } from "../deps.ts";
 import type { Settings } from "../type/settings.ts";
 import { getEnv } from "./env.ts";
+import {
+  accumulateHistorySettings,
+  createHistoryAccumulatorState,
+  finalizeHistorySettings,
+  parseHistoryConfig,
+} from "./history.ts";
 
 export const DEFAULT_CONFIG_FILENAME = "config.yml";
 export const DEFAULT_APP_DIR = "zeno";
@@ -32,6 +38,7 @@ export const parseXdgConfigDirs = (raw: string): readonly string[] => {
 export const getDefaultSettings = (): Settings => ({
   snippets: [],
   completions: [],
+  history: finalizeHistorySettings(createHistoryAccumulatorState()),
 });
 
 /**
@@ -146,7 +153,7 @@ export const findConfigFilePath = async (): Promise<string> => {
 export const loadConfigFile = async (configPath: string): Promise<Settings> => {
   try {
     const content = await Deno.readTextFile(configPath);
-    const parsed = yamlParse(content) as Partial<Settings> | undefined;
+    const parsed = yamlParse(content) as Record<string, unknown> | undefined;
 
     if (!parsed || typeof parsed !== "object") {
       return getDefaultSettings();
@@ -160,6 +167,7 @@ export const loadConfigFile = async (configPath: string): Promise<Settings> => {
       completions: Array.isArray(parsed.completions)
         ? parsed.completions
         : defaults.completions,
+      history: parseHistoryConfig(parsed.history),
     };
   } catch (error) {
     if (
@@ -189,8 +197,14 @@ export const loadConfigFiles = async (
 
   const validSettings = results.filter((s): s is Settings => s != null);
 
+  const historyState = validSettings.reduce(
+    (state, settings) => accumulateHistorySettings(state, settings.history),
+    createHistoryAccumulatorState(),
+  );
+
   return {
     snippets: validSettings.flatMap((s) => s.snippets),
     completions: validSettings.flatMap((s) => s.completions),
+    history: finalizeHistorySettings(historyState),
   };
 };

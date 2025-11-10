@@ -3,7 +3,7 @@
 .DEFAULT_GOAL := help
 
 SRCS := ./src ./test
-ALLOW := --allow-env --allow-read --allow-run --allow-write
+ALLOW := --allow-env --allow-read --allow-run --allow-write --allow-ffi --allow-net
 FLAG := --unstable-byonm
 TEST_FLAG := ${FLAG}
 
@@ -25,6 +25,7 @@ lint: ## Lint code
 precommit: fmt
 
 test: ## Test
+	deno run ${FLAG} ${ALLOW} -- ./scripts/preload_sqlite.ts
 	deno test --no-check ${TEST_FLAG} ${ALLOW} --parallel
 
 type-check: ## Type check
