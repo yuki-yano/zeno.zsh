@@ -18,10 +18,12 @@ options+=" --bind ctrl-d:preview-page-down,ctrl-u:preview-page-up"
 dir=$(echo "${(F)out}" | eval "${ZENO_FZF_COMMAND} $options")
 
 if [[ -z $dir ]]; then
+  zle reset-prompt
   return 1
 fi
 
 BUFFER="cd ${dir// /\\ }"
+zle reset-prompt
 zle accept-line
 
 if [[ -n $TMUX ]]; then
