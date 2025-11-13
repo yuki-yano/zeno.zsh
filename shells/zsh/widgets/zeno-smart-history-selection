@@ -52,11 +52,12 @@ else
   local fzf_config_raw
   if fzf_config_raw=$("$zeno_client" history fzf-config 2>/dev/null); then
     local -a fzf_config_lines
-    fzf_config_lines=(${(f)fzf_config_raw})
+    # Use null character delimiter to preserve empty strings
+    fzf_config_lines=("${(@ps:\0:)fzf_config_raw}")
     if [[ ${fzf_config_lines[1]-} == success ]]; then
       config_fzf_command=${fzf_config_lines[2]-}
       if [[ ${#fzf_config_lines[@]} -ge 3 && -n ${fzf_config_lines[3]} ]]; then
-        config_fzf_options=(${(z)fzf_config_lines[3]})
+        config_fzf_options=("${(@z)fzf_config_lines[3]}")
       fi
       if [[ ${#fzf_config_lines[@]} -ge 4 && -n ${fzf_config_lines[4]} ]]; then
         preview_toggle_key=${fzf_config_lines[4]}
