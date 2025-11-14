@@ -8,7 +8,7 @@ export type { ConfigContext } from "./context.ts";
  */
 export type ConfigFunction = (
   context: ConfigContext,
-) => Settings | Promise<Settings>;
+) => Partial<Settings> | Promise<Partial<Settings>>;
 
 /**
  * Configuration module that exports a config function
