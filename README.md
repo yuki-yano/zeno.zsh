@@ -313,7 +313,6 @@ export default defineConfig(({ projectRoot, currentDirectory }) => ({
       context: { lbuffer: ".+\\s" },
     },
   ],
-  completions: [],
 }));
 ```
 
@@ -323,7 +322,6 @@ import { defineConfig } from "jsr:@yuki-yano/zeno";
 import { join } from "jsr:@std/path@^1.0.0/join";
 
 export default defineConfig(({ projectRoot, currentDirectory }) => ({
-  snippets: [],
   completions: [
     {
       name: "kill signal",

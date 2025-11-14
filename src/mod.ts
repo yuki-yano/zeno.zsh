@@ -23,7 +23,6 @@ import type { ConfigFunction } from "./type/config.ts";
  *       // Add project-specific snippets
  *       ...(isGitRepo ? gitSnippets : [])
  *     ],
- *     completions: []
  *   };
  * });
  * ```
@@ -96,7 +95,6 @@ export const CONFIG_FUNCTION_MARK = Symbol.for(
  *
  *   return {
  *     snippets: projectConfig.snippets || [],
- *     completions: []
  *   };
  * });
  * ```
