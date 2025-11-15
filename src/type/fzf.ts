@@ -21,11 +21,16 @@ export type CompletionSourceFunction = (
   | ReadonlyArray<string>
   | Promise<ReadonlyArray<string>>;
 
+export type CompletionCallbackFunction = (
+  items: readonly string[],
+) => string[] | Promise<string[]>;
+
 type CompletionSourceBase = Readonly<{
   name: string;
   patterns: readonly RegExp[];
   excludePatterns?: readonly RegExp[];
   callback?: string;
+  callbackFunction?: CompletionCallbackFunction;
   callbackZero?: boolean;
   options: FzfOptions;
 }>;

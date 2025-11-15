@@ -9,6 +9,13 @@ export const loadCompletions = async (): Promise<
   const userCompletions = settings.completions;
 
   const completions = userCompletions.map((userCompletion) => {
+    // Validate that callback and callbackFunction are mutually exclusive
+    if (userCompletion.callback && userCompletion.callbackFunction) {
+      throw new Error(
+        `Completion "${userCompletion.name}": cannot use both "callback" and "callbackFunction". Please use only one.`,
+      );
+    }
+
     const userOptions = userCompletion.options ?? {};
 
     const bind = [

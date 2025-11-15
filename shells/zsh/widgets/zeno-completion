@@ -35,12 +35,58 @@ out=( ${(@)out:#} )
 
 # filter output with callback
 if [[ $callback && $out ]]; then
-  if [[ $callback_zero ]]; then
-    # divide input and output by null (\0)
-    out=( "${(0)$(printf '%s\0' ${(@)out} | eval $callback)}" )
+  # Check if callback is a TypeScript function (special marker)
+  if [[ $callback == __CALLBACK_FUNCTION__:* ]]; then
+    # Extract callback ID
+    local callback_id="${callback#__CALLBACK_FUNCTION__:}"
+
+    # Prepare items as JSON array
+    local items_json="["
+    local first=true
+    for item in ${(@)out}; do
+      if [[ $first == true ]]; then
+        first=false
+      else
+        items_json+=","
+      fi
+      # Escape quotes in item and wrap in quotes
+      local escaped_item="${item//\\/\\\\}"
+      escaped_item="${escaped_item//\"/\\\"}"
+      items_json+="\"${escaped_item}\""
+    done
+    items_json+="]"
+
+    # Call apply-callback-function command
+    local -a callback_result
+    callback_result=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=apply-callback-function \
+      --input.callbackId="$callback_id" \
+      --input.items="$items_json" \
+      --input.zero="$([[ $callback_zero ]] && echo true || echo false)" \
+      )}" )
+
+    if [[ $callback_result[1] == success ]]; then
+      # Remove first element (status)
+      shift callback_result
+
+      # Parse result based on separator
+      if [[ $callback_zero ]]; then
+        out=( "${(0)${(F)callback_result}}" )
+      else
+        out=( ${(@)callback_result} )
+      fi
+    else
+      # Callback function failed, clear output
+      out=()
+    fi
   else
-    # divide input and output by new-line (\n)
-    out=( "${(f)$(printf '%s\n' ${(@)out} | eval $callback)}" )
+    # Regular shell command callback
+    if [[ $callback_zero ]]; then
+      # divide input and output by null (\0)
+      out=( "${(0)$(printf '%s\0' ${(@)out} | eval $callback)}" )
+    else
+      # divide input and output by new-line (\n)
+      out=( "${(f)$(printf '%s\n' ${(@)out} | eval $callback)}" )
+    fi
   fi
 
   # remove empty items

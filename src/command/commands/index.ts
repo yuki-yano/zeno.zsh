@@ -28,6 +28,9 @@ import { ulid } from "../../deps.ts";
 
 const MAX_INLINE_COMMAND_LENGTH = 120_000;
 
+// Cache for callback functions by completion source ID
+const callbackFunctionCache = new Map<string, CompletionFunctionSource>();
+
 // Command implementations
 export const pidCommand = createCommand(
   "pid",
@@ -111,14 +114,80 @@ export const completionCommand = createCommand(
       return;
     }
 
+    // Handle callbackFunction for sourceCommand case
+    let callback = source.callback ?? "";
+    let callbackZero = source.callbackZero ? "zero" : "";
+
+    if (source.callbackFunction) {
+      // Generate a unique ID for this callback function
+      const callbackId = ulid();
+      callbackFunctionCache.set(callbackId, source);
+
+      // Return special marker with ID for zsh to detect
+      callback = `__CALLBACK_FUNCTION__:${callbackId}`;
+      callbackZero = source.callbackZero ? "zero" : "";
+    }
+
     await writeResult(
       writer.write.bind(writer),
       "success",
       source.sourceCommand,
       fzfOptionsToString(source.options),
-      source.callback ?? "",
-      source.callbackZero ? "zero" : "",
+      callback,
+      callbackZero,
     );
+  },
+);
+
+export const applyCallbackFunctionCommand = createCommand(
+  "apply-callback-function",
+  async ({ input, writer }) => {
+    const callbackId = input.callbackId as string | undefined;
+    const itemsJson = input.items as string | undefined;
+    const useZeroSeparator = input.zero === "true";
+
+    if (!callbackId || !itemsJson) {
+      await writeResult(writer.write.bind(writer), "failure");
+      return;
+    }
+
+    const source = callbackFunctionCache.get(callbackId);
+    if (!source || !source.callbackFunction) {
+      await writeResult(writer.write.bind(writer), "failure");
+      return;
+    }
+
+    try {
+      // Parse JSON array
+      const items = JSON.parse(itemsJson);
+      if (!Array.isArray(items)) {
+        throw new Error("Items must be a JSON array");
+      }
+
+      const result = await source.callbackFunction(items);
+
+      if (!Array.isArray(result)) {
+        throw new Error(
+          "Callback function must return an array of strings",
+        );
+      }
+
+      const resultStrings = result.map((item) => `${item}`);
+
+      // Clean up the cache entry
+      callbackFunctionCache.delete(callbackId);
+
+      // Write results
+      await writeResult(writer.write.bind(writer), "success");
+
+      const separator = useZeroSeparator ? "\0" : "\n";
+      for (const item of resultStrings) {
+        await writer.write({ format: "%s", text: item + separator });
+      }
+    } catch (_error) {
+      callbackFunctionCache.delete(callbackId);
+      await writeResult(writer.write.bind(writer), "failure");
+    }
   },
 );
 
@@ -141,13 +210,27 @@ const handleFunctionCompletion = async (
     const separatorIsNull = Boolean(options["--read0"]);
     const command = await createCandidatesCommand(candidates, separatorIsNull);
 
+    // Handle callbackFunction
+    let callback = source.callback ?? "";
+    let callbackZero = source.callbackZero ? "zero" : "";
+
+    if (source.callbackFunction) {
+      // Generate a unique ID for this callback function
+      const callbackId = ulid();
+      callbackFunctionCache.set(callbackId, source);
+
+      // Return special marker with ID for zsh to detect
+      callback = `__CALLBACK_FUNCTION__:${callbackId}`;
+      callbackZero = source.callbackZero ? "zero" : "";
+    }
+
     await writeResult(
       writeFn,
       "success",
       command,
       fzfOptionsToString(options),
-      source.callback ?? "",
-      source.callbackZero ? "zero" : "",
+      callback,
+      callbackZero,
     );
   } catch (_error) {
     await writeResult(writeFn, "failure");
@@ -218,6 +301,7 @@ export const createCommandRegistry = () => {
   registry.register(insertSnippetCommand);
   registry.register(nextPlaceholderCommand);
   registry.register(completionCommand);
+  registry.register(applyCallbackFunctionCommand);
   registry.register(
     createHistoryLogCommand({
       getHistoryModule,
