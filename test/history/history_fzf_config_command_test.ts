@@ -38,10 +38,7 @@ describe("history-fzf-config command", () => {
     });
 
     assertEquals(writer.lines, [
-      "success",
-      "fzf-tmux",
-      "-p 80%",
-      "alt-p",
+      "success\0fzf-tmux\0-p 80%\0alt-p",
     ]);
   });
 
@@ -67,7 +64,7 @@ describe("history-fzf-config command", () => {
       writer,
     });
 
-    assertEquals(writer.lines, ["success", "", "", "?"]);
+    assertEquals(writer.lines, ["success\0\0\0?"]);
   });
 
   it("reports errors", async () => {

@@ -16,13 +16,14 @@ export const createHistoryFzfConfigCommand = (
         const settings = await deps.loadHistorySettings();
         const command = settings.fzfCommand ?? "";
         const options = settings.fzfOptions?.join(" ") ?? "";
-        await writeResult(
-          writer.write.bind(writer),
+        // Use null character delimiter to preserve empty strings
+        const data = [
           "success",
           command,
           options,
           settings.keymap.togglePreview,
-        );
+        ].join("\0");
+        await writer.write({ format: "%s\n", text: data });
       } catch (error) {
         await writeResult(
           writer.write.bind(writer),
