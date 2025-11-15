@@ -12,6 +12,14 @@ export const snippetListOptions = () => {
   return `${DEFAULT_SNIPPET_LIST_OPTION.join(" ")}`;
 };
 
+const escapeInvisibleChars = (text: string): string => {
+  return text
+    .replace(/\\/g, "\\\\") // escape backslash first
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r")
+    .replace(/\t/g, "\\t");
+};
+
 export const snippetList = async () => {
   const loadedSnippets = await loadSnippets();
 
@@ -27,7 +35,11 @@ export const snippetList = async () => {
   const lineFormat = `%-${nameWidth}s  %s`;
 
   const nameAndSnippet = snippets.map(({ snippet, name }) =>
-    sprintf(lineFormat, name?.length ? `${name}:` : "", snippet)
+    sprintf(
+      lineFormat,
+      name?.length ? `${name}:` : "",
+      escapeInvisibleChars(snippet),
+    )
   );
 
   return nameAndSnippet;
