@@ -5,6 +5,7 @@ const DEFAULT_SNIPPET_LIST_OPTION = [
   "--delimiter=':'",
   "--prompt='Snippet> '",
   "--height='80%'",
+  "--no-multi",
 ];
 
 export const snippetListOptions = () => {

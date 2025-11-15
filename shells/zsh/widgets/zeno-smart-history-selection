@@ -180,6 +180,7 @@ fzf_opts=(
   "--with-nth=2..6"
   "$fzf_delimiter_opt"
   "--ansi"
+  "--no-multi"
   "--header-lines=1"
   "--bind"
   "start:reload(:)+reload(${scope_cmd_str})"

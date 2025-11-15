@@ -15,6 +15,7 @@ fi
 options=${ZENO_ENABLE_FZF_TMUX:+${ZENO_FZF_TMUX_OPTIONS}}
 options+=" --prompt='Project >' --preview 'cat \$(eval echo {})/README.md'"
 options+=" --bind ctrl-d:preview-page-down,ctrl-u:preview-page-up"
+options+=" --no-multi"
 dir=$(echo "${(F)out}" | eval "${ZENO_FZF_COMMAND} $options")
 
 if [[ -z $dir ]]; then

@@ -19,6 +19,7 @@ function zeno-ghq-cd --description "Select and change to a ghq repository direct
     end
     set options $options "--prompt='Project >' --preview 'cat \$(eval echo {})/README.md'"
     set options $options "--bind ctrl-d:preview-page-down,ctrl-u:preview-page-up"
+    set options $options "--no-multi"
     
     # Select directory with fzf
     set -l selected_dir (printf '%s\n' $repos | eval "$ZENO_FZF_COMMAND $options")

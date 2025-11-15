@@ -9,7 +9,7 @@ function zeno-history-selection --description "Select a command from history"
     set -l current_buffer (commandline -b)
     
     # Add fzf options
-    set options $options "--no-sort --exact --query='$current_buffer' --prompt='History> '"
+    set options $options "--no-sort --exact --no-multi --query='$current_buffer' --prompt='History> '"
     
     # Check if bat is available for preview
     if command -q bat
