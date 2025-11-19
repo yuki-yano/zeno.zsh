@@ -1,0 +1,47 @@
+#autoload
+
+emulate -L zsh
+
+local in_zle=0
+if (( $+BUFFER )); then
+  in_zle=1
+fi
+
+if [[ $ZENO_ENABLE -eq 0 ]]; then
+  return
+fi
+
+local template
+if (( in_zle )); then
+  template=$BUFFER
+else
+  template=$*
+fi
+
+if [[ -z $template ]]; then
+  unset ZENO_PREPROMPT_BUFFER ZENO_PREPROMPT_CURSOR ZENO_PREPROMPT_RAW
+  (( in_zle )) && zle reset-prompt
+  return
+fi
+
+local -a out
+
+out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=preprompt \
+  --input.template="$template" \
+  )}" )
+
+if [[ $out[1] == success && -n $out[2] ]]; then
+  typeset -g ZENO_PREPROMPT_BUFFER="$out[2]"
+  typeset -g ZENO_PREPROMPT_CURSOR="$out[3]"
+  typeset -g ZENO_PREPROMPT_RAW="$template"
+
+  if (( in_zle )); then
+    BUFFER=$out[2]
+    CURSOR=$out[3]
+  fi
+else
+  unset ZENO_PREPROMPT_BUFFER ZENO_PREPROMPT_CURSOR ZENO_PREPROMPT_RAW
+fi
+
+(( in_zle )) && zle reset-prompt
+return 0

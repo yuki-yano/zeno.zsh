@@ -3,5 +3,6 @@ export type Input = Readonly<{
   lbuffer?: string;
   rbuffer?: string;
   snippet?: string;
+  template?: string;
   dir?: string;
 }>;

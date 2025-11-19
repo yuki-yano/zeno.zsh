@@ -1,4 +1,5 @@
 import { normalizeCommand } from "../command.ts";
+import { placeholderRegex } from "./placeholder.ts";
 import type { Input } from "../type/shell.ts";
 
 export const nextPlaceholder = (
@@ -7,7 +8,6 @@ export const nextPlaceholder = (
   const lbuffer = input.lbuffer ?? "";
   const rbuffer = input.rbuffer ?? "";
   const buffer = normalizeCommand(`${lbuffer}${rbuffer}`);
-  const placeholderRegex = /\{\{[^{}\s]*\}\}/;
 
   const placeholderMatch = placeholderRegex.exec(buffer);
   if (placeholderMatch == null) {

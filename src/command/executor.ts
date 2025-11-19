@@ -57,6 +57,9 @@ export const parseArgs = (args: readonly string[]) => {
     snippet: typeof rawInput.snippet === "string"
       ? rawInput.snippet
       : undefined,
+    template: typeof rawInput.template === "string"
+      ? rawInput.template
+      : undefined,
     dir: typeof rawInput.dir === "string" ? rawInput.dir : undefined,
   };
 

@@ -1,6 +1,7 @@
 import { loadSnippets } from "./settings.ts";
 import { normalizeCommand } from "../command.ts";
 import { executeCommand } from "../util/exec.ts";
+import { applyFirstPlaceholder } from "./placeholder.ts";
 import type { Input } from "../type/shell.ts";
 
 export type InsertSnippetData = {
@@ -24,8 +25,6 @@ export const insertSnippet = async (
   });
   const snippetName = (input.snippet ?? "").trim();
 
-  const placeholderRegex = /\{\{[^{}\s]*\}\}/;
-
   const snippets = await loadSnippets();
   for (const { snippet, name, evaluate } of snippets) {
     if (name == null || snippetName !== name.trim()) {
@@ -37,17 +36,14 @@ export const insertSnippet = async (
       snipText = await executeCommand(snippet);
     }
 
-    const placeholderMatch = placeholderRegex.exec(snipText);
-
-    let cursor = snipText.length + 1;
-    if (placeholderMatch != null) {
-      snipText = snipText.replace(placeholderRegex, "");
-      cursor = placeholderMatch.index;
-    }
+    const { text: preparedSnippet, cursor } = applyFirstPlaceholder(
+      snipText,
+      snipText.length + 1,
+    );
 
     return {
       status: "success",
-      buffer: `${lbuffer}${snipText}${rbuffer} `,
+      buffer: `${lbuffer}${preparedSnippet}${rbuffer} `,
       cursor: (lbuffer.length + cursor),
     } as const;
   }

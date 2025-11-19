@@ -44,5 +44,9 @@ if (( $+functions[zeno-history-hooks] )); then
   zeno-history-hooks
 fi
 
+if (( $+functions[zeno-preprompt-hooks] )); then
+  zeno-preprompt-hooks
+fi
+
 export ZENO_ENABLE=1
 export ZENO_LOADED=1

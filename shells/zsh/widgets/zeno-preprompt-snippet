@@ -1,0 +1,49 @@
+#autoload
+
+emulate -L zsh
+
+local in_zle=0
+if (( $+BUFFER )); then
+  in_zle=1
+fi
+
+local snippet lines options
+local -a out
+
+if [[ -z $1 ]]; then
+  out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=snippet-list)}" )
+
+  options=$out[1]
+  shift out
+  lines=${(F)out}
+
+  options="${ZENO_ENABLE_FZF_TMUX:+${ZENO_FZF_TMUX_OPTIONS}} $options"
+  snippet=$(echo "$lines" | eval "${ZENO_FZF_COMMAND} ${options}")
+  snippet=${snippet%%:*}
+else
+  snippet=$1
+fi
+
+if [[ -z $snippet ]]; then
+  return
+fi
+
+out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=preprompt-snippet \
+  --input.snippet="$snippet" \
+  )}" )
+
+if [[ $out[1] == success && -n $out[2] ]]; then
+  typeset -g ZENO_PREPROMPT_BUFFER="$out[2]"
+  typeset -g ZENO_PREPROMPT_CURSOR="$out[3]"
+  typeset -g ZENO_PREPROMPT_RAW="$snippet"
+
+  if (( in_zle )); then
+    BUFFER=$out[2]
+    CURSOR=$out[3]
+  fi
+else
+  unset ZENO_PREPROMPT_BUFFER ZENO_PREPROMPT_CURSOR ZENO_PREPROMPT_RAW
+fi
+
+(( in_zle )) && zle reset-prompt
+return 0

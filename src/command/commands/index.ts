@@ -4,6 +4,10 @@ import { snippetList, snippetListOptions } from "../../snippet/snippet-list.ts";
 import { autoSnippet } from "../../snippet/auto-snippet.ts";
 import { insertSnippet } from "../../snippet/insert-snippet.ts";
 import { nextPlaceholder } from "../../snippet/next-placeholder.ts";
+import {
+  preparePreprompt,
+  preparePrepromptFromSnippet,
+} from "../../preprompt/index.ts";
 import { completion } from "../../completion/completion.ts";
 import { fzfOptionsToString } from "../../fzf/option/convert.ts";
 import {
@@ -82,6 +86,30 @@ export const insertSnippetCommand = createCommand(
       }
       return [];
     });
+  },
+);
+
+export const prepromptCommand = createCommand(
+  "preprompt",
+  async ({ input, writer }) => {
+    const template = typeof input.template === "string" ? input.template : "";
+    const result = preparePreprompt(template);
+    await handleStatusResult(writer.write.bind(writer), result, (r) => [
+      r.buffer!,
+      r.cursor!.toString(),
+    ]);
+  },
+);
+
+export const prepromptSnippetCommand = createCommand(
+  "preprompt-snippet",
+  async ({ input, writer }) => {
+    const snippetName = typeof input.snippet === "string" ? input.snippet : "";
+    const result = await preparePrepromptFromSnippet(snippetName);
+    await handleStatusResult(writer.write.bind(writer), result, (r) => [
+      r.buffer!,
+      r.cursor!.toString(),
+    ]);
   },
 );
 
@@ -216,6 +244,8 @@ export const createCommandRegistry = () => {
   registry.register(snippetListCommand);
   registry.register(autoSnippetCommand);
   registry.register(insertSnippetCommand);
+  registry.register(prepromptCommand);
+  registry.register(prepromptSnippetCommand);
   registry.register(nextPlaceholderCommand);
   registry.register(completionCommand);
   registry.register(

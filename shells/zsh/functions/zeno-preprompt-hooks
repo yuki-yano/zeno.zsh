@@ -1,0 +1,33 @@
+#autoload
+
+function zeno-preprompt-hooks() {
+  emulate -L zsh
+
+  autoload -Uz add-zle-hook-widget
+
+  if [[ ${ZENO_PREPROMPT_HOOK_INITIALIZED-} == 1 ]]; then
+    return
+  fi
+  typeset -g ZENO_PREPROMPT_HOOK_INITIALIZED=1
+
+  function zeno-preprompt-line-init() {
+    emulate -L zsh
+
+    if [[ -z ${ZENO_PREPROMPT_BUFFER-} ]]; then
+      return
+    fi
+
+    if [[ -n $BUFFER ]]; then
+      return
+    fi
+
+    BUFFER=$ZENO_PREPROMPT_BUFFER
+    if [[ -n ${ZENO_PREPROMPT_CURSOR-} ]]; then
+      CURSOR=$ZENO_PREPROMPT_CURSOR
+    else
+      CURSOR=${#BUFFER}
+    fi
+  }
+
+  add-zle-hook-widget line-init zeno-preprompt-line-init
+}

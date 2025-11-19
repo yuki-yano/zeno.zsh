@@ -51,6 +51,7 @@ Deno.test("parseArgs", async (t) => {
       lbuffer: undefined,
       rbuffer: undefined,
       snippet: undefined,
+      template: undefined,
       dir: undefined,
     });
   });

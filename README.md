@@ -9,6 +9,7 @@ Zsh/Fish fuzzy completion and utility plugin with [Deno](https://deno.land/).
   - Builtin git completion
   - User defined completion
 - ZLE utilities
+- Persistent preprompt prefix (placeholder jump)
 - Smart History Selection (global / repository / directory / session scopes, delete, export/import)
 
 ## Demo
@@ -77,6 +78,14 @@ Git Add Files> ...
 ### Insert snippet
 
 Use zeno-insert-snippet zle
+
+### Preprompt prefix
+
+- Bind a key to `zeno-preprompt` (example: `bindkey '^xp' zeno-preprompt`).
+- Invoke it with a non-empty buffer to save that text as the next prompt prefix (a space is auto-appended).
+- Start typing on the next line with the prefix already inserted; call the widget again with an empty buffer to reset.
+- You can embed `{{placeholder}}` in the prefix; the first one is replaced and the cursor starts there. Use the existing `next-placeholder` widget to jump through the remaining placeholders.
+- Use `zeno-preprompt-snippet` to pick a configured snippet (via fzf or by passing a snippet name as an argument) and set it as the next prompt prefix.
 
 ### History Selection
 
@@ -155,9 +164,17 @@ if [[ -n $ZENO_LOADED ]]; then
 
   bindkey '^i' zeno-completion
 
+  bindkey '^xx' zeno-insert-snippet           # open snippet picker (fzf) and insert at cursor
+
   bindkey '^x '  zeno-insert-space
   bindkey '^x^m' accept-line
   bindkey '^x^z' zeno-toggle-auto-snippet
+
+  # preprompt bindings
+  bindkey '^xp' zeno-preprompt
+  bindkey '^xs' zeno-preprompt-snippet
+  # Outside ZLE you can run `zeno-preprompt git {{cmd}}` or `zeno-preprompt-snippet foo`
+  # to set the next prompt prefix; invoking them with an empty argument resets the state.
 
   bindkey '^r' zeno-history-selection         # classic history widget
   # bindkey '^r' zeno-smart-history-selection # smart history widget
