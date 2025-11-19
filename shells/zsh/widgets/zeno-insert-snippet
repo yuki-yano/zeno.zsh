@@ -2,8 +2,8 @@
 
 emulate -L zsh
 
-local lines options snippet
-local -a out
+local lines options snippet fzf_command tmux_opts_str
+local -a out tmux_opts
 
 out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=snippet-list)}" )
 
@@ -11,8 +11,24 @@ options=$out[1]
 shift out
 lines=${(F)out}
 
-options="${ZENO_ENABLE_FZF_TMUX:+${ZENO_FZF_TMUX_OPTIONS}} $options"
-snippet=$(echo "$lines" | eval "${ZENO_FZF_COMMAND} ${options}")
+fzf_command=${ZENO_FZF_COMMAND:-fzf}
+if [[ $fzf_command == fzf-tmux ]]; then
+  if [[ -n ${TMUX-} ]] && (( $+commands[fzf-tmux] )); then
+    if [[ -n ${ZENO_FZF_TMUX_OPTIONS-} ]]; then
+      tmux_opts=(${(z)ZENO_FZF_TMUX_OPTIONS})
+    fi
+  else
+    fzf_command=fzf
+  fi
+fi
+
+if (( ${#tmux_opts[@]} > 0 )); then
+  tmux_opts_str="${(j: :)tmux_opts} "
+else
+  tmux_opts_str=""
+fi
+
+snippet=$(echo "$lines" | eval "${fzf_command} ${tmux_opts_str}${options}")
 snippet=${snippet%%:*}
 
 out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=insert-snippet \

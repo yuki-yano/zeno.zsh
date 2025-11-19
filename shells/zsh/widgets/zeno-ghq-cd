@@ -2,8 +2,8 @@
 
 emulate -L zsh
 
-local current_session dir options repository session
-local -a out
+local current_session dir options repository session fzf_command tmux_opts_str
+local -a out tmux_opts
 
 out=( "${(f)^$(ghq list -p)}"(N-/) )
 [[ -n $HOME ]] && out=( "${(@)out//#$HOME/~}" )
@@ -12,11 +12,28 @@ if [[ $#out == 0 ]]; then
   return 1
 fi
 
-options=${ZENO_ENABLE_FZF_TMUX:+${ZENO_FZF_TMUX_OPTIONS}}
+fzf_command=${ZENO_FZF_COMMAND:-fzf}
+if [[ $fzf_command == fzf-tmux ]]; then
+  if [[ -n ${TMUX-} ]] && (( $+commands[fzf-tmux] )); then
+    if [[ -n ${ZENO_FZF_TMUX_OPTIONS-} ]]; then
+      tmux_opts=(${(z)ZENO_FZF_TMUX_OPTIONS})
+    fi
+  else
+    fzf_command=fzf
+  fi
+fi
+
+if (( ${#tmux_opts[@]} > 0 )); then
+  tmux_opts_str="${(j: :)tmux_opts} "
+else
+  tmux_opts_str=""
+fi
+
+options=$tmux_opts_str
 options+=" --prompt='Project >' --preview 'cat \$(eval echo {})/README.md'"
 options+=" --bind ctrl-d:preview-page-down,ctrl-u:preview-page-up"
 options+=" --no-multi"
-dir=$(echo "${(F)out}" | eval "${ZENO_FZF_COMMAND} $options")
+dir=$(echo "${(F)out}" | eval "${fzf_command} $options")
 
 if [[ -z $dir ]]; then
   zle reset-prompt
