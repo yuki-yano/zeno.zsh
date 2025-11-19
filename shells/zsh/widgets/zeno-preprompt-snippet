@@ -7,8 +7,19 @@ if (( $+BUFFER )); then
   in_zle=1
 fi
 
-local snippet lines options
-local -a out
+local snippet lines options fzf_command
+local -a out tmux_opts
+
+fzf_command=${ZENO_FZF_COMMAND:-fzf}
+if [[ $fzf_command == fzf-tmux ]]; then
+  if [[ -n ${TMUX-} ]] && (( $+commands[fzf-tmux] )); then
+    if [[ -n ${ZENO_FZF_TMUX_OPTIONS-} ]]; then
+      tmux_opts=(${(z)ZENO_FZF_TMUX_OPTIONS})
+    fi
+  else
+    fzf_command=fzf
+  fi
+fi
 
 if [[ -z $1 ]]; then
   out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=snippet-list)}" )
@@ -17,15 +28,18 @@ if [[ -z $1 ]]; then
   shift out
   lines=${(F)out}
 
-  options="${ZENO_ENABLE_FZF_TMUX:+${ZENO_FZF_TMUX_OPTIONS}} $options"
-  snippet=$(echo "$lines" | eval "${ZENO_FZF_COMMAND} ${options}")
+  local tmux_opts_str=""
+  if (( ${#tmux_opts[@]} > 0 )); then
+    tmux_opts_str="${(j: :)tmux_opts} "
+  fi
+  snippet=$(echo "$lines" | eval "${fzf_command} ${tmux_opts_str}${options}")
   snippet=${snippet%%:*}
 else
   snippet=$1
 fi
 
 if [[ -z $snippet ]]; then
-  return
+  return 0
 fi
 
 out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=preprompt-snippet \

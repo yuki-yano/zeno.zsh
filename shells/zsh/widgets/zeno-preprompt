@@ -8,7 +8,7 @@ if (( $+BUFFER )); then
 fi
 
 if [[ $ZENO_ENABLE -eq 0 ]]; then
-  return
+  return 0
 fi
 
 local template
@@ -21,7 +21,7 @@ fi
 if [[ -z $template ]]; then
   unset ZENO_PREPROMPT_BUFFER ZENO_PREPROMPT_CURSOR ZENO_PREPROMPT_RAW
   (( in_zle )) && zle reset-prompt
-  return
+  return 0
 fi
 
 local -a out
