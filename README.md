@@ -483,3 +483,7 @@ instead.
 - [fzf-zsh-completions](https://github.com/chitoku-k/fzf-zsh-completions)
 - [pmy](https://github.com/relastle/pmy/)
 - [zabrze](https://github.com/Ryooooooga/zabrze)
+
+## Inspiration
+
+- Preprompt feature inspired by [by-binds-yourself](https://github.com/atusy/by-binds-yourself)
