@@ -105,6 +105,8 @@ Use zeno-insert-snippet zle
 
 Use zeno-ghq-cd zle
 
+**Note:** By default, when running inside a tmux session, `zeno-ghq-cd` automatically renames the tmux session to match the selected repository name. To disable this behavior, set `ZENO_DISABLE_GHQ_CD_TMUX_RENAME=1`.
+
 ## Configuration files
 
 zeno loads configuration files from the project and user config directories and
@@ -140,6 +142,9 @@ and types from `jsr:@yuki-yano/zeno`, giving you access to the full
 
 # if disable builtin completion
 # export ZENO_DISABLE_BUILTIN_COMPLETION=1
+
+# if disable tmux session renaming in zeno-ghq-cd
+# export ZENO_DISABLE_GHQ_CD_TMUX_RENAME=1
 
 # default
 export ZENO_GIT_CAT="cat"
@@ -447,6 +452,9 @@ if test "$ZENO_LOADED" = "1"
     bind \t zeno-completion
     bind \cx\x20 zeno-insert-space
 end
+
+# Optional: Disable tmux session renaming in zeno-ghq-cd
+# set -gx ZENO_DISABLE_GHQ_CD_TMUX_RENAME 1
 ```
 
 ### Available features for Fish
