@@ -44,7 +44,7 @@ BUFFER="cd ${dir// /\\ }"
 zle reset-prompt
 zle accept-line
 
-if [[ -n $TMUX ]]; then
+if [[ -n $TMUX && -z ${ZENO_DISABLE_GHQ_CD_TMUX_RENAME-} ]]; then
   repository=${dir:t}
   session=${repository//./-}
   tmux rename-session "${session}"

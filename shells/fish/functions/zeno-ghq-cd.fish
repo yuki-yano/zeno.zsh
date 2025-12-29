@@ -36,7 +36,7 @@ function zeno-ghq-cd --description "Select and change to a ghq repository direct
     commandline -f execute
     
     # Rename tmux session if in tmux
-    if set -q TMUX
+    if set -q TMUX; and not set -q ZENO_DISABLE_GHQ_CD_TMUX_RENAME
         # Get the last component of the path (repository name)
         set -l repository (basename $selected_dir)
         # Replace dots with hyphens for tmux session name
