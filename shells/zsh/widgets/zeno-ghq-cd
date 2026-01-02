@@ -44,8 +44,6 @@ BUFFER="cd ${dir// /\\ }"
 zle reset-prompt
 zle accept-line
 
-if [[ -n $TMUX ]]; then
-  repository=${dir:t}
-  session=${repository//./-}
-  tmux rename-session "${session}"
+if (( $+widgets[zeno-ghq-cd-post-hook] )); then
+  ZENO_GHQ_CD_DIR="$dir" zle zeno-ghq-cd-post-hook
 fi
