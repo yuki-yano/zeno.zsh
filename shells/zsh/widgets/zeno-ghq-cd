@@ -2,7 +2,7 @@
 
 emulate -L zsh
 
-local current_session dir options repository session fzf_command tmux_opts_str
+local dir options fzf_command tmux_opts_str
 local -a out tmux_opts
 
 out=( "${(f)^$(ghq list -p)}"(N-/) )
