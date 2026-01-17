@@ -116,7 +116,7 @@ Register a ZLE widget named `zeno-ghq-cd-post-hook`:
 ```zsh
 # Example: Rename tmux session to repository name
 function zeno-ghq-cd-post-hook-impl() {
-  local dir=$ZENO_GHQ_CD_DIR
+  local dir="$ZENO_GHQ_CD_DIR"
   if [[ -n $TMUX ]]; then
     local repository=${dir:t}
     local session=${repository//./-}
@@ -134,9 +134,9 @@ Define a function named `zeno-ghq-cd-post-hook`:
 ```fish
 # Example: Rename tmux session to repository name
 function zeno-ghq-cd-post-hook
-    set -l dir $ZENO_GHQ_CD_DIR
+    set -l dir "$ZENO_GHQ_CD_DIR"
     if set -q TMUX
-        set -l repository (basename $dir)
+        set -l repository (basename "$dir")
         set -l session (string replace -a '.' '-' $repository)
         tmux rename-session "$session" 2>/dev/null
     end
