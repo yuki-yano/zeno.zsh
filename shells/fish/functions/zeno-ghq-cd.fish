@@ -37,8 +37,7 @@ function zeno-ghq-cd --description "Select and change to a ghq repository direct
 
     # Post-hook support
     if functions -q zeno-ghq-cd-post-hook
-        set -gx ZENO_GHQ_CD_DIR "$selected_dir"
+        set -lx ZENO_GHQ_CD_DIR "$selected_dir"
         zeno-ghq-cd-post-hook
-        set -e ZENO_GHQ_CD_DIR
     end
 end
