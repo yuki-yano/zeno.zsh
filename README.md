@@ -105,6 +105,46 @@ Use zeno-insert-snippet zle
 
 Use zeno-ghq-cd zle
 
+#### Post-hook for ghq-cd
+
+You can execute custom processing after changing directory by registering a post-hook.
+
+**For Zsh:**
+
+Register a ZLE widget named `zeno-ghq-cd-post-hook`:
+
+```zsh
+# Example: Rename tmux session to repository name
+function zeno-ghq-cd-post-hook-impl() {
+  local dir="$ZENO_GHQ_CD_DIR"
+  if [[ -n $TMUX ]]; then
+    local repository=${dir:t}
+    local session=${repository//./-}
+    tmux rename-session "${session}"
+  fi
+}
+
+zle -N zeno-ghq-cd-post-hook zeno-ghq-cd-post-hook-impl
+```
+
+**For Fish:**
+
+Define a function named `zeno-ghq-cd-post-hook`:
+
+```fish
+# Example: Rename tmux session to repository name
+function zeno-ghq-cd-post-hook
+    set -l dir "$ZENO_GHQ_CD_DIR"
+    if set -q TMUX
+        set -l repository (basename "$dir")
+        set -l session (string replace -a '.' '-' $repository)
+        tmux rename-session "$session" 2>/dev/null
+    end
+end
+```
+
+The hook can access the selected directory path via the `ZENO_GHQ_CD_DIR` environment variable.
+
 ## Configuration files
 
 zeno loads configuration files from the project and user config directories and

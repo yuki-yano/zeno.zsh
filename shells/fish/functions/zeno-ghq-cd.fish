@@ -34,13 +34,10 @@ function zeno-ghq-cd --description "Select and change to a ghq repository direct
     # Set the command and execute
     commandline -r "cd $escaped_dir"
     commandline -f execute
-    
-    # Rename tmux session if in tmux
-    if set -q TMUX
-        # Get the last component of the path (repository name)
-        set -l repository (basename $selected_dir)
-        # Replace dots with hyphens for tmux session name
-        set -l session (string replace -a '.' '-' $repository)
-        tmux rename-session "$session" 2>/dev/null
+
+    # Post-hook support
+    if functions -q zeno-ghq-cd-post-hook
+        set -lx ZENO_GHQ_CD_DIR "$selected_dir"
+        zeno-ghq-cd-post-hook
     end
 end

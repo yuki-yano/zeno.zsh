@@ -2,7 +2,7 @@
 
 emulate -L zsh
 
-local current_session dir options repository session fzf_command tmux_opts_str
+local dir options fzf_command tmux_opts_str
 local -a out tmux_opts
 
 out=( "${(f)^$(ghq list -p)}"(N-/) )
@@ -44,8 +44,6 @@ BUFFER="cd ${dir// /\\ }"
 zle reset-prompt
 zle accept-line
 
-if [[ -n $TMUX ]]; then
-  repository=${dir:t}
-  session=${repository//./-}
-  tmux rename-session "${session}"
+if (( $+widgets[zeno-ghq-cd-post-hook] )); then
+  ZENO_GHQ_CD_DIR="$dir" zle zeno-ghq-cd-post-hook
 fi
