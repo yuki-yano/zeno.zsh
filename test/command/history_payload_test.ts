@@ -41,6 +41,27 @@ describe("history positional payload", () => {
     assertStrictEquals(resolved.payload.toggleScope, true);
   });
 
+  it("parses toggle-scope when provided as string true", () => {
+    const resolved = resolveHistoryPositional({
+      _: ["history", "query"],
+      "toggle-scope": "true",
+    });
+    assertExists(resolved);
+    assertEquals(resolved.mode, "history-query");
+    assertStrictEquals(resolved.payload.toggleScope, true);
+  });
+
+  it("parses hard delete flag when provided as string true", () => {
+    const resolved = resolveHistoryPositional({
+      _: ["history", "delete"],
+      id: "01DELETE000000000000000000",
+      hard: "true",
+    });
+    assertExists(resolved);
+    assertEquals(resolved.mode, "history-delete");
+    assertStrictEquals(resolved.payload.hard, true);
+  });
+
   it("builds history-export payload with out alias and redact array", () => {
     const resolved = resolveHistoryPositional({
       _: ["history", "export"],
@@ -66,6 +87,18 @@ describe("history positional payload", () => {
     assertEquals(resolved.mode, "history-import");
     assertEquals(resolved.inputKey, "historyImport");
     assertEquals(resolved.payload.inputPath, "/tmp/in.ndjson");
+    assertStrictEquals(resolved.payload.dryRun, true);
+  });
+
+  it("parses dry-run when provided as string true", () => {
+    const resolved = resolveHistoryPositional({
+      _: ["history", "import"],
+      format: "ndjson",
+      in: "/tmp/in.ndjson",
+      "dry-run": "true",
+    });
+    assertExists(resolved);
+    assertEquals(resolved.mode, "history-import");
     assertStrictEquals(resolved.payload.dryRun, true);
   });
 

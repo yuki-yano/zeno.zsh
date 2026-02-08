@@ -49,6 +49,9 @@ const assignIfDefined = (
   }
 };
 
+const isEnabledFlag = (value: unknown): boolean =>
+  value === true || value === "true";
+
 const buildHistoryLogPayload = (
   source: ParsedArgsLike,
 ): Record<string, unknown> => {
@@ -93,7 +96,8 @@ const buildHistoryQueryPayload = (
   assignIfDefined(payload, "format", source.format);
   assignIfDefined(payload, "deleted", source.deleted);
   assignIfDefined(payload, "repoRoot", getArg(source, "repoRoot", "repo-root"));
-  if (source.toggleScope === true || source["toggle-scope"] === true) {
+  const toggleScope = getArg(source, "toggleScope", "toggle-scope");
+  if (isEnabledFlag(toggleScope)) {
     payload.toggleScope = true;
   }
   return payload;
@@ -103,7 +107,7 @@ const buildHistoryDeletePayload = (
   source: ParsedArgsLike,
 ): Record<string, unknown> => ({
   id: source.id,
-  hard: source.hard === true,
+  hard: isEnabledFlag(source.hard),
 });
 
 const buildHistoryExportPayload = (
@@ -136,7 +140,8 @@ const buildHistoryImportPayload = (
   assignIfDefined(payload, "format", source.format);
   assignIfDefined(payload, "inputPath", getArg(source, "in", "inputPath"));
   assignIfDefined(payload, "dedupe", source.dedupe);
-  if (source.dryRun === true || source["dry-run"] === true) {
+  const dryRun = getArg(source, "dryRun", "dry-run");
+  if (isEnabledFlag(dryRun)) {
     payload.dryRun = true;
   }
   if (source.redact !== undefined) {
