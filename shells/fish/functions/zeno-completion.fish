@@ -119,6 +119,11 @@ function zeno-completion --description "Fuzzy completion with fzf"
         set -l selected_file (mktemp)
         if test -n "$selected_file"
             chmod 600 $selected_file 2>/dev/null
+            set -l cleanup_fn "__zeno_completion_cleanup_"(random)
+            function $cleanup_fn --on-signal INT --on-signal TERM --inherit-variable selected_file --inherit-variable cleanup_fn
+                rm -f $selected_file
+                functions -e $cleanup_fn 2>/dev/null
+            end
             printf '%s\0' $out > $selected_file
 
             set -l callback_result (zeno-call-client-and-fallback --zeno-mode=completion-callback \
@@ -129,6 +134,7 @@ function zeno-completion --description "Fuzzy completion with fzf"
                 --input.completionCallback.selectedFile="$selected_file")
             set -l callback_status $status
             rm -f $selected_file
+            functions -e $cleanup_fn 2>/dev/null
 
             if test $callback_status -eq 0 -a "$callback_result[1]" = "success"
                 set -l result_command $callback_result[2]
