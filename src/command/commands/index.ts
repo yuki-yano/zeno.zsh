@@ -9,6 +9,7 @@ import {
   preparePrepromptFromSnippet,
 } from "../../preprompt/index.ts";
 import { completion } from "../../completion/completion.ts";
+import { getCompletionSources } from "../../completion/source/index.ts";
 import { fzfOptionsToString } from "../../fzf/option/convert.ts";
 import {
   handleNullableResult,
@@ -18,8 +19,10 @@ import {
 import type { WriteFunction } from "../../app-helpers.ts";
 import { getConfigContext, getSettings } from "../../config/index.ts";
 import {
-  type CompletionFunctionSource,
+  hasCallbackFunction,
   isFunctionCompletionSource,
+  type ResolvedCompletionFunctionSource,
+  type ResolvedCompletionSource,
 } from "../../type/fzf.ts";
 import { createHistoryLogCommand } from "../../history/log-command.ts";
 import { createHistoryQueryCommand } from "../../history/query-command.ts";
@@ -31,6 +34,9 @@ import { getHistoryModule } from "../../history/runtime.ts";
 import { ulid } from "../../deps.ts";
 
 const MAX_INLINE_COMMAND_LENGTH = 120_000;
+const SOURCE_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
+
+type CallbackKind = "none" | "shell" | "function";
 
 // Command implementations
 export const pidCommand = createCommand(
@@ -139,20 +145,90 @@ export const completionCommand = createCommand(
       return;
     }
 
-    await writeResult(
+    await writeCompletionResult(
       writer.write.bind(writer),
-      "success",
+      source,
       source.sourceCommand,
-      fzfOptionsToString(source.options),
-      source.callback ?? "",
-      source.callbackZero ? "zero" : "",
     );
+  },
+);
+
+export const completionCallbackCommand = createCommand(
+  "completion-callback",
+  async ({ input, writer }) => {
+    const sourceId = input.completionCallback?.sourceId;
+    const selectedFile = input.completionCallback?.selectedFile;
+    const expectKey = input.completionCallback?.expectKey;
+
+    if (
+      typeof sourceId !== "string" ||
+      !SOURCE_ID_PATTERN.test(sourceId) ||
+      typeof selectedFile !== "string" ||
+      selectedFile.length === 0
+    ) {
+      await writeResult(writer.write.bind(writer), "failure");
+      return;
+    }
+
+    let selected: readonly string[];
+    try {
+      selected = await readNullSeparatedSelectedFile(selectedFile);
+    } catch (error) {
+      console.error(
+        `completion-callback failed to read selected file (${selectedFile}):`,
+        error,
+      );
+      await writeResult(writer.write.bind(writer), "failure");
+      return;
+    }
+
+    if (selected.length === 0) {
+      const command = await createCandidatesCommand([], true);
+      await writeResult(writer.write.bind(writer), "success", command);
+      return;
+    }
+
+    const sources = await getCompletionSources();
+    const source = sources.find((candidate) => candidate.id === sourceId);
+    if (!source) {
+      await writeResult(writer.write.bind(writer), "failure");
+      return;
+    }
+
+    let resultCandidates: readonly string[] = selected;
+
+    if (hasCallbackFunction(source)) {
+      try {
+        const context = await getConfigContext();
+        const callbackResult = await source.callbackFunction({
+          selected,
+          context,
+          lbuffer: input.lbuffer ?? "",
+          rbuffer: input.rbuffer ?? "",
+          expectKey,
+        });
+
+        if (!isStringArray(callbackResult)) {
+          throw new Error(
+            "Completion callback function must return an array of strings",
+          );
+        }
+        resultCandidates = callbackResult;
+      } catch (error) {
+        console.error("completion-callback execution failed:", error);
+        await writeResult(writer.write.bind(writer), "failure");
+        return;
+      }
+    }
+
+    const command = await createCandidatesCommand(resultCandidates, true);
+    await writeResult(writer.write.bind(writer), "success", command);
   },
 );
 
 const handleFunctionCompletion = async (
   writeFn: WriteFunction,
-  source: CompletionFunctionSource,
+  source: ResolvedCompletionFunctionSource,
 ): Promise<void> => {
   try {
     const context = await getConfigContext();
@@ -169,18 +245,61 @@ const handleFunctionCompletion = async (
     const separatorIsNull = Boolean(options["--read0"]);
     const command = await createCandidatesCommand(candidates, separatorIsNull);
 
-    await writeResult(
-      writeFn,
-      "success",
-      command,
-      fzfOptionsToString(options),
-      source.callback ?? "",
-      source.callbackZero ? "zero" : "",
-    );
+    await writeCompletionResult(writeFn, source, command);
   } catch (_error) {
     await writeResult(writeFn, "failure");
   }
 };
+
+const resolveCallbackKind = (
+  source: ResolvedCompletionSource,
+): CallbackKind => {
+  if (hasCallbackFunction(source)) {
+    return "function";
+  }
+
+  if (source.callback) {
+    return "shell";
+  }
+
+  return "none";
+};
+
+const writeCompletionResult = async (
+  writeFn: WriteFunction,
+  source: ResolvedCompletionSource,
+  sourceCommand: string,
+): Promise<void> => {
+  await writeResult(
+    writeFn,
+    "success",
+    sourceCommand,
+    fzfOptionsToString(source.options),
+    source.callback ?? "",
+    source.callbackZero ? "zero" : "",
+    resolveCallbackKind(source),
+    source.id,
+  );
+};
+
+const readNullSeparatedSelectedFile = async (
+  filePath: string,
+): Promise<readonly string[]> => {
+  const data = await Deno.readFile(filePath);
+  if (data.length === 0) {
+    return [];
+  }
+
+  const text = new TextDecoder().decode(data);
+  const selected = text.split("\0");
+  if (selected.length > 0 && selected[selected.length - 1] === "") {
+    selected.pop();
+  }
+  return selected;
+};
+
+const isStringArray = (value: unknown): value is readonly string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === "string");
 
 const createCandidatesCommand = async (
   candidates: readonly string[],
@@ -248,6 +367,7 @@ export const createCommandRegistry = () => {
   registry.register(prepromptSnippetCommand);
   registry.register(nextPlaceholderCommand);
   registry.register(completionCommand);
+  registry.register(completionCallbackCommand);
   registry.register(
     createHistoryLogCommand({
       getHistoryModule,

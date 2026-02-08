@@ -45,7 +45,12 @@ const argsParseOption: Readonly<Partial<ArgParserOptions>> = {
 export const parseArgs = (args: readonly string[]) => {
   const parsedArgs = argsParser([...args], argsParseOption) as ParsedArgs;
   const mode = parsedArgs["zeno-mode"] ?? "";
-  const rawInput = parsedArgs.input ?? {};
+  const rawInput = (parsedArgs.input ?? {}) as Record<string, unknown>;
+  const rawCompletionCallback = rawInput.completionCallback;
+  const completionCallbackObject = rawCompletionCallback &&
+      typeof rawCompletionCallback === "object"
+    ? rawCompletionCallback as Record<string, unknown>
+    : undefined;
 
   // Validate and convert input fields
   const input: Record<string, unknown> = {
@@ -62,6 +67,19 @@ export const parseArgs = (args: readonly string[]) => {
       ? rawInput.template
       : undefined,
     dir: typeof rawInput.dir === "string" ? rawInput.dir : undefined,
+    completionCallback: completionCallbackObject
+      ? {
+        sourceId: typeof completionCallbackObject.sourceId === "string"
+          ? completionCallbackObject.sourceId
+          : undefined,
+        selectedFile: typeof completionCallbackObject.selectedFile === "string"
+          ? completionCallbackObject.selectedFile
+          : undefined,
+        expectKey: typeof completionCallbackObject.expectKey === "string"
+          ? completionCallbackObject.expectKey
+          : undefined,
+      }
+      : undefined,
   };
 
   let resolvedMode = mode;

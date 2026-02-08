@@ -1,17 +1,17 @@
-import type { CompletionSource } from "../../type/fzf.ts";
+import type { ResolvedCompletionSource } from "../../type/fzf.ts";
 
 /**
  * Create a cache manager for completion sources using closure
  */
 export const createCompletionSourceCache = () => {
-  let cache: readonly CompletionSource[] | undefined;
+  let cache: readonly ResolvedCompletionSource[] | undefined;
 
   return {
-    get: (): readonly CompletionSource[] | undefined => {
+    get: (): readonly ResolvedCompletionSource[] | undefined => {
       return cache;
     },
 
-    set: (sources: readonly CompletionSource[]): void => {
+    set: (sources: readonly ResolvedCompletionSource[]): void => {
       cache = sources;
     },
 

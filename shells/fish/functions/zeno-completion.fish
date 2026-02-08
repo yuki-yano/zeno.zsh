@@ -38,6 +38,16 @@ function zeno-completion --description "Fuzzy completion with fzf"
     set -l options $out[3]
     set -l callback $out[4]
     set -l callback_zero $out[5]
+    set -l callback_kind $out[6]
+    set -l source_id $out[7]
+
+    if test -z "$callback_kind"
+        if test -n "$callback"
+            set callback_kind shell
+        else
+            set callback_kind none
+        end
+    end
     
     # Add fzf-tmux options if enabled
     if set -q ZENO_ENABLE_FZF_TMUX
@@ -87,8 +97,8 @@ function zeno-completion --description "Fuzzy completion with fzf"
     end
     set out $filtered_out
     
-    # Apply callback if specified
-    if test -n "$callback" -a -n "$out"
+    # Apply shell callback if specified
+    if test "$callback_kind" = "shell" -a -n "$callback" -a -n "$out"
         if test "$callback_zero" = "zero"
             # Use null character as delimiter
             set out (printf '%s\0' $out | eval $callback | string split0)
@@ -105,6 +115,38 @@ function zeno-completion --description "Fuzzy completion with fzf"
             end
         end
         set out $filtered_out
+    else if test "$callback_kind" = "function" -a -n "$source_id" -a -n "$out"
+        set -l selected_file (mktemp)
+        if test -n "$selected_file"
+            chmod 600 $selected_file 2>/dev/null
+            printf '%s\0' $out > $selected_file
+
+            set -l callback_result (zeno-call-client-and-fallback --zeno-mode=completion-callback \
+                --input.lbuffer="$lbuffer" \
+                --input.rbuffer="$rbuffer" \
+                --input.completionCallback.sourceId="$source_id" \
+                --input.completionCallback.expectKey="$expect_key" \
+                --input.completionCallback.selectedFile="$selected_file")
+            set -l callback_status $status
+            rm -f $selected_file
+
+            if test $callback_status -eq 0 -a "$callback_result[1]" = "success"
+                set -l result_command $callback_result[2]
+                if test -n "$result_command"
+                    set out (bash -c "$result_command" | string split0)
+                else
+                    set out
+                end
+
+                set filtered_out
+                for item in $out
+                    if test -n "$item"
+                        set -a filtered_out $item
+                    end
+                end
+                set out $filtered_out
+            end
+        end
     end
     
     # Update buffer if result is not empty

@@ -377,7 +377,12 @@ export default defineConfig(
             "--preview":
               "'cat package.json | jq -r \".scripts.{}\" 2>/dev/null'",
           },
-          callback: "npm run {{}}",
+          callbackFunction: ({ selected, expectKey }) => {
+            if (expectKey === "alt-enter") {
+              return selected;
+            }
+            return selected.map((script) => `npm run ${script}`);
+          },
         },
         {
           name: "npm packages",

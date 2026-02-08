@@ -21,14 +21,38 @@ export type CompletionSourceFunction = (
   | ReadonlyArray<string>
   | Promise<ReadonlyArray<string>>;
 
-type CompletionSourceBase = Readonly<{
-  name: string;
-  patterns: readonly RegExp[];
-  excludePatterns?: readonly RegExp[];
+export type CompletionCallbackFunction = (params: {
+  selected: readonly string[];
+  context: ConfigContext;
+  lbuffer: string;
+  rbuffer: string;
+  expectKey?: string;
+}) =>
+  | ReadonlyArray<string>
+  | Promise<ReadonlyArray<string>>;
+
+type ShellCallbackSpec = Readonly<{
   callback?: string;
   callbackZero?: boolean;
-  options: FzfOptions;
+  callbackFunction?: never;
 }>;
+
+type FunctionCallbackSpec = Readonly<{
+  callbackFunction: CompletionCallbackFunction;
+  callback?: never;
+  callbackZero?: never;
+}>;
+
+type CompletionCallbackSpec = ShellCallbackSpec | FunctionCallbackSpec;
+
+type CompletionSourceBase =
+  & Readonly<{
+    name: string;
+    patterns: readonly RegExp[];
+    excludePatterns?: readonly RegExp[];
+    options: FzfOptions;
+  }>
+  & CompletionCallbackSpec;
 
 export type CompletionCommandSource =
   & CompletionSourceBase
@@ -48,8 +72,34 @@ export type CompletionSource =
   | CompletionCommandSource
   | CompletionFunctionSource;
 
+type CompletionSourceId = Readonly<{
+  id: string;
+}>;
+
+export type ResolvedCompletionCommandSource =
+  & CompletionCommandSource
+  & CompletionSourceId;
+
+export type ResolvedCompletionFunctionSource =
+  & CompletionFunctionSource
+  & CompletionSourceId;
+
+export type ResolvedCompletionSource =
+  | ResolvedCompletionCommandSource
+  | ResolvedCompletionFunctionSource;
+
 export const isFunctionCompletionSource = (
-  source: CompletionSource,
-): source is CompletionFunctionSource =>
+  source: CompletionSource | ResolvedCompletionSource,
+): source is CompletionFunctionSource | ResolvedCompletionFunctionSource =>
   typeof (source as Partial<CompletionFunctionSource>).sourceFunction ===
+    "function";
+
+export const hasCallbackFunction = (
+  source: CompletionSource | ResolvedCompletionSource,
+): source is
+  & (CompletionSource | ResolvedCompletionSource)
+  & Readonly<{
+    callbackFunction: CompletionCallbackFunction;
+  }> =>
+  typeof (source as Partial<FunctionCallbackSpec>).callbackFunction ===
     "function";

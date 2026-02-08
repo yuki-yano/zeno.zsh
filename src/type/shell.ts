@@ -5,4 +5,9 @@ export type Input = Readonly<{
   snippet?: string;
   template?: string;
   dir?: string;
+  completionCallback?: Readonly<{
+    sourceId?: string;
+    selectedFile?: string;
+    expectKey?: string;
+  }>;
 }>;

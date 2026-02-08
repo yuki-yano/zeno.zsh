@@ -36,7 +36,10 @@ export type {
   UserFunctionCompletionSource,
 } from "./type/settings.ts";
 
-export type { CompletionSourceFunction } from "./type/fzf.ts";
+export type {
+  CompletionCallbackFunction,
+  CompletionSourceFunction,
+} from "./type/fzf.ts";
 
 export type {
   ConfigContext,
