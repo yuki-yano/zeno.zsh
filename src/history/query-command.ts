@@ -1,6 +1,12 @@
 import { writeResult } from "../app-helpers.ts";
 import { createCommand } from "../command/types.ts";
 import type { HistorySettings } from "../type/settings.ts";
+import {
+  parseInteger,
+  parseLimit,
+  parseNonEmptyString,
+} from "./input-parsers.ts";
+import { buildConfigRedactPatterns } from "./redact-patterns.ts";
 import type {
   DeletedFilter,
   HistoryModule,
@@ -72,42 +78,6 @@ const parseDeleted = (value: unknown): DeletedFilter => {
     return "exclude";
   }
   return "exclude";
-};
-
-const parseLimit = (value: unknown, fallback = 2000): number => {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return clampLimit(value);
-  }
-  if (typeof value === "string" && value.length > 0) {
-    const parsed = Number.parseInt(value, 10);
-    if (Number.isFinite(parsed)) {
-      return clampLimit(parsed);
-    }
-  }
-  return clampLimit(fallback);
-};
-
-const clampLimit = (value: number): number => {
-  const safe = Math.min(Math.max(Math.floor(value), 1), 5000);
-  return Number.isNaN(safe) ? 1 : safe;
-};
-
-const parseNumber = (value: unknown): number | null => {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-  if (typeof value === "string" && value.length > 0) {
-    const parsed = Number.parseInt(value, 10);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-};
-
-const sanitizeString = (value: unknown): string | null => {
-  if (typeof value === "string" && value.length > 0) {
-    return value;
-  }
-  return null;
 };
 
 const SMART_HISTORY_DELIMITER = "\u00a0";
@@ -186,15 +156,15 @@ const toHistoryQueryRequest = (
   scope,
   limit,
   deleted,
-  cwd: sanitizeString(payload.cwd),
-  repoRoot: sanitizeString(payload.repoRoot),
-  directory: sanitizeString(payload.directory),
-  sessionId: sanitizeString(payload.session),
-  term: sanitizeString(payload.term),
-  after: sanitizeString(payload.after),
-  before: sanitizeString(payload.before),
-  exitCode: parseNumber(payload.exit),
-  id: sanitizeString(payload.id),
+  cwd: parseNonEmptyString(payload.cwd),
+  repoRoot: parseNonEmptyString(payload.repoRoot),
+  directory: parseNonEmptyString(payload.directory),
+  sessionId: parseNonEmptyString(payload.session),
+  term: parseNonEmptyString(payload.term),
+  after: parseNonEmptyString(payload.after),
+  before: parseNonEmptyString(payload.before),
+  exitCode: parseInteger(payload.exit),
+  id: parseNonEmptyString(payload.id),
 });
 
 const formatTimeAgo = (now: Date, iso: string): string => {
@@ -280,27 +250,12 @@ const formatSmartLines = (
     return color.red;
   };
 
-  const seen = new Set<string>();
-  const deduped: HistoryRecord[] = [];
-  for (const record of items) {
-    const key = (record.command ?? "").trim();
-    if (key.length === 0) {
-      deduped.push(record);
-      continue;
-    }
-    if (seen.has(key)) {
-      continue;
-    }
-    seen.add(key);
-    deduped.push(record);
-  }
-
-  const timeStrings = deduped.map((record) => formatTimeAgo(now, record.ts));
+  const timeStrings = items.map((record) => formatTimeAgo(now, record.ts));
   const maxTimeWidth = timeStrings.reduce((max, value) => {
     return value.length > max ? value.length : max;
   }, 0);
 
-  const lines = deduped.map((record, index) => {
+  const lines = items.map((record, index) => {
     const rawTime = timeStrings[index];
     const paddedTime = rawTime.padStart(maxTimeWidth, " ");
     const timePart = `${pickTimeColor(record.ts)}${paddedTime}${color.reset}`;
@@ -387,9 +342,13 @@ export const createHistoryQueryCommand = (
         return;
       }
 
-      const limit = parseLimit(queryInput.limit);
+      const limit = parseLimit(queryInput.limit, {
+        fallback: 2000,
+        min: 1,
+        max: 5000,
+      });
       const deleted = parseDeleted(queryInput.deleted);
-      const hasExplicitId = sanitizeString(queryInput.id) !== null;
+      const hasExplicitId = parseNonEmptyString(queryInput.id) !== null;
       const scopesToQuery = wantsAllScopes ? [...SCOPE_ORDER] : [primaryScope];
       let module: HistoryModule;
       try {
@@ -405,28 +364,16 @@ export const createHistoryQueryCommand = (
         return;
       }
 
-      let settingsPatterns: RegExp[];
-      try {
-        settingsPatterns = settings.redact.map((pattern, index) => {
-          if (pattern instanceof RegExp) {
-            return pattern;
-          }
-          if (typeof pattern === "string" && pattern.length > 0) {
-            return new RegExp(pattern, "g");
-          }
-          throw new Error(`history.redact[${index}] must be string or RegExp`);
-        });
-      } catch (error) {
+      const settingsPatternsResult = buildConfigRedactPatterns(settings.redact);
+      if (!settingsPatternsResult.ok) {
         await writeResult(
           writer.write.bind(writer),
           "failure",
-          error instanceof Error
-            ? `invalid redact pattern: ${error.message}`
-            : "invalid redact pattern",
+          `invalid redact pattern: ${settingsPatternsResult.error}`,
         );
         return;
       }
-      module.setRedactPatterns(settingsPatterns);
+      module.setRedactPatterns(settingsPatternsResult.value);
 
       const results: Array<{ scope: HistoryScope; items: HistoryRecord[] }> =
         [];

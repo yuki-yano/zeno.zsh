@@ -2,6 +2,11 @@ import { writeResult } from "../app-helpers.ts";
 import { createCommand } from "../command/types.ts";
 import type { DedupeStrategy, ExportFormat, HistoryModule } from "./types.ts";
 import type { HistorySettings } from "../type/settings.ts";
+import { parseBooleanFlag, parseNonEmptyString } from "./input-parsers.ts";
+import {
+  buildCliLiteralRedactPatterns,
+  buildConfigRedactPatterns,
+} from "./redact-patterns.ts";
 
 export type HistoryImportCommandDeps = {
   getHistoryModule: () => Promise<
@@ -28,58 +33,6 @@ const allowedFormats = new Set([
 
 const allowedDedupe = new Set(["off", "strict", "loose"]);
 
-const normalizeStringArray = (value: unknown): string[] => {
-  if (Array.isArray(value)) {
-    return value
-      .map((entry) => (typeof entry === "string" ? entry : null))
-      .filter((entry): entry is string => entry != null && entry.length > 0);
-  }
-  if (typeof value === "string" && value.length > 0) {
-    return [value];
-  }
-  return [];
-};
-
-const MAX_PATTERN_LENGTH = 512;
-
-const escapeForLiteral = (value: string): string =>
-  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-const compileLiteralPattern = (pattern: string, label: string): RegExp => {
-  if (pattern.length > MAX_PATTERN_LENGTH) {
-    throw new Error(`${label} is too long`);
-  }
-  return new RegExp(escapeForLiteral(pattern), "g");
-};
-
-const compileConfigPattern = (pattern: string, label: string): RegExp => {
-  if (pattern.length > MAX_PATTERN_LENGTH) {
-    throw new Error(`${label} is too long`);
-  }
-  return new RegExp(pattern, "g");
-};
-
-const buildCliPatterns = (value: unknown): Result<RegExp[], string> => {
-  const normalized = normalizeStringArray(value);
-  const patterns: RegExp[] = [];
-
-  for (let index = 0; index < normalized.length; index++) {
-    const entry = normalized[index];
-    try {
-      patterns.push(compileLiteralPattern(entry, `pattern[${index}]`));
-    } catch (error) {
-      return {
-        ok: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
-
-  return { ok: true, value: patterns };
-};
-
-type Result<T, E> = { ok: true; value: T } | { ok: false; error: E };
-
 export const createHistoryImportCommand = (
   deps: HistoryImportCommandDeps,
 ) =>
@@ -102,9 +55,7 @@ export const createHistoryImportCommand = (
           allowedFormats.has(payload.format)
         ? payload.format as ExportFormat
         : null;
-      const inputPath = typeof payload.inputPath === "string"
-        ? payload.inputPath
-        : null;
+      const inputPath = parseNonEmptyString(payload.inputPath);
       if (!format || !allowedFormats.has(format) || !inputPath) {
         await writeResult(
           writer.write.bind(writer),
@@ -118,7 +69,7 @@ export const createHistoryImportCommand = (
         typeof payload.dedupe === "string" && allowedDedupe.has(payload.dedupe)
           ? payload.dedupe as DedupeStrategy
           : "off";
-      const dryRun = payload.dryRun === true || payload.dryRun === "true";
+      const dryRun = parseBooleanFlag(payload.dryRun);
 
       let settings: HistorySettings;
       try {
@@ -134,7 +85,7 @@ export const createHistoryImportCommand = (
         return;
       }
 
-      const cliPatterns = buildCliPatterns(payload.redact);
+      const cliPatterns = buildCliLiteralRedactPatterns(payload.redact);
       if (!cliPatterns.ok) {
         await writeResult(
           writer.write.bind(writer),
@@ -146,24 +97,7 @@ export const createHistoryImportCommand = (
 
       try {
         const module = await deps.getHistoryModule();
-        const basePatternsResult = (() => {
-          try {
-            return {
-              ok: true as const,
-              value: settings.redact.map((pattern, index) =>
-                pattern instanceof RegExp ? pattern : compileConfigPattern(
-                  pattern,
-                  `history.redact[${index}]`,
-                )
-              ),
-            };
-          } catch (error) {
-            return {
-              ok: false as const,
-              error: error instanceof Error ? error.message : String(error),
-            };
-          }
-        })();
+        const basePatternsResult = buildConfigRedactPatterns(settings.redact);
 
         if (!basePatternsResult.ok) {
           await writeResult(

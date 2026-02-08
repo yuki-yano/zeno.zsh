@@ -145,4 +145,41 @@ describe("SQLiteStore", () => {
       await store.close();
     }
   });
+
+  it("deduplicates same command and keeps the latest timestamp", async () => {
+    const store = await createSQLiteStore({ databasePath: dbPath });
+    try {
+      const oldRecord = createRecord({
+        id: "01OLD" + crypto.randomUUID().slice(0, 21),
+        ts: "2024-01-01T00:00:00.000Z",
+        command: "git status",
+      });
+      const newRecord = createRecord({
+        id: "01NEW" + crypto.randomUUID().slice(0, 21),
+        ts: "2024-01-02T00:00:00.000Z",
+        command: "git status",
+      });
+      const another = createRecord({
+        id: "01ANOTHER" + crypto.randomUUID().slice(0, 17),
+        ts: "2024-01-03T00:00:00.000Z",
+        command: "npm test",
+      });
+
+      await store.insert(oldRecord);
+      await store.insert(newRecord);
+      await store.insert(another);
+
+      const result = await store.select({
+        scope: "global",
+        limit: 10,
+        deleted: "exclude",
+      });
+
+      assertEquals(result.items.length, 2);
+      assertEquals(result.items[0].id, another.id);
+      assertEquals(result.items[1].id, newRecord.id);
+    } finally {
+      await store.close();
+    }
+  });
 });
