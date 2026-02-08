@@ -38,6 +38,12 @@ const SOURCE_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
 
 type CallbackKind = "none" | "shell" | "function";
 
+const logCompletionCallbackError = (...args: unknown[]): void => {
+  if (Deno.env.get("ZENO_DEBUG_COMPLETION_CALLBACK")) {
+    console.error(...args);
+  }
+};
+
 // Command implementations
 export const pidCommand = createCommand(
   "pid",
@@ -174,7 +180,7 @@ export const completionCallbackCommand = createCommand(
     try {
       selected = await readNullSeparatedSelectedFile(selectedFile);
     } catch (error) {
-      console.error(
+      logCompletionCallbackError(
         `completion-callback failed to read selected file (${selectedFile}):`,
         error,
       );
@@ -215,7 +221,10 @@ export const completionCallbackCommand = createCommand(
         }
         resultCandidates = callbackResult;
       } catch (error) {
-        console.error("completion-callback execution failed:", error);
+        logCompletionCallbackError(
+          "completion-callback execution failed:",
+          error,
+        );
         await writeResult(writer.write.bind(writer), "failure");
         return;
       }

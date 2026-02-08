@@ -262,8 +262,8 @@ describe("completionCallbackCommand", () => {
           name: "async",
           patterns: ["^async"],
           sourceCommand: "printf ''",
-          callbackFunction: async ({ selected }) =>
-            selected.map((item) => `${item}-done`),
+          callbackFunction: ({ selected }) =>
+            Promise.resolve(selected.map((item) => `${item}-done`)),
         }],
       }));
 

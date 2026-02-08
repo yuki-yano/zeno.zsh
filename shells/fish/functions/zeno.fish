@@ -1,6 +1,6 @@
 function zeno
     set -l deno_flags --unstable-byonm --no-check \
-        --allow-env --allow-read --allow-run --allow-write --allow-net
+        --allow-env --allow-read --allow-run --allow-write --allow-ffi --allow-net
     set -l quiet 0
 
     for i in (seq (count $argv))
