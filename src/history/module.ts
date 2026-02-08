@@ -1,6 +1,12 @@
 import type { RepoFinder } from "./repo-finder.ts";
 import type { Redactor } from "./redactor.ts";
 import type { SQLiteStore } from "./sqlite-store.ts";
+import {
+  createIoHistoryError,
+  createUnsupportedHistoryError,
+  mapHistfileErrorToHistoryError,
+} from "./error-utils.ts";
+import { buildHistoryQueryFilter } from "./query-filter.ts";
 import type {
   DeleteRequest,
   ExportRequest,
@@ -11,15 +17,10 @@ import type {
   ImportRequest,
   ImportSummary,
   LogCommandInput,
-  QueryFilter,
   QueryResult,
   Result,
 } from "./types.ts";
-import type {
-  HistfileEditor,
-  HistfileEntry,
-  HistfileError,
-} from "./histfile-editor.ts";
+import type { HistfileEditor, HistfileEntry } from "./histfile-editor.ts";
 import type { ExportAllArgs, HistoryIO, ImportOutcome } from "./io.ts";
 
 export type HistoryModuleDeps = {
@@ -105,61 +106,6 @@ const validateLogInput = (
   return undefined;
 };
 
-const sanitizeOptionalString = (
-  value: string | null | undefined,
-): string | null => value && value.length > 0 ? value : null;
-
-const normalizeExitCode = (value: number | null | undefined): number | null =>
-  typeof value === "number" && Number.isFinite(value) ? value : null;
-
-const buildQueryFilter = async (
-  request: HistoryQueryRequest,
-  repoFinder: RepoFinder,
-): Promise<QueryFilter | "invalid"> => {
-  const limit = Number.isFinite(request.limit)
-    ? Math.max(1, request.limit)
-    : 2000;
-
-  const scope = request.scope;
-
-  let repoRoot = request.repoRoot ?? null;
-  if (scope === "repository" && !repoRoot) {
-    const resolveBase = request.cwd ?? request.directory ?? null;
-    repoRoot = resolveBase
-      ? await resolveRepository(repoFinder, resolveBase)
-      : null;
-  }
-
-  let directory = request.directory ?? null;
-  if (scope === "directory" && !directory) {
-    directory = request.cwd ?? null;
-  }
-
-  const sessionId = request.sessionId ?? null;
-  if (scope === "session" && !sessionId) {
-    return "invalid";
-  }
-
-  return {
-    scope,
-    limit,
-    deleted: request.deleted ?? "exclude",
-    repoRoot: repoRoot !== undefined ? repoRoot : null,
-    directory,
-    sessionId,
-    term: sanitizeOptionalString(request.term),
-    after: sanitizeOptionalString(request.after),
-    before: sanitizeOptionalString(request.before),
-    exitCode: normalizeExitCode(request.exitCode),
-  };
-};
-
-const mapHistfileError = (error: HistfileError): HistoryError => ({
-  type: error.type === "lock" ? "histfile" : "io",
-  message: error.message,
-  cause: error.cause,
-});
-
 export const createHistoryModule = (
   deps: HistoryModuleDeps,
 ): HistoryModule => {
@@ -184,13 +130,9 @@ export const createHistoryModule = (
       await store.insert(record);
       return ok(undefined);
     } catch (error) {
-      return err({
-        type: "io",
-        message: error instanceof Error
-          ? `failed to insert history record: ${error.message}`
-          : "failed to insert history record",
-        cause: error,
-      });
+      return err(
+        createIoHistoryError("failed to insert history record", error),
+      );
     }
   };
 
@@ -208,17 +150,11 @@ export const createHistoryModule = (
           items: byId ? [byId] : [],
         });
       } catch (error) {
-        return err({
-          type: "io",
-          message: error instanceof Error
-            ? `failed to load history by id: ${error.message}`
-            : "failed to load history by id",
-          cause: error,
-        });
+        return err(createIoHistoryError("failed to load history by id", error));
       }
     }
 
-    const filter = await buildQueryFilter(request, repoFinder);
+    const filter = await buildHistoryQueryFilter(request, repoFinder);
     if (filter === "invalid") {
       return ok({ items: [] });
     }
@@ -227,13 +163,7 @@ export const createHistoryModule = (
       const result = await store.select(filter);
       return ok(result);
     } catch (error) {
-      return err({
-        type: "io",
-        message: error instanceof Error
-          ? `failed to query history: ${error.message}`
-          : "failed to query history",
-        cause: error,
-      });
+      return err(createIoHistoryError("failed to query history", error));
     }
   };
 
@@ -251,13 +181,9 @@ export const createHistoryModule = (
     try {
       record = await store.selectById(request.id);
     } catch (error) {
-      return err({
-        type: "io",
-        message: error instanceof Error
-          ? `failed to lookup history record: ${error.message}`
-          : "failed to lookup history record",
-        cause: error,
-      });
+      return err(
+        createIoHistoryError("failed to lookup history record", error),
+      );
     }
 
     if (!record) {
@@ -271,13 +197,9 @@ export const createHistoryModule = (
     try {
       await store.markDeleted(request.id, deletedAt);
     } catch (error) {
-      return err({
-        type: "io",
-        message: error instanceof Error
-          ? `failed to mark history record deleted: ${error.message}`
-          : "failed to mark history record deleted",
-        cause: error,
-      });
+      return err(
+        createIoHistoryError("failed to mark history record deleted", error),
+      );
     }
 
     if (request.hard) {
@@ -286,7 +208,7 @@ export const createHistoryModule = (
       };
       const result = await histfileEditor.prune(entry);
       if (!result.ok) {
-        return err(mapHistfileError(result.error));
+        return err(mapHistfileErrorToHistoryError(result.error));
       }
     }
 
@@ -296,7 +218,7 @@ export const createHistoryModule = (
   const exportHistory = async (
     request: ExportRequest,
   ): Promise<Result<void, HistoryError>> => {
-    const filter = await buildQueryFilter(request, repoFinder);
+    const filter = await buildHistoryQueryFilter(request, repoFinder);
     if (filter === "invalid") {
       return ok(undefined);
     }
@@ -305,13 +227,9 @@ export const createHistoryModule = (
     try {
       result = await store.select(filter);
     } catch (error) {
-      return err({
-        type: "io",
-        message: error instanceof Error
-          ? `failed to query history for export: ${error.message}`
-          : "failed to query history for export",
-        cause: error,
-      });
+      return err(
+        createIoHistoryError("failed to query history for export", error),
+      );
     }
 
     const redactedRecords = result.items.map((record) => ({
@@ -330,13 +248,9 @@ export const createHistoryModule = (
       await historyIO.exportAll(payload);
       return ok(undefined);
     } catch (error) {
-      return err({
-        type: "unsupported",
-        message: error instanceof Error
-          ? error.message
-          : "failed to export history",
-        cause: error,
-      });
+      return err(
+        createUnsupportedHistoryError("failed to export history", error),
+      );
     }
   };
 
@@ -350,13 +264,9 @@ export const createHistoryModule = (
         inputPath: request.inputPath,
       });
     } catch (error) {
-      return err({
-        type: "unsupported",
-        message: error instanceof Error
-          ? error.message
-          : "failed to import history",
-        cause: error,
-      });
+      return err(
+        createUnsupportedHistoryError("failed to import history", error),
+      );
     }
 
     if (request.dryRun) {
@@ -381,13 +291,7 @@ export const createHistoryModule = (
             skipped += 1;
           }
         } catch (error) {
-          return err({
-            type: "io",
-            message: error instanceof Error
-              ? `failed to check duplicates: ${error.message}`
-              : "failed to check duplicates",
-            cause: error,
-          });
+          return err(createIoHistoryError("failed to check duplicates", error));
         }
       }
 
@@ -409,13 +313,9 @@ export const createHistoryModule = (
         await store.insert(toInsert);
         added += 1;
       } catch (error) {
-        return err({
-          type: "io",
-          message: error instanceof Error
-            ? `failed to insert imported record: ${error.message}`
-            : "failed to insert imported record",
-          cause: error,
-        });
+        return err(
+          createIoHistoryError("failed to insert imported record", error),
+        );
       }
     }
 

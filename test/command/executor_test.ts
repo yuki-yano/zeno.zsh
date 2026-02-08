@@ -166,6 +166,21 @@ Deno.test("parseArgs", async (t) => {
     assertEquals(historyImport?.inputPath, "/tmp/in.ndjson");
     assertStrictEquals(historyImport?.dryRun, true);
   });
+
+  await t.step("parses history fzf-config positional command", () => {
+    const result = parseArgs([
+      "history",
+      "fzf-config",
+    ]);
+
+    assertEquals(result.mode, "history-fzf-config");
+    const historyFzfConfig = (result.input as Record<string, unknown>)
+      .historyFzfConfig as
+        | Record<string, unknown>
+        | undefined;
+    assertExists(historyFzfConfig);
+    assertEquals(historyFzfConfig, {});
+  });
 });
 
 Deno.test("createCommandExecutor", async (t) => {

@@ -1,6 +1,11 @@
 import { writeResult } from "../app-helpers.ts";
 import { createCommand } from "../command/types.ts";
 import type { HistorySettings } from "../type/settings.ts";
+import { parseInteger, parseNonEmptyString } from "./input-parsers.ts";
+import {
+  buildCliLiteralRedactPatterns,
+  buildConfigRedactPatterns,
+} from "./redact-patterns.ts";
 import type {
   HistoryError,
   HistoryModule,
@@ -17,29 +22,8 @@ export type HistoryLogCommandDeps = {
 
 type HistoryLogPayload = Record<string, unknown>;
 
-const ok = <T>(value: T): Result<T, HistoryError> => ({
-  ok: true,
-  value,
-});
-
-const err = (error: HistoryError): Result<never, HistoryError> => ({
-  ok: false,
-  error,
-});
-
 const describeError = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
-
-const parseNumber = (value: unknown): number | null => {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-  if (typeof value === "string" && value.length > 0) {
-    const parsed = Number.parseInt(value, 10);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-};
 
 const parseMeta = (value: unknown): Record<string, unknown> | null => {
   if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -60,84 +44,15 @@ const parseMeta = (value: unknown): Record<string, unknown> | null => {
   return null;
 };
 
-const MAX_PATTERN_LENGTH = 512;
-
-const escapeForLiteral = (value: string): string =>
-  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-const compileConfigPattern = (pattern: string, index: number): RegExp => {
-  if (pattern.length > MAX_PATTERN_LENGTH) {
-    throw new Error(`history.redact[${index}] is too long`);
-  }
-  return new RegExp(pattern, "g");
-};
-
-const compileCliPattern = (pattern: string, index: number): RegExp => {
-  if (pattern.length > MAX_PATTERN_LENGTH) {
-    throw new Error(`pattern[${index}] is too long`);
-  }
-  return new RegExp(escapeForLiteral(pattern), "g");
-};
-
-const buildRedactPatterns = (
-  settings: HistorySettings,
-): Result<RegExp[], HistoryError> => {
-  try {
-    const patterns = settings.redact.map((entry, index) =>
-      entry instanceof RegExp ? entry : compileConfigPattern(entry, index)
-    );
-    return ok(patterns);
-  } catch (error) {
-    return err({
-      type: "validation",
-      message: error instanceof Error ? error.message : String(error),
-      cause: error,
-    });
-  }
-};
-
-const buildCliPatterns = (
-  source: unknown,
-): Result<RegExp[], HistoryError> => {
-  if (source == null) {
-    return ok([]);
-  }
-
-  const items = Array.isArray(source) ? source : [source];
-  const patterns: RegExp[] = [];
-
-  for (let index = 0; index < items.length; index++) {
-    const item = items[index];
-    if (typeof item !== "string" || item.length === 0) {
-      continue;
-    }
-    try {
-      patterns.push(compileCliPattern(item, index));
-    } catch (error) {
-      return err({
-        type: "validation",
-        message: error instanceof Error
-          ? error.message
-          : `invalid --redact pattern: ${item}`,
-        cause: error,
-      });
-    }
-  }
-
-  return ok(patterns);
-};
-
 const toLogCommandInput = (
   deps: HistoryLogCommandDeps,
   payload: HistoryLogPayload,
 ): LogCommandInput => {
-  const exit = parseNumber(payload.exit) ?? 0;
-  const durationMs = parseNumber(
+  const exit = parseInteger(payload.exit) ?? 0;
+  const durationMs = parseInteger(
     payload.durationMs ?? payload["duration-ms"] ?? null,
   );
-  const repoRoot = typeof payload.repoRoot === "string"
-    ? payload.repoRoot
-    : null;
+  const repoRoot = parseNonEmptyString(payload.repoRoot);
 
   const ts = typeof payload.ts === "string" && payload.ts.length > 0
     ? payload.ts
@@ -188,24 +103,24 @@ export const createHistoryLogCommand = (
         );
         return;
       }
-      const patternsResult = buildRedactPatterns(settings);
+      const patternsResult = buildConfigRedactPatterns(settings.redact);
       if (!patternsResult.ok) {
         await writeResult(
           writer.write.bind(writer),
           "failure",
-          patternsResult.error.message,
+          patternsResult.error,
         );
         return;
       }
 
-      const cliPatternsResult = buildCliPatterns(
+      const cliPatternsResult = buildCliLiteralRedactPatterns(
         (payload as Record<string, unknown>).redact,
       );
       if (!cliPatternsResult.ok) {
         await writeResult(
           writer.write.bind(writer),
           "failure",
-          cliPatternsResult.error.message,
+          cliPatternsResult.error,
         );
         return;
       }
