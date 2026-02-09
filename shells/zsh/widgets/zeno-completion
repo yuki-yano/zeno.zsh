@@ -3,7 +3,7 @@
 emulate -L zsh
 
 local callback callback_kind callback_zero cmdline expect_key options source_command source_id fzf_command tmux_opts_str
-local -a out tmux_opts
+local -a out tmux_opts expect_keys option_words
 
 # ${(f)...} : split by new-line (\n)
 out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=completion \
@@ -54,8 +54,27 @@ cmdline="${source_command} | ${fzf_command} ${options}"
 # ${(0)...} : split by null (\0)
 out=( "${(0)$(eval $cmdline)}" )
 
-expect_key=$out[1]
-shift out
+local option_word expect_value
+option_words=(${(z)options})
+for option_word in "${(@)option_words}"; do
+  if [[ $option_word == --expect=* ]]; then
+    expect_value=${option_word#--expect=}
+    expect_keys=(${(s:,:)expect_value})
+    break
+  fi
+done
+
+expect_key=""
+if (( ${#out[@]} > 0 )); then
+  if (( ${#expect_keys[@]} > 0 )); then
+    if (( ${expect_keys[(Ie)$out[1]]} > 0 )); then
+      expect_key=$out[1]
+      shift out
+    fi
+  elif [[ -z $out[1] ]]; then
+    shift out
+  fi
+fi
 
 # remove empty items
 out=( ${(@)out:#} )

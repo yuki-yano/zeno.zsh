@@ -40,6 +40,7 @@ function zeno-completion --description "Fuzzy completion with fzf"
     set -l callback_zero $out[5]
     set -l callback_kind $out[6]
     set -l source_id $out[7]
+    set -l expect_keys
 
     if test -z "$callback_kind"
         if test -n "$callback"
@@ -52,6 +53,13 @@ function zeno-completion --description "Fuzzy completion with fzf"
     # Add fzf-tmux options if enabled
     if set -q ZENO_ENABLE_FZF_TMUX
         set options "$ZENO_FZF_TMUX_OPTIONS $options"
+    end
+
+    set -l expect_arg (string match -r -- '--expect="[^"]*"|--expect=[^ ]+' -- $options)
+    if test -n "$expect_arg"
+        set -l expect_value (string replace -r '^--expect=' '' -- $expect_arg)
+        set expect_value (string trim --chars '"' -- $expect_value)
+        set expect_keys (string split ',' -- $expect_value)
     end
     
     # Build the command line
@@ -84,9 +92,19 @@ function zeno-completion --description "Fuzzy completion with fzf"
     
     rm -f $temp_file
     
-    # Extract expect key (first line) and shift array
-    set -l expect_key $out[1]
-    set -e out[1]
+    # Extract expect key only when the first token is a configured expect key.
+    # Some fzf versions do not emit an empty placeholder for Enter.
+    set -l expect_key ""
+    if test -n "$out"
+        if test (count $expect_keys) -gt 0
+            if contains -- "$out[1]" $expect_keys
+                set expect_key $out[1]
+                set -e out[1]
+            end
+        else if test "$out[1]" = ""
+            set -e out[1]
+        end
+    end
     
     # Remove empty items
     set -l filtered_out
