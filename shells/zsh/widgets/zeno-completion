@@ -2,8 +2,10 @@
 
 emulate -L zsh
 
-local callback callback_zero cmdline expect_key options source_command fzf_command tmux_opts_str
-local -a out tmux_opts
+local callback callback_kind callback_zero cmdline expect_key options source_command source_id fzf_command tmux_opts_str
+local maybe_callback_kind maybe_source_id maybe_callback maybe_callback_or_zero
+local -i out_count
+local -a out tmux_opts expect_keys option_words
 
 # ${(f)...} : split by new-line (\n)
 out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=completion \
@@ -20,6 +22,44 @@ source_command=$out[2]
 options=$out[3]
 callback=$out[4]
 callback_zero=$out[5]
+callback_kind=$out[6]
+source_id=$out[7]
+
+# Newer protocol emits:
+#   status, sourceCommand, options, callback, callbackZero, callbackKind, sourceId
+# But line-based split drops empty callback/callbackZero entries.
+# Reconstruct fields from the tail when possible.
+out_count=${#out[@]}
+if (( out_count >= 5 )); then
+  maybe_callback_kind=$out[$(( out_count - 1 ))]
+  maybe_source_id=$out[$out_count]
+  if [[ $maybe_callback_kind == (none|shell|function) ]]; then
+    callback_kind=$maybe_callback_kind
+    source_id=$maybe_source_id
+    callback=""
+    callback_zero=""
+
+    if [[ $callback_kind == shell ]]; then
+      maybe_callback_or_zero=$out[$(( out_count - 2 ))]
+      if [[ $maybe_callback_or_zero == zero ]]; then
+        callback_zero=zero
+        if (( out_count >= 7 )); then
+          callback=$out[$(( out_count - 3 ))]
+        fi
+      else
+        callback=$maybe_callback_or_zero
+      fi
+    fi
+  fi
+fi
+
+if [[ -z $callback_kind ]]; then
+  if [[ -n $callback ]]; then
+    callback_kind=shell
+  else
+    callback_kind=none
+  fi
+fi
 
 fzf_command=${ZENO_FZF_COMMAND:-fzf}
 if [[ $fzf_command == fzf-tmux ]]; then
@@ -44,28 +84,108 @@ cmdline="${source_command} | ${fzf_command} ${options}"
 # ${(0)...} : split by null (\0)
 out=( "${(0)$(eval $cmdline)}" )
 
-expect_key=$out[1]
-shift out
+local option_word expect_value
+option_words=(${(z)options})
+for option_word in "${(@)option_words}"; do
+  if [[ $option_word == --expect=* ]]; then
+    expect_value=${option_word#--expect=}
+    if [[ $expect_value == \"*\" ]]; then
+      expect_value=${expect_value#\"}
+      expect_value=${expect_value%\"}
+    elif [[ $expect_value == \'*\' ]]; then
+      expect_value=${expect_value#\'}
+      expect_value=${expect_value%\'}
+    fi
+    expect_keys=(${(s:,:)expect_value})
+    break
+  fi
+done
+
+expect_key=""
+if (( ${#out[@]} > 0 )); then
+  if (( ${#expect_keys[@]} > 0 )); then
+    if (( ${expect_keys[(Ie)$out[1]]} > 0 )); then
+      expect_key=$out[1]
+      shift out
+    fi
+  elif [[ -z $out[1] ]]; then
+    shift out
+  fi
+fi
 
 # remove empty items
 out=( ${(@)out:#} )
 
-# filter output with callback
-if [[ $callback && $out ]]; then
+# filter output with shell callback
+if [[ $callback_kind == shell && $callback && $out ]]; then
   if [[ $callback_zero ]]; then
     # divide input and output by null (\0)
-    out=( "${(0)$(printf '%s\0' ${(@)out} | eval $callback)}" )
+    out=( "${(0)$(printf '%s\0' "${(@)out}" | eval $callback)}" )
   else
     # divide input and output by new-line (\n)
-    out=( "${(f)$(printf '%s\n' ${(@)out} | eval $callback)}" )
+    out=( "${(f)$(printf '%s\n' "${(@)out}" | eval $callback)}" )
   fi
 
   # remove empty items
   out=( ${(@)out:#} )
+elif [[ $callback_kind == function && $source_id && $out ]]; then
+  local selected_file
+  selected_file=$(mktemp 2>/dev/null || mktemp -t zeno-callback 2>/dev/null)
+
+  if [[ -n $selected_file ]]; then
+    chmod 600 "$selected_file" 2>/dev/null
+    {
+      printf '%s\0' "${(@)out}" >| "$selected_file"
+
+      local -a callback_response callback_out
+      callback_response=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=completion-callback \
+        --input.lbuffer="$LBUFFER" \
+        --input.rbuffer="$RBUFFER" \
+        --input.completionCallback.sourceId="$source_id" \
+        --input.completionCallback.expectKey="$expect_key" \
+        --input.completionCallback.selectedFile="$selected_file")}" )
+
+      if [[ $callback_response[1] == success ]]; then
+        if [[ -n $callback_response[2] ]]; then
+          callback_out=( "${(0)$(eval $callback_response[2])}" )
+        else
+          callback_out=()
+        fi
+
+        callback_out=( ${(@)callback_out:#} )
+        out=( "${(@)callback_out}" )
+      fi
+    } always {
+      rm -f "$selected_file"
+    }
+  fi
 fi
 
 # update buffer if result is not empty
 if [[ $out ]]; then
+  local -i all_prefixed=1
+  local item
+  local -a stripped_out
+
+  if [[ -n $LBUFFER ]]; then
+    for item in "${(@)out}"; do
+      if [[ ${item#"$LBUFFER"} == $item ]]; then
+        all_prefixed=0
+        break
+      fi
+    done
+
+    if (( all_prefixed )); then
+      for item in "${(@)out}"; do
+        item=${item#"$LBUFFER"}
+        if [[ -n $item ]]; then
+          stripped_out+=( "$item" )
+        fi
+      done
+      out=( "${(@)stripped_out}" )
+    fi
+  fi
+
   # ${(@q)...} : quote each items
   LBUFFER+=${(@q)out}
 

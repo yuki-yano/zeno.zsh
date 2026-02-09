@@ -53,6 +53,27 @@ Deno.test("parseArgs", async (t) => {
       snippet: undefined,
       template: undefined,
       dir: undefined,
+      completionCallback: undefined,
+    });
+  });
+
+  await t.step("parses completionCallback input fields", () => {
+    const result = parseArgs([
+      "--zeno-mode=completion-callback",
+      "--input.lbuffer=left",
+      "--input.rbuffer=right",
+      "--input.completionCallback.sourceId=u0001",
+      "--input.completionCallback.selectedFile=/tmp/selected.bin",
+      "--input.completionCallback.expectKey=alt-enter",
+    ]);
+
+    assertEquals(result.mode, "completion-callback");
+    assertEquals(result.input.lbuffer, "left");
+    assertEquals(result.input.rbuffer, "right");
+    assertEquals(result.input.completionCallback, {
+      sourceId: "u0001",
+      selectedFile: "/tmp/selected.bin",
+      expectKey: "alt-enter",
     });
   });
 

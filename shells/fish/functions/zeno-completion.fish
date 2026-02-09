@@ -33,15 +33,59 @@ function zeno-completion --description "Fuzzy completion with fzf"
         return
     end
     
-    # Extract completion parameters
+    # Extract completion parameters.
+    # Newer protocol emits:
+    #   status, sourceCommand, options, callback, callbackZero, callbackKind, sourceId
+    # Fish command substitution can drop empty fields, so reconstruct from tail.
     set -l source_command $out[2]
     set -l options $out[3]
     set -l callback $out[4]
     set -l callback_zero $out[5]
+    set -l callback_kind $out[6]
+    set -l source_id $out[7]
+    set -l out_count (count $out)
+    if test $out_count -ge 5
+        set -l maybe_callback_kind $out[(math $out_count - 1)]
+        set -l maybe_source_id $out[$out_count]
+        if contains -- $maybe_callback_kind none shell function
+            set callback_kind $maybe_callback_kind
+            set source_id $maybe_source_id
+            set callback ""
+            set callback_zero ""
+
+            if test "$callback_kind" = "shell"
+                set -l maybe_callback_or_zero $out[(math $out_count - 2)]
+                if test "$maybe_callback_or_zero" = "zero"
+                    set callback_zero zero
+                    if test $out_count -ge 7
+                        set callback $out[(math $out_count - 3)]
+                    end
+                else
+                    set callback $maybe_callback_or_zero
+                end
+            end
+        end
+    end
+    set -l expect_keys
+
+    if test -z "$callback_kind"
+        if test -n "$callback"
+            set callback_kind shell
+        else
+            set callback_kind none
+        end
+    end
     
     # Add fzf-tmux options if enabled
     if set -q ZENO_ENABLE_FZF_TMUX
         set options "$ZENO_FZF_TMUX_OPTIONS $options"
+    end
+
+    set -l expect_arg (string match -r -- '--expect="[^"]*"|--expect=[^ ]+' -- $options)
+    if test -n "$expect_arg"
+        set -l expect_value (string replace -r '^--expect=' '' -- $expect_arg)
+        set expect_value (string trim --chars '"' -- $expect_value)
+        set expect_keys (string split ',' -- $expect_value)
     end
     
     # Build the command line
@@ -74,9 +118,19 @@ function zeno-completion --description "Fuzzy completion with fzf"
     
     rm -f $temp_file
     
-    # Extract expect key (first line) and shift array
-    set -l expect_key $out[1]
-    set -e out[1]
+    # Extract expect key only when the first token is a configured expect key.
+    # Some fzf versions do not emit an empty placeholder for Enter.
+    set -l expect_key ""
+    if test -n "$out"
+        if test (count $expect_keys) -gt 0
+            if contains -- "$out[1]" $expect_keys
+                set expect_key $out[1]
+                set -e out[1]
+            end
+        else if test "$out[1]" = ""
+            set -e out[1]
+        end
+    end
     
     # Remove empty items
     set -l filtered_out
@@ -87,8 +141,8 @@ function zeno-completion --description "Fuzzy completion with fzf"
     end
     set out $filtered_out
     
-    # Apply callback if specified
-    if test -n "$callback" -a -n "$out"
+    # Apply shell callback if specified
+    if test "$callback_kind" = "shell" -a -n "$callback" -a -n "$out"
         if test "$callback_zero" = "zero"
             # Use null character as delimiter
             set out (printf '%s\0' $out | eval $callback | string split0)
@@ -105,8 +159,68 @@ function zeno-completion --description "Fuzzy completion with fzf"
             end
         end
         set out $filtered_out
+    else if test "$callback_kind" = "function" -a -n "$source_id" -a -n "$out"
+        set -l selected_file (mktemp)
+        if test -n "$selected_file"
+            chmod 600 $selected_file 2>/dev/null
+            set -l cleanup_fn "__zeno_completion_cleanup_"(random)
+            function $cleanup_fn --on-signal INT --on-signal TERM --inherit-variable selected_file --inherit-variable cleanup_fn
+                rm -f $selected_file
+                functions -e $cleanup_fn 2>/dev/null
+            end
+            printf '%s\0' $out > $selected_file
+
+            set -l callback_result (zeno-call-client-and-fallback --zeno-mode=completion-callback \
+                --input.lbuffer="$lbuffer" \
+                --input.rbuffer="$rbuffer" \
+                --input.completionCallback.sourceId="$source_id" \
+                --input.completionCallback.expectKey="$expect_key" \
+                --input.completionCallback.selectedFile="$selected_file")
+            set -l callback_status $status
+            rm -f $selected_file
+            functions -e $cleanup_fn 2>/dev/null
+
+            if test $callback_status -eq 0 -a "$callback_result[1]" = "success"
+                set -l result_command $callback_result[2]
+                if test -n "$result_command"
+                    set out (bash -c "$result_command" | string split0)
+                else
+                    set out
+                end
+
+                set filtered_out
+                for item in $out
+                    if test -n "$item"
+                        set -a filtered_out $item
+                    end
+                end
+                set out $filtered_out
+            end
+        end
     end
     
+    # If callback returned full-line values prefixed with current lbuffer,
+    # strip the duplicated prefix and insert only the suffix parts.
+    if test -n "$out" -a -n "$lbuffer"
+        set -l all_prefixed 1
+        for item in $out
+            if not string match -q -- "$lbuffer*" "$item"
+                set all_prefixed 0
+                break
+            end
+        end
+        if test $all_prefixed -eq 1
+            set -l stripped_out
+            for item in $out
+                set -l stripped (string replace -r "^"(string escape --style=regex -- "$lbuffer") "" -- "$item")
+                if test -n "$stripped"
+                    set -a stripped_out "$stripped"
+                end
+            end
+            set out $stripped_out
+        end
+    end
+
     # Update buffer if result is not empty
     if test -n "$out"
         # Quote each item properly and append to command line

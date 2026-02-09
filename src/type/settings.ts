@@ -1,5 +1,9 @@
 import type { HistoryScope } from "../history/types.ts";
-import type { CompletionSourceFunction, FzfOptions } from "./fzf.ts";
+import type {
+  CompletionCallbackFunction,
+  CompletionSourceFunction,
+  FzfOptions,
+} from "./fzf.ts";
 
 export type HistoryKeymapSettings = Readonly<{
   deleteSoft: string;
@@ -41,12 +45,25 @@ type UserCompletionSourceBase = Readonly<{
   excludePatterns?: readonly string[];
   preview?: string;
   options?: FzfOptions;
+}>;
+
+type ShellCallbackSpec = Readonly<{
   callback?: string;
   callbackZero?: boolean;
+  callbackFunction?: never;
 }>;
+
+type FunctionCallbackSpec = Readonly<{
+  callbackFunction: CompletionCallbackFunction;
+  callback?: never;
+  callbackZero?: never;
+}>;
+
+type CompletionCallbackSpec = ShellCallbackSpec | FunctionCallbackSpec;
 
 export type UserCommandCompletionSource =
   & UserCompletionSourceBase
+  & CompletionCallbackSpec
   & Readonly<{
     sourceCommand: string;
     sourceFunction?: never;
@@ -54,6 +71,7 @@ export type UserCommandCompletionSource =
 
 export type UserFunctionCompletionSource =
   & UserCompletionSourceBase
+  & CompletionCallbackSpec
   & Readonly<{
     sourceFunction: CompletionSourceFunction;
     sourceCommand?: never;

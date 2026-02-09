@@ -340,6 +340,13 @@ same `ConfigContext` as `defineConfig` and may return a `ReadonlyArray<string>`
 or a `Promise` of it. Only one of `sourceCommand` or `sourceFunction` can be
 specified for a completion.
 
+For post-filtering selected values, TypeScript configs can use
+`callbackFunction` instead of shell `callback`.
+
+- `callback`/`callbackZero` and `callbackFunction` are mutually exclusive
+- `callbackFunction` receives `{ selected, context, lbuffer, rbuffer, expectKey }`
+- `callbackFunction` must return `ReadonlyArray<string>` (or `Promise` of it)
+
 ### Example (TypeScript)
 
 TypeScript configs can be split into multiple files. Each file returns a partial
@@ -422,7 +429,12 @@ export default defineConfig(({ projectRoot, currentDirectory }) => ({
         }
       },
       options: { "--prompt": "'npm scripts> '" },
-      callback: "npm run {{}}",
+      callbackFunction: ({ selected, expectKey }) => {
+        if (expectKey === "alt-enter") {
+          return selected.map((script) => `${script} -- --watch`);
+        }
+        return selected;
+      },
     },
   ],
 }));

@@ -18,14 +18,14 @@ deno_flags=(
 
 for (( i = 1; i <= $#args; ++i )); do
   case ${args[i]} in
-    --zeno-mode=auto-snippet|--zeno-mode=completion)
+    --zeno-mode=auto-snippet|--zeno-mode=completion|--zeno-mode=completion-callback)
       quiet=1
       break
       ;;
     --zeno-mode)
       if (( i + 1 <= $#args )); then
         case ${args[i+1]} in
-          auto-snippet|completion)
+          auto-snippet|completion|completion-callback)
             quiet=1
             break
             ;;
