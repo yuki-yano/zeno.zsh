@@ -282,6 +282,22 @@ export const createConfigDiscovery = (): DiscoverConfigFiles => {
     return undefined;
   };
 
+  const resolveWorkspaceConfigDir = (
+    env: ReturnType<typeof getEnv>,
+    projectRoot: string,
+  ): string | undefined => {
+    if (env.LOCAL_CONFIG_PATH) {
+      if (path.isAbsolute(env.LOCAL_CONFIG_PATH)) {
+        return env.LOCAL_CONFIG_PATH;
+      }
+      return path.resolve(projectRoot, env.LOCAL_CONFIG_PATH);
+    }
+    if (env.DISABLE_AUTOMATIC_WORKSPACE_LOOKUP) {
+      return undefined;
+    }
+    return path.join(projectRoot, ".zeno");
+  };
+
   return async ({ env, xdgDirs, projectRoot }) => {
     const yamlFiles: string[] = [];
     const tsFiles: string[] = [];
@@ -312,7 +328,7 @@ export const createConfigDiscovery = (): DiscoverConfigFiles => {
       }
     };
 
-    await tryCollectDir(path.join(projectRoot, ".zeno"));
+    await tryCollectDir(resolveWorkspaceConfigDir(env, projectRoot));
 
     if (env.HOME) {
       await tryCollectDir(env.HOME);

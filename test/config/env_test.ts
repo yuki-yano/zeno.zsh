@@ -11,6 +11,10 @@ Deno.test("getEnv", async (t) => {
       ZENO_DISABLE_BUILTIN_COMPLETION: Deno.env.get(
         "ZENO_DISABLE_BUILTIN_COMPLETION",
       ),
+      ZENO_DISABLE_AUTOMATIC_WORKSPACE_LOOKUP: Deno.env.get(
+        "ZENO_DISABLE_AUTOMATIC_WORKSPACE_LOOKUP",
+      ),
+      ZENO_LOCAL_CONFIG_PATH: Deno.env.get("ZENO_LOCAL_CONFIG_PATH"),
       ZENO_HOME: Deno.env.get("ZENO_HOME"),
     };
 
@@ -20,6 +24,8 @@ Deno.test("getEnv", async (t) => {
     Deno.env.delete("ZENO_GIT_CAT");
     Deno.env.delete("ZENO_GIT_TREE");
     Deno.env.delete("ZENO_DISABLE_BUILTIN_COMPLETION");
+    Deno.env.delete("ZENO_DISABLE_AUTOMATIC_WORKSPACE_LOOKUP");
+    Deno.env.delete("ZENO_LOCAL_CONFIG_PATH");
     Deno.env.delete("ZENO_HOME");
 
     const env = getEnv();
@@ -29,6 +35,8 @@ Deno.test("getEnv", async (t) => {
     assertEquals(env.GIT_CAT, "cat");
     assertEquals(env.GIT_TREE, "tree");
     assertEquals(env.DISABLE_BUILTIN_COMPLETION, false);
+    assertEquals(env.DISABLE_AUTOMATIC_WORKSPACE_LOOKUP, false);
+    assertEquals(env.LOCAL_CONFIG_PATH, undefined);
     assertEquals(env.HOME, undefined);
 
     // Restore env vars
@@ -45,6 +53,8 @@ Deno.test("getEnv", async (t) => {
     Deno.env.set("ZENO_GIT_CAT", "bat");
     Deno.env.set("ZENO_GIT_TREE", "exa");
     Deno.env.set("ZENO_DISABLE_BUILTIN_COMPLETION", "1");
+    Deno.env.set("ZENO_DISABLE_AUTOMATIC_WORKSPACE_LOOKUP", "1");
+    Deno.env.set("ZENO_LOCAL_CONFIG_PATH", " ./project/.zeno-local ");
     Deno.env.set("ZENO_HOME", "/home/user/.zeno");
 
     const env = getEnv();
@@ -54,6 +64,8 @@ Deno.test("getEnv", async (t) => {
     assertEquals(env.GIT_CAT, "bat");
     assertEquals(env.GIT_TREE, "exa");
     assertEquals(env.DISABLE_BUILTIN_COMPLETION, true);
+    assertEquals(env.DISABLE_AUTOMATIC_WORKSPACE_LOOKUP, true);
+    assertEquals(env.LOCAL_CONFIG_PATH, "./project/.zeno-local");
     assertEquals(env.HOME, "/home/user/.zeno");
 
     // Cleanup
@@ -62,6 +74,8 @@ Deno.test("getEnv", async (t) => {
     Deno.env.delete("ZENO_GIT_CAT");
     Deno.env.delete("ZENO_GIT_TREE");
     Deno.env.delete("ZENO_DISABLE_BUILTIN_COMPLETION");
+    Deno.env.delete("ZENO_DISABLE_AUTOMATIC_WORKSPACE_LOOKUP");
+    Deno.env.delete("ZENO_LOCAL_CONFIG_PATH");
     Deno.env.delete("ZENO_HOME");
   });
 
@@ -81,4 +95,32 @@ Deno.test("getEnv", async (t) => {
       assertEquals(getEnv().DISABLE_BUILTIN_COMPLETION, false);
     },
   );
+
+  await t.step(
+    "DISABLE_AUTOMATIC_WORKSPACE_LOOKUP is true only when value is 1",
+    () => {
+      Deno.env.set("ZENO_DISABLE_AUTOMATIC_WORKSPACE_LOOKUP", "1");
+      assertEquals(getEnv().DISABLE_AUTOMATIC_WORKSPACE_LOOKUP, true);
+
+      Deno.env.set("ZENO_DISABLE_AUTOMATIC_WORKSPACE_LOOKUP", "0");
+      assertEquals(getEnv().DISABLE_AUTOMATIC_WORKSPACE_LOOKUP, false);
+
+      Deno.env.set("ZENO_DISABLE_AUTOMATIC_WORKSPACE_LOOKUP", "true");
+      assertEquals(getEnv().DISABLE_AUTOMATIC_WORKSPACE_LOOKUP, false);
+
+      Deno.env.delete("ZENO_DISABLE_AUTOMATIC_WORKSPACE_LOOKUP");
+      assertEquals(getEnv().DISABLE_AUTOMATIC_WORKSPACE_LOOKUP, false);
+    },
+  );
+
+  await t.step("LOCAL_CONFIG_PATH trims whitespace and ignores empty", () => {
+    Deno.env.set("ZENO_LOCAL_CONFIG_PATH", " ./local-config ");
+    assertEquals(getEnv().LOCAL_CONFIG_PATH, "./local-config");
+
+    Deno.env.set("ZENO_LOCAL_CONFIG_PATH", "   ");
+    assertEquals(getEnv().LOCAL_CONFIG_PATH, undefined);
+
+    Deno.env.delete("ZENO_LOCAL_CONFIG_PATH");
+    assertEquals(getEnv().LOCAL_CONFIG_PATH, undefined);
+  });
 });

@@ -81,6 +81,8 @@ export default defineConfig(async ({ projectRoot, currentDirectory }) => {
         GIT_CAT: "cat",
         GIT_TREE: "tree",
         DISABLE_BUILTIN_COMPLETION: false,
+        DISABLE_AUTOMATIC_WORKSPACE_LOOKUP: false,
+        LOCAL_CONFIG_PATH: undefined,
         HOME: zenoHome,
       }),
       xdgConfigDirsProvider: () => [],
@@ -144,6 +146,8 @@ snippets:
         GIT_CAT: "cat",
         GIT_TREE: "tree",
         DISABLE_BUILTIN_COMPLETION: false,
+        DISABLE_AUTOMATIC_WORKSPACE_LOOKUP: false,
+        LOCAL_CONFIG_PATH: undefined,
         HOME: zenoHome,
       }),
       xdgConfigDirsProvider: () => [],
@@ -164,6 +168,190 @@ snippets:
     );
     assertEquals(projectSnippet?.snippet, "from-project");
     assertEquals(homeSnippet?.snippet, "from-home");
+    assertEquals(settings.history, defaultHistory);
+  });
+
+  it("skips project .zeno when automatic workspace lookup is disabled", async () => {
+    const tempDir = helper.getTempDir();
+    const zenoHome = path.join(tempDir, "zeno-home-disable-workspace");
+    Deno.mkdirSync(zenoHome, { recursive: true });
+
+    const projectDir = path.join(tempDir, "project-disable-workspace");
+    Deno.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
+    const nestedDir = path.join(projectDir, "nested");
+    Deno.mkdirSync(nestedDir, { recursive: true });
+
+    const projectZenoDir = path.join(projectDir, ".zeno");
+    Deno.mkdirSync(projectZenoDir, { recursive: true });
+    Deno.writeTextFileSync(
+      path.join(projectZenoDir, "00-project.yml"),
+      `
+snippets:
+  - keyword: project
+    snippet: from-project
+`,
+    );
+
+    Deno.writeTextFileSync(
+      path.join(zenoHome, "01-home.yml"),
+      `
+snippets:
+  - keyword: home
+    snippet: from-home
+`,
+    );
+
+    const manager = createConfigManager({
+      envProvider: () => ({
+        DEFAULT_FZF_OPTIONS: "",
+        SOCK: undefined,
+        GIT_CAT: "cat",
+        GIT_TREE: "tree",
+        DISABLE_BUILTIN_COMPLETION: false,
+        DISABLE_AUTOMATIC_WORKSPACE_LOOKUP: true,
+        LOCAL_CONFIG_PATH: undefined,
+        HOME: zenoHome,
+      }),
+      xdgConfigDirsProvider: () => [],
+      cwdProvider: () => nestedDir,
+    });
+
+    const settings = await manager.getSettings();
+
+    assertEquals(
+      settings.snippets.map((snippet) => snippet.keyword),
+      ["home"],
+    );
+    assertEquals(settings.history, defaultHistory);
+  });
+
+  it("loads configs from explicit absolute local config path", async () => {
+    const tempDir = helper.getTempDir();
+    const zenoHome = path.join(tempDir, "zeno-home-explicit-absolute");
+    Deno.mkdirSync(zenoHome, { recursive: true });
+
+    const projectDir = path.join(tempDir, "project-explicit-absolute");
+    Deno.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
+    const nestedDir = path.join(projectDir, "nested");
+    Deno.mkdirSync(nestedDir, { recursive: true });
+
+    const projectZenoDir = path.join(projectDir, ".zeno");
+    Deno.mkdirSync(projectZenoDir, { recursive: true });
+    Deno.writeTextFileSync(
+      path.join(projectZenoDir, "00-project.yml"),
+      `
+snippets:
+  - keyword: project
+    snippet: from-project
+`,
+    );
+
+    const explicitConfigDir = path.join(tempDir, "shared-config", "zeno");
+    Deno.mkdirSync(explicitConfigDir, { recursive: true });
+    Deno.writeTextFileSync(
+      path.join(explicitConfigDir, "00-local.yml"),
+      `
+snippets:
+  - keyword: local
+    snippet: from-local
+`,
+    );
+
+    Deno.writeTextFileSync(
+      path.join(zenoHome, "01-home.yml"),
+      `
+snippets:
+  - keyword: home
+    snippet: from-home
+`,
+    );
+
+    const manager = createConfigManager({
+      envProvider: () => ({
+        DEFAULT_FZF_OPTIONS: "",
+        SOCK: undefined,
+        GIT_CAT: "cat",
+        GIT_TREE: "tree",
+        DISABLE_BUILTIN_COMPLETION: false,
+        DISABLE_AUTOMATIC_WORKSPACE_LOOKUP: false,
+        LOCAL_CONFIG_PATH: explicitConfigDir,
+        HOME: zenoHome,
+      }),
+      xdgConfigDirsProvider: () => [],
+      cwdProvider: () => nestedDir,
+    });
+
+    const settings = await manager.getSettings();
+
+    assertEquals(
+      settings.snippets.map((snippet) => snippet.keyword),
+      ["local", "home"],
+    );
+    assertEquals(settings.history, defaultHistory);
+  });
+
+  it("resolves relative local config path from project root", async () => {
+    const tempDir = helper.getTempDir();
+    const zenoHome = path.join(tempDir, "zeno-home-explicit-relative");
+    Deno.mkdirSync(zenoHome, { recursive: true });
+
+    const projectDir = path.join(tempDir, "project-explicit-relative");
+    Deno.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
+    const nestedDir = path.join(projectDir, "nested", "dir");
+    Deno.mkdirSync(nestedDir, { recursive: true });
+
+    const projectZenoDir = path.join(projectDir, ".zeno");
+    Deno.mkdirSync(projectZenoDir, { recursive: true });
+    Deno.writeTextFileSync(
+      path.join(projectZenoDir, "00-project.yml"),
+      `
+snippets:
+  - keyword: project
+    snippet: from-project
+`,
+    );
+
+    const relativeConfigDir = path.join(projectDir, "configs", "shared-zeno");
+    Deno.mkdirSync(relativeConfigDir, { recursive: true });
+    Deno.writeTextFileSync(
+      path.join(relativeConfigDir, "00-relative.yml"),
+      `
+snippets:
+  - keyword: relative
+    snippet: from-relative
+`,
+    );
+
+    Deno.writeTextFileSync(
+      path.join(zenoHome, "01-home.yml"),
+      `
+snippets:
+  - keyword: home
+    snippet: from-home
+`,
+    );
+
+    const manager = createConfigManager({
+      envProvider: () => ({
+        DEFAULT_FZF_OPTIONS: "",
+        SOCK: undefined,
+        GIT_CAT: "cat",
+        GIT_TREE: "tree",
+        DISABLE_BUILTIN_COMPLETION: false,
+        DISABLE_AUTOMATIC_WORKSPACE_LOOKUP: false,
+        LOCAL_CONFIG_PATH: "configs/shared-zeno",
+        HOME: zenoHome,
+      }),
+      xdgConfigDirsProvider: () => [],
+      cwdProvider: () => nestedDir,
+    });
+
+    const settings = await manager.getSettings();
+
+    assertEquals(
+      settings.snippets.map((snippet) => snippet.keyword),
+      ["relative", "home"],
+    );
     assertEquals(settings.history, defaultHistory);
   });
 
@@ -197,6 +385,8 @@ export default () => ({
           GIT_CAT: "cat",
           GIT_TREE: "tree",
           DISABLE_BUILTIN_COMPLETION: false,
+          DISABLE_AUTOMATIC_WORKSPACE_LOOKUP: false,
+          LOCAL_CONFIG_PATH: undefined,
           HOME: zenoHome,
         }),
         xdgConfigDirsProvider: () => [],
@@ -249,6 +439,8 @@ export default defineConfig(({ currentDirectory }) => ({
         GIT_CAT: "cat",
         GIT_TREE: "tree",
         DISABLE_BUILTIN_COMPLETION: false,
+        DISABLE_AUTOMATIC_WORKSPACE_LOOKUP: false,
+        LOCAL_CONFIG_PATH: undefined,
         HOME: zenoHome,
       }),
       xdgConfigDirsProvider: () => [],

@@ -9,7 +9,19 @@ export type ZenoEnv = {
   readonly GIT_CAT: string;
   readonly GIT_TREE: string;
   readonly DISABLE_BUILTIN_COMPLETION: boolean;
+  readonly DISABLE_AUTOMATIC_WORKSPACE_LOOKUP: boolean;
+  readonly LOCAL_CONFIG_PATH: string | undefined;
   readonly HOME: string | undefined;
+};
+
+const normalizeLocalConfigPath = (
+  value: string | undefined,
+): string | undefined => {
+  if (value == null) {
+    return undefined;
+  }
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : undefined;
 };
 
 /**
@@ -23,6 +35,11 @@ export const getEnv = (): ZenoEnv => ({
   GIT_TREE: Deno.env.get("ZENO_GIT_TREE") ?? "tree",
   DISABLE_BUILTIN_COMPLETION:
     Deno.env.get("ZENO_DISABLE_BUILTIN_COMPLETION") != null,
+  DISABLE_AUTOMATIC_WORKSPACE_LOOKUP:
+    Deno.env.get("ZENO_DISABLE_AUTOMATIC_WORKSPACE_LOOKUP") === "1",
+  LOCAL_CONFIG_PATH: normalizeLocalConfigPath(
+    Deno.env.get("ZENO_LOCAL_CONFIG_PATH"),
+  ),
   HOME: Deno.env.get("ZENO_HOME"),
 });
 
