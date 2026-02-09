@@ -150,8 +150,8 @@ The hook can access the selected directory path via the `ZENO_GHQ_CD_DIR` enviro
 zeno loads configuration files from the project and user config directories and
 merges them in priority order. You can explicitly set the workspace config
 directory with `ZENO_LOCAL_CONFIG_PATH`; otherwise zeno loads `.zeno/` in the
-detected project root (unless disabled with
-`ZENO_DISABLE_AUTOMATIC_WORKSPACE_LOOKUP=1`). After workspace config loading,
+detected project root (unless disabled by setting
+`ZENO_DISABLE_AUTOMATIC_WORKSPACE_LOOKUP` to `'1'`). After workspace config loading,
 zeno loads the user config directory (`$ZENO_HOME` or `~/.config/zeno/`), and
 finally any XDG config directories. Within each location, files are merged
 alphabetically. Both YAML (`*.yml`, `*.yaml`) and TypeScript (`*.ts`) files are
@@ -262,8 +262,8 @@ The configuration files are discovered and merged in the following order.
   - Absolute paths are used as-is.
   - Relative paths are resolved from the detected project root.
 - If `$ZENO_LOCAL_CONFIG_PATH` is not set and
-  `ZENO_DISABLE_AUTOMATIC_WORKSPACE_LOOKUP != 1`, and the detected project root
-  contains `.zeno/`, load `.zeno/*.yml`/`*.yaml`/`*.ts` (A→Z).
+  `$ZENO_DISABLE_AUTOMATIC_WORKSPACE_LOOKUP` is not set to `'1'`, and the
+  detected project root contains `.zeno/`, load `.zeno/*.yml`/`*.yaml`/`*.ts` (A→Z).
 - If `$ZENO_HOME` is a directory, merge all `*.yml`/`*.yaml`/`*.ts` directly
   under it.
 - For each path in `$XDG_CONFIG_DIRS`, if `zeno/` exists, merge all
