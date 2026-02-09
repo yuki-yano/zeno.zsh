@@ -33,13 +33,39 @@ function zeno-completion --description "Fuzzy completion with fzf"
         return
     end
     
-    # Extract completion parameters
+    # Extract completion parameters.
+    # Newer protocol emits:
+    #   status, sourceCommand, options, callback, callbackZero, callbackKind, sourceId
+    # Fish command substitution can drop empty fields, so reconstruct from tail.
     set -l source_command $out[2]
     set -l options $out[3]
     set -l callback $out[4]
     set -l callback_zero $out[5]
     set -l callback_kind $out[6]
     set -l source_id $out[7]
+    set -l out_count (count $out)
+    if test $out_count -ge 5
+        set -l maybe_callback_kind $out[(math $out_count - 1)]
+        set -l maybe_source_id $out[$out_count]
+        if contains -- $maybe_callback_kind none shell function
+            set callback_kind $maybe_callback_kind
+            set source_id $maybe_source_id
+            set callback ""
+            set callback_zero ""
+
+            if test "$callback_kind" = "shell"
+                set -l maybe_callback_or_zero $out[(math $out_count - 2)]
+                if test "$maybe_callback_or_zero" = "zero"
+                    set callback_zero zero
+                    if test $out_count -ge 7
+                        set callback $out[(math $out_count - 3)]
+                    end
+                else
+                    set callback $maybe_callback_or_zero
+                end
+            end
+        end
+    end
     set -l expect_keys
 
     if test -z "$callback_kind"
@@ -173,6 +199,28 @@ function zeno-completion --description "Fuzzy completion with fzf"
         end
     end
     
+    # If callback returned full-line values prefixed with current lbuffer,
+    # strip the duplicated prefix and insert only the suffix parts.
+    if test -n "$out" -a -n "$lbuffer"
+        set -l all_prefixed 1
+        for item in $out
+            if not string match -q -- "$lbuffer*" "$item"
+                set all_prefixed 0
+                break
+            end
+        end
+        if test $all_prefixed -eq 1
+            set -l stripped_out
+            for item in $out
+                set -l stripped (string replace -r "^"(string escape --style=regex -- "$lbuffer") "" -- "$item")
+                if test -n "$stripped"
+                    set -a stripped_out "$stripped"
+                end
+            end
+            set out $stripped_out
+        end
+    end
+
     # Update buffer if result is not empty
     if test -n "$out"
         # Quote each item properly and append to command line

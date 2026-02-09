@@ -28,10 +28,29 @@ function zeno-client() {
 }
 
 function zeno-start-server() {
+  local server_bin
+  local -i i
   if [[ ! -d ${ZENO_SOCK:h} ]]; then
     mkdir -p "${ZENO_SOCK:h}"
   fi
-  nohup "${ZENO_SERVER_BIN:-${ZENO_ROOT}/bin/zeno-server}" >/dev/null 2>&1 &!
+
+  if [[ -e $ZENO_SOCK ]]; then
+    rm -f "$ZENO_SOCK"
+  fi
+
+  server_bin="${ZENO_SERVER_BIN:-${ZENO_ROOT}/bin/zeno-server}"
+  nohup "${server_bin}" >/dev/null 2>&1 &!
+
+  for i in {1..50}; do
+    if [[ -S $ZENO_SOCK ]]; then
+      zeno-set-pid
+      return 0
+    fi
+    sleep 0.1
+  done
+
+  print -u2 -- "zeno: failed to start socket server: $ZENO_SOCK"
+  return 1
 }
 
 function zeno-restart-server() {
@@ -40,12 +59,26 @@ function zeno-restart-server() {
 }
 
 function zeno-stop-server() {
+  local pid
+  local -i i
   zeno-set-pid
-  if [[ -n $ZENO_PID ]]; then
-    kill "$ZENO_PID" >/dev/null 2>&1
-    ZENO_PID=
-    rm -f "$ZENO_SOCK"
+  pid="$ZENO_PID"
+
+  if [[ -n $pid ]]; then
+    kill "$pid" >/dev/null 2>&1
+    for i in {1..20}; do
+      if ! kill -0 "$pid" >/dev/null 2>&1; then
+        break
+      fi
+      sleep 0.05
+    done
+    if kill -0 "$pid" >/dev/null 2>&1; then
+      kill -KILL "$pid" >/dev/null 2>&1
+    fi
   fi
+
+  ZENO_PID=
+  rm -f "$ZENO_SOCK"
 }
 
 function zeno-onchpwd() {

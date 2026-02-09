@@ -431,9 +431,9 @@ export default defineConfig(({ projectRoot, currentDirectory }) => ({
       options: { "--prompt": "'npm scripts> '" },
       callbackFunction: ({ selected, expectKey }) => {
         if (expectKey === "alt-enter") {
-          return selected;
+          return selected.map((script) => `${script} -- --watch`);
         }
-        return selected.map((script) => `npm run ${script}`);
+        return selected;
       },
     },
   ],
