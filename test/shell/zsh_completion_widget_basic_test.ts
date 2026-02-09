@@ -1,31 +1,11 @@
 import { assertEquals, describe, it, path } from "../deps.ts";
-
-const TEST_DIR = path.dirname(path.fromFileUrl(import.meta.url));
-const REPO_ROOT = path.resolve(TEST_DIR, "..", "..");
-const ZSH_WIDGETS_DIR = path.join(REPO_ROOT, "shells", "zsh", "widgets");
-
-const toHeredoc = (lines: readonly string[]): string =>
-  lines.length === 0 ? "" : `${lines.join("\n")}\n`;
-
-const shellQuote = (value: string): string =>
-  `'${value.replaceAll("'", `'\"'\"'`)}'`;
-
-const hasZsh = async (): Promise<boolean> => {
-  try {
-    const result = await new Deno.Command("zsh", {
-      args: ["-lc", "exit 0"],
-      stdin: "null",
-      stdout: "null",
-      stderr: "null",
-    }).output();
-    return result.success;
-  } catch (error) {
-    if (error instanceof Deno.errors.NotFound) {
-      return false;
-    }
-    throw error;
-  }
-};
+import {
+  hasZsh,
+  parseNullSeparatedPairs,
+  shellQuote,
+  toHeredoc,
+  ZSH_WIDGETS_DIR,
+} from "./zsh_test_utils.ts";
 
 type CompletionScenario = {
   initialLbuffer: string;
@@ -71,6 +51,14 @@ const runCompletionScenario = async (
       toHeredoc(scenario.completionResponseLines),
       "__ZENO_COMPLETION_RESPONSE__",
       "}",
+      "function zeno-test-print-kv() {",
+      '  local key="$1"',
+      '  local value="$2"',
+      '  print -rn -- "$key"',
+      "  print -rn -- $'\\0'",
+      '  print -rn -- "$value"',
+      "  print -rn -- $'\\0'",
+      "}",
       `fpath=(${shellQuote(ZSH_WIDGETS_DIR)} $fpath)`,
       "autoload -Uz zeno-completion",
       `export ZENO_FZF_COMMAND=${shellQuote(fzfPath)}`,
@@ -79,9 +67,9 @@ const runCompletionScenario = async (
       `BUFFER=${shellQuote(scenario.initialBuffer)}`,
       "RBUFFER=''",
       "zeno-completion",
-      'print -r -- "LBUFFER=${LBUFFER}"',
-      'print -r -- "BUFFER=${BUFFER}"',
-      'print -r -- "LAST_ZLE_CALL=${LAST_ZLE_CALL}"',
+      'zeno-test-print-kv "LBUFFER" "$LBUFFER"',
+      'zeno-test-print-kv "BUFFER" "$BUFFER"',
+      'zeno-test-print-kv "LAST_ZLE_CALL" "$LAST_ZLE_CALL"',
       "",
     ].join("\n");
 
@@ -97,15 +85,7 @@ const runCompletionScenario = async (
       throw new Error(`zsh completion scenario failed: ${stderr}`);
     }
 
-    const stdout = new TextDecoder().decode(result.stdout).trimEnd();
-    const parsed: Record<string, string> = {};
-    for (const line of stdout.split("\n")) {
-      const index = line.indexOf("=");
-      if (index <= 0) {
-        continue;
-      }
-      parsed[line.slice(0, index)] = line.slice(index + 1);
-    }
+    const parsed = parseNullSeparatedPairs(result.stdout);
 
     return {
       lbuffer: parsed.LBUFFER ?? "",

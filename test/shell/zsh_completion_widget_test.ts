@@ -1,31 +1,10 @@
 import { assertEquals, describe, it, path } from "../deps.ts";
-
-const TEST_DIR = path.dirname(path.fromFileUrl(import.meta.url));
-const REPO_ROOT = path.resolve(TEST_DIR, "..", "..");
-const ZSH_WIDGETS_DIR = path.join(REPO_ROOT, "shells", "zsh", "widgets");
-
-const shellQuote = (value: string): string =>
-  `'${value.replaceAll("'", `'\"'\"'`)}'`;
-
-const toHeredoc = (lines: readonly string[]): string =>
-  lines.length === 0 ? "" : `${lines.join("\n")}\n`;
-
-const hasZsh = async (): Promise<boolean> => {
-  try {
-    const result = await new Deno.Command("zsh", {
-      args: ["-lc", "exit 0"],
-      stdin: "null",
-      stdout: "null",
-      stderr: "null",
-    }).output();
-    return result.success;
-  } catch (error) {
-    if (error instanceof Deno.errors.NotFound) {
-      return false;
-    }
-    throw error;
-  }
-};
+import {
+  hasZsh,
+  shellQuote,
+  toHeredoc,
+  ZSH_WIDGETS_DIR,
+} from "./zsh_test_utils.ts";
 
 type ScenarioParams = {
   initialLbuffer: string;
