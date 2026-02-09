@@ -1,4 +1,4 @@
-.PHONY: ci fmt fmt-check help lint precommit test type-check
+.PHONY: ci fmt fmt-check help lint precommit test test-parallel type-check
 
 .DEFAULT_GOAL := help
 
@@ -25,6 +25,10 @@ lint: ## Lint code
 precommit: fmt
 
 test: ## Test
+	deno run ${FLAG} ${ALLOW} -- ./scripts/preload_sqlite.ts
+	deno test --no-check ${TEST_FLAG} ${ALLOW}
+
+test-parallel: ## Test (parallel, may be flaky with global env mutations)
 	deno run ${FLAG} ${ALLOW} -- ./scripts/preload_sqlite.ts
 	deno test --no-check ${TEST_FLAG} ${ALLOW} --parallel
 

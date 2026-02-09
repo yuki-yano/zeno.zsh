@@ -30,15 +30,31 @@ export const hasZsh = async (): Promise<boolean> => {
 
 export const parseNullSeparatedPairs = (
   stdout: Uint8Array,
+  requiredKeys: readonly string[] = [],
 ): Record<string, string> => {
   const parts = new TextDecoder().decode(stdout).split("\0");
+  if (parts.length > 0 && parts[parts.length - 1] === "") {
+    parts.pop();
+  }
+
+  if (parts.length % 2 !== 0) {
+    throw new Error("invalid NUL-separated key/value output");
+  }
+
   const parsed: Record<string, string> = {};
-  for (let index = 0; index + 1 < parts.length; index += 2) {
+  for (let index = 0; index < parts.length; index += 2) {
     const key = parts[index];
     if (key.length === 0) {
-      continue;
+      throw new Error("invalid NUL-separated key/value output: empty key");
     }
     parsed[key] = parts[index + 1];
   }
+
+  for (const key of requiredKeys) {
+    if (!(key in parsed)) {
+      throw new Error(`missing key in NUL-separated output: ${key}`);
+    }
+  }
+
   return parsed;
 };

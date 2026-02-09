@@ -77,7 +77,10 @@ const runWidgetScenario = async (
     throw new Error(`zsh widget scenario failed: ${stderr}`);
   }
 
-  const parsed = parseNullSeparatedPairs(result.stdout);
+  const parsed = parseNullSeparatedPairs(
+    result.stdout,
+    ["BUFFER", "CURSOR", "LAST_ZLE_CALL"],
+  );
 
   return {
     buffer: parsed.BUFFER ?? "",

@@ -23,6 +23,13 @@ export class Helper {
   }
 
   restoreEnvs() {
+    const currentEnvs = Deno.env.toObject();
+    for (const name of Object.keys(currentEnvs)) {
+      if (!(name in this._envs)) {
+        Deno.env.delete(name);
+      }
+    }
+
     for (const [name, value] of Object.entries(this._envs)) {
       Deno.env.set(name, value);
     }

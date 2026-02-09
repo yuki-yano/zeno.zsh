@@ -85,7 +85,10 @@ const runCompletionScenario = async (
       throw new Error(`zsh completion scenario failed: ${stderr}`);
     }
 
-    const parsed = parseNullSeparatedPairs(result.stdout);
+    const parsed = parseNullSeparatedPairs(
+      result.stdout,
+      ["LBUFFER", "BUFFER", "LAST_ZLE_CALL"],
+    );
 
     return {
       lbuffer: parsed.LBUFFER ?? "",
