@@ -13,5 +13,7 @@ export type Input = Readonly<{
   completionPreview?: Readonly<{
     sourceId?: string;
     item?: string;
+    lbufferB64?: string;
+    rbufferB64?: string;
   }>;
 }>;

@@ -85,6 +85,8 @@ Deno.test("parseArgs", async (t) => {
       "--input.rbuffer=right",
       "--input.completionPreview.sourceId=u0001",
       "--input.completionPreview.item=alpha beta",
+      "--input.completionPreview.lbufferB64=bGVmdAo=",
+      "--input.completionPreview.rbufferB64=cmlnaHQ=",
     ]);
 
     assertEquals(result.mode, "completion-preview");
@@ -93,6 +95,8 @@ Deno.test("parseArgs", async (t) => {
     assertEquals(result.input.completionPreview, {
       sourceId: "u0001",
       item: "alpha beta",
+      lbufferB64: "bGVmdAo=",
+      rbufferB64: "cmlnaHQ=",
     });
   });
 

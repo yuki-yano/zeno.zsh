@@ -40,17 +40,18 @@ const SOURCE_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
 
 type CallbackKind = "none" | "shell" | "function";
 
-const logCompletionCallbackError = (...args: unknown[]): void => {
-  if (Deno.env.get("ZENO_DEBUG_COMPLETION_CALLBACK")) {
+const createDebugLogger = (envVar: string) => (...args: unknown[]): void => {
+  if (Deno.env.get(envVar)) {
     console.error(...args);
   }
 };
 
-const logCompletionPreviewError = (...args: unknown[]): void => {
-  if (Deno.env.get("ZENO_DEBUG_COMPLETION_PREVIEW")) {
-    console.error(...args);
-  }
-};
+const logCompletionCallbackError = createDebugLogger(
+  "ZENO_DEBUG_COMPLETION_CALLBACK",
+);
+const logCompletionPreviewError = createDebugLogger(
+  "ZENO_DEBUG_COMPLETION_PREVIEW",
+);
 
 // Command implementations
 export const pidCommand = createCommand(
@@ -249,6 +250,14 @@ export const completionPreviewCommand = createCommand(
   async ({ input, writer }) => {
     const sourceId = input.completionPreview?.sourceId;
     const item = input.completionPreview?.item;
+    const lbuffer = decodeCompletionPreviewBuffer(
+      input.completionPreview?.lbufferB64,
+      input.lbuffer ?? "",
+    );
+    const rbuffer = decodeCompletionPreviewBuffer(
+      input.completionPreview?.rbufferB64,
+      input.rbuffer ?? "",
+    );
 
     if (
       typeof sourceId !== "string" ||
@@ -269,8 +278,8 @@ export const completionPreviewCommand = createCommand(
       const previewResult = await source.callbackPreviewFunction({
         item,
         context,
-        lbuffer: input.lbuffer ?? "",
-        rbuffer: input.rbuffer ?? "",
+        lbuffer,
+        rbuffer,
       });
 
       if (typeof previewResult !== "string") {
@@ -359,12 +368,17 @@ const resolveCompletionOptions = (
     return source.options;
   }
 
+  // callbackPreviewFunction has precedence over a static --preview.
+  // fzfOptionsToString wraps preview values in double quotes, so escape the
+  // generated command for safe embedding in that context.
   return {
     ...source.options,
-    "--preview": createCallbackPreviewCommand(
-      source.id,
-      input.lbuffer ?? "",
-      input.rbuffer ?? "",
+    "--preview": escapeForDoubleQuotedOption(
+      createCallbackPreviewCommand(
+        source.id,
+        input.lbuffer ?? "",
+        input.rbuffer ?? "",
+      ),
     ),
   };
 };
@@ -373,16 +387,83 @@ const createCallbackPreviewCommand = (
   sourceId: string,
   lbuffer: string,
   rbuffer: string,
-): string =>
-  [
-    "zeno-history-client",
+): string => {
+  const lbufferB64 = encodeUtf8Base64(lbuffer);
+  const rbufferB64 = encodeUtf8Base64(rbuffer);
+  const commonArgs = [
     "--zeno-mode=completion-preview",
     `--input.completionPreview.sourceId=${quoteForSingleShellArg(sourceId)}`,
     "--input.completionPreview.item={}",
-    `--input.lbuffer=${quoteForSingleShellArg(lbuffer)}`,
-    `--input.rbuffer=${quoteForSingleShellArg(rbuffer)}`,
-    "2>/dev/null",
+    `--input.completionPreview.lbufferB64=${
+      quoteForSingleShellArg(lbufferB64)
+    }`,
+    `--input.completionPreview.rbufferB64=${
+      quoteForSingleShellArg(rbufferB64)
+    }`,
+  ];
+
+  const historyClientCommand = [
+    "zeno-history-client",
+    ...commonArgs,
   ].join(" ");
+
+  // Keep zeno-history-client as a fast path, then fallback to direct deno run
+  // for environments where zsh is unavailable.
+  const denoFallbackCommand = [
+    "deno run",
+    "--unstable-byonm",
+    "--no-check",
+    "--allow-env",
+    "--allow-read",
+    "--allow-run",
+    "--allow-write",
+    "--allow-ffi",
+    "--allow-net",
+    "--quiet",
+    '"${ZENO_ROOT}/src/cli.ts"',
+    ...commonArgs,
+  ].join(" ");
+
+  return `(${historyClientCommand} || ${denoFallbackCommand}) 2>/dev/null`;
+};
+
+const encodeUtf8Base64 = (value: string): string => {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
+};
+
+const decodeUtf8Base64 = (value: string): string | undefined => {
+  try {
+    const binary = atob(value);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  } catch {
+    return undefined;
+  }
+};
+
+const decodeCompletionPreviewBuffer = (
+  encoded: string | undefined,
+  fallback: string,
+): string => {
+  if (typeof encoded !== "string") {
+    return fallback;
+  }
+  return decodeUtf8Base64(encoded) ?? fallback;
+};
+
+const escapeForDoubleQuotedOption = (value: string): string =>
+  value
+    .replace(/\\/g, "\\\\")
+    .replace(/\$/g, "\\$")
+    .replace(/`/g, "\\`")
+    .replace(/"/g, '\\"')
+    .replace(/\r/g, "\\r")
+    .replace(/\n/g, "\\n");
 
 const readNullSeparatedSelectedFile = async (
   filePath: string,

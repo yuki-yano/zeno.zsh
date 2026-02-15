@@ -4,6 +4,15 @@ import { completionPreviewCommand } from "../../src/command/commands/index.ts";
 import { getCompletionSourceCache } from "../../src/completion/source/cache.ts";
 import { clearCache, setSettings } from "../../src/settings.ts";
 
+const encodeUtf8Base64 = (value: string): string => {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
+};
+
 const createWriter = (buffer: string[]) => ({
   write({ text }: { format: string; text: string }): Promise<void> {
     buffer.push(text);
@@ -92,6 +101,42 @@ describe("completionPreviewCommand", () => {
     });
 
     assertEquals(output.join(""), "async:value");
+  });
+
+  it("decodes lbuffer/rbuffer from base64 payload", async () => {
+    const calls: Array<{ lbuffer: string; rbuffer: string }> = [];
+
+    setSettings(withHistoryDefaults({
+      snippets: [],
+      completions: [{
+        name: "preview",
+        patterns: ["^b64"],
+        sourceCommand: "printf ''",
+        callbackPreviewFunction: ({ lbuffer, rbuffer }) => {
+          calls.push({ lbuffer, rbuffer });
+          return `${lbuffer}|${rbuffer}`;
+        },
+      }],
+    }));
+
+    const lbuffer = 'echo "a`\n$\\';
+    const rbuffer = "x\ny'z";
+    const output: string[] = [];
+    await completionPreviewCommand.execute({
+      input: {
+        completionPreview: {
+          sourceId: "u0001",
+          item: "value",
+          lbufferB64: encodeUtf8Base64(lbuffer),
+          rbufferB64: encodeUtf8Base64(rbuffer),
+        },
+      },
+      writer: createWriter(output),
+    });
+
+    assertEquals(calls.length, 1);
+    assertEquals(calls[0], { lbuffer, rbuffer });
+    assertEquals(output.join(""), `${lbuffer}|${rbuffer}`);
   });
 
   it("does nothing when source has no callbackPreviewFunction", async () => {

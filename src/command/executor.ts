@@ -93,6 +93,12 @@ export const parseArgs = (args: readonly string[]) => {
         item: typeof completionPreviewObject.item === "string"
           ? completionPreviewObject.item
           : undefined,
+        lbufferB64: typeof completionPreviewObject.lbufferB64 === "string"
+          ? completionPreviewObject.lbufferB64
+          : undefined,
+        rbufferB64: typeof completionPreviewObject.rbufferB64 === "string"
+          ? completionPreviewObject.rbufferB64
+          : undefined,
       }
       : undefined,
   };

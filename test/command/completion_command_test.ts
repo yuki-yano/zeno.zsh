@@ -4,6 +4,15 @@ import { completionCommand } from "../../src/command/commands/index.ts";
 import { getCompletionSourceCache } from "../../src/completion/source/cache.ts";
 import { clearCache, setSettings } from "../../src/settings.ts";
 
+const encodeUtf8Base64 = (value: string): string => {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
+};
+
 const createWriter = (buffer: string[]) => ({
   write({ text }: { format: string; text: string }): Promise<void> {
     buffer.push(text);
@@ -313,7 +322,7 @@ describe("completionCommand with sourceFunction", () => {
     assertEquals(output[0], "success");
     assertEquals(
       output[2].includes(
-        '--preview="zeno-history-client --zeno-mode=completion-preview',
+        '--preview="(zeno-history-client --zeno-mode=completion-preview',
       ),
       true,
     );
@@ -325,10 +334,61 @@ describe("completionCommand with sourceFunction", () => {
       output[2].includes("--input.completionPreview.item={}"),
       true,
     );
-    assertEquals(output[2].includes("--input.lbuffer='pv '"), true);
-    assertEquals(output[2].includes("--input.rbuffer='tail'"), true);
+    assertEquals(
+      output[2].includes(
+        `--input.completionPreview.lbufferB64='${encodeUtf8Base64("pv ")}'`,
+      ),
+      true,
+    );
+    assertEquals(
+      output[2].includes(
+        `--input.completionPreview.rbufferB64='${encodeUtf8Base64("tail")}'`,
+      ),
+      true,
+    );
+    assertEquals(output[2].includes('\\"\\${ZENO_ROOT}/src/cli.ts\\"'), true);
     assertEquals(output[5], "none");
     assertEquals(output[6], "u0001");
+  });
+
+  it("keeps preview options single-line for multiline lbuffer/rbuffer", async () => {
+    setSettings(withHistoryDefaults({
+      snippets: [],
+      completions: [{
+        name: "preview-function-multiline",
+        patterns: [".*"],
+        sourceCommand: "printf '%s\\n' value",
+        callbackPreviewFunction: ({ item }) => item,
+      }],
+    }));
+
+    const output: string[] = [];
+    await completionCommand.execute({
+      input: {
+        lbuffer: 'echo "a`\n$\\',
+        rbuffer: "x\ny",
+        snippet: undefined,
+        dir: undefined,
+      },
+      writer: createWriter(output),
+    });
+
+    assertEquals(output[0], "success");
+    assertEquals(output[2].includes("\n"), false);
+    assertEquals(
+      output[2].includes(
+        `--input.completionPreview.lbufferB64='${
+          encodeUtf8Base64('echo "a`\n$\\')
+        }'`,
+      ),
+      true,
+    );
+    assertEquals(
+      output[2].includes(
+        `--input.completionPreview.rbufferB64='${encodeUtf8Base64("x\ny")}'`,
+      ),
+      true,
+    );
   });
 
   it("assigns builtin sourceId with b-prefix", async () => {
