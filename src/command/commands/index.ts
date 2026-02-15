@@ -20,10 +20,12 @@ import type { WriteFunction } from "../../app-helpers.ts";
 import { getConfigContext, getSettings } from "../../config/index.ts";
 import {
   hasCallbackFunction,
+  hasCallbackPreviewFunction,
   isFunctionCompletionSource,
   type ResolvedCompletionFunctionSource,
   type ResolvedCompletionSource,
 } from "../../type/fzf.ts";
+import type { Input } from "../../type/shell.ts";
 import { createHistoryLogCommand } from "../../history/log-command.ts";
 import { createHistoryQueryCommand } from "../../history/query-command.ts";
 import { createHistoryDeleteCommand } from "../../history/delete-command.ts";
@@ -40,6 +42,12 @@ type CallbackKind = "none" | "shell" | "function";
 
 const logCompletionCallbackError = (...args: unknown[]): void => {
   if (Deno.env.get("ZENO_DEBUG_COMPLETION_CALLBACK")) {
+    console.error(...args);
+  }
+};
+
+const logCompletionPreviewError = (...args: unknown[]): void => {
+  if (Deno.env.get("ZENO_DEBUG_COMPLETION_PREVIEW")) {
     console.error(...args);
   }
 };
@@ -147,7 +155,7 @@ export const completionCommand = createCommand(
     }
 
     if (isFunctionCompletionSource(source)) {
-      await handleFunctionCompletion(writer.write.bind(writer), source);
+      await handleFunctionCompletion(writer.write.bind(writer), source, input);
       return;
     }
 
@@ -155,6 +163,7 @@ export const completionCommand = createCommand(
       writer.write.bind(writer),
       source,
       source.sourceCommand,
+      input,
     );
   },
 );
@@ -235,9 +244,57 @@ export const completionCallbackCommand = createCommand(
   },
 );
 
+export const completionPreviewCommand = createCommand(
+  "completion-preview",
+  async ({ input, writer }) => {
+    const sourceId = input.completionPreview?.sourceId;
+    const item = input.completionPreview?.item;
+
+    if (
+      typeof sourceId !== "string" ||
+      !SOURCE_ID_PATTERN.test(sourceId) ||
+      typeof item !== "string"
+    ) {
+      return;
+    }
+
+    const sources = await getCompletionSources();
+    const source = sources.find((candidate) => candidate.id === sourceId);
+    if (!source || !hasCallbackPreviewFunction(source)) {
+      return;
+    }
+
+    try {
+      const context = await getConfigContext();
+      const previewResult = await source.callbackPreviewFunction({
+        item,
+        context,
+        lbuffer: input.lbuffer ?? "",
+        rbuffer: input.rbuffer ?? "",
+      });
+
+      if (typeof previewResult !== "string") {
+        throw new Error(
+          "Completion callback preview function must return a string",
+        );
+      }
+
+      if (previewResult.length > 0) {
+        await writer.write({ format: "%s", text: previewResult });
+      }
+    } catch (error) {
+      logCompletionPreviewError(
+        "completion-preview execution failed:",
+        error,
+      );
+    }
+  },
+);
+
 const handleFunctionCompletion = async (
   writeFn: WriteFunction,
   source: ResolvedCompletionFunctionSource,
+  input: Input,
 ): Promise<void> => {
   try {
     const context = await getConfigContext();
@@ -254,7 +311,7 @@ const handleFunctionCompletion = async (
     const separatorIsNull = Boolean(options["--read0"]);
     const command = await createCandidatesCommand(candidates, separatorIsNull);
 
-    await writeCompletionResult(writeFn, source, command);
+    await writeCompletionResult(writeFn, source, command, input);
   } catch (_error) {
     await writeResult(writeFn, "failure");
   }
@@ -278,18 +335,54 @@ const writeCompletionResult = async (
   writeFn: WriteFunction,
   source: ResolvedCompletionSource,
   sourceCommand: string,
+  input: Input,
 ): Promise<void> => {
+  const options = resolveCompletionOptions(source, input);
+
   await writeResult(
     writeFn,
     "success",
     sourceCommand,
-    fzfOptionsToString(source.options),
+    fzfOptionsToString(options),
     source.callback ?? "",
     source.callbackZero ? "zero" : "",
     resolveCallbackKind(source),
     source.id,
   );
 };
+
+const resolveCompletionOptions = (
+  source: ResolvedCompletionSource,
+  input: Input,
+) => {
+  if (!hasCallbackPreviewFunction(source)) {
+    return source.options;
+  }
+
+  return {
+    ...source.options,
+    "--preview": createCallbackPreviewCommand(
+      source.id,
+      input.lbuffer ?? "",
+      input.rbuffer ?? "",
+    ),
+  };
+};
+
+const createCallbackPreviewCommand = (
+  sourceId: string,
+  lbuffer: string,
+  rbuffer: string,
+): string =>
+  [
+    "zeno-history-client",
+    "--zeno-mode=completion-preview",
+    `--input.completionPreview.sourceId=${quoteForSingleShellArg(sourceId)}`,
+    "--input.completionPreview.item={}",
+    `--input.lbuffer=${quoteForSingleShellArg(lbuffer)}`,
+    `--input.rbuffer=${quoteForSingleShellArg(rbuffer)}`,
+    "2>/dev/null",
+  ].join(" ");
 
 const readNullSeparatedSelectedFile = async (
   filePath: string,
@@ -377,6 +470,7 @@ export const createCommandRegistry = () => {
   registry.register(nextPlaceholderCommand);
   registry.register(completionCommand);
   registry.register(completionCallbackCommand);
+  registry.register(completionPreviewCommand);
   registry.register(
     createHistoryLogCommand({
       getHistoryModule,

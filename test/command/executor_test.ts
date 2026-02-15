@@ -54,6 +54,7 @@ Deno.test("parseArgs", async (t) => {
       template: undefined,
       dir: undefined,
       completionCallback: undefined,
+      completionPreview: undefined,
     });
   });
 
@@ -74,6 +75,24 @@ Deno.test("parseArgs", async (t) => {
       sourceId: "u0001",
       selectedFile: "/tmp/selected.bin",
       expectKey: "alt-enter",
+    });
+  });
+
+  await t.step("parses completionPreview input fields", () => {
+    const result = parseArgs([
+      "--zeno-mode=completion-preview",
+      "--input.lbuffer=left",
+      "--input.rbuffer=right",
+      "--input.completionPreview.sourceId=u0001",
+      "--input.completionPreview.item=alpha beta",
+    ]);
+
+    assertEquals(result.mode, "completion-preview");
+    assertEquals(result.input.lbuffer, "left");
+    assertEquals(result.input.rbuffer, "right");
+    assertEquals(result.input.completionPreview, {
+      sourceId: "u0001",
+      item: "alpha beta",
     });
   });
 

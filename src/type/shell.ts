@@ -10,4 +10,8 @@ export type Input = Readonly<{
     selectedFile?: string;
     expectKey?: string;
   }>;
+  completionPreview?: Readonly<{
+    sourceId?: string;
+    item?: string;
+  }>;
 }>;

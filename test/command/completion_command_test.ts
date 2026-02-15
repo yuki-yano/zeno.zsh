@@ -288,6 +288,49 @@ describe("completionCommand with sourceFunction", () => {
     assertEquals(output[6], "u0001");
   });
 
+  it("embeds completion-preview command when callbackPreviewFunction is configured", async () => {
+    setSettings(withHistoryDefaults({
+      snippets: [],
+      completions: [{
+        name: "preview-function",
+        patterns: ["^pv"],
+        sourceCommand: "printf '%s\\n' value",
+        callbackPreviewFunction: ({ item }) => item,
+      }],
+    }));
+
+    const output: string[] = [];
+    await completionCommand.execute({
+      input: {
+        lbuffer: "pv ",
+        rbuffer: "tail",
+        snippet: undefined,
+        dir: undefined,
+      },
+      writer: createWriter(output),
+    });
+
+    assertEquals(output[0], "success");
+    assertEquals(
+      output[2].includes(
+        '--preview="zeno-history-client --zeno-mode=completion-preview',
+      ),
+      true,
+    );
+    assertEquals(
+      output[2].includes("--input.completionPreview.sourceId='u0001'"),
+      true,
+    );
+    assertEquals(
+      output[2].includes("--input.completionPreview.item={}"),
+      true,
+    );
+    assertEquals(output[2].includes("--input.lbuffer='pv '"), true);
+    assertEquals(output[2].includes("--input.rbuffer='tail'"), true);
+    assertEquals(output[5], "none");
+    assertEquals(output[6], "u0001");
+  });
+
   it("assigns builtin sourceId with b-prefix", async () => {
     Deno.env.delete("ZENO_DISABLE_BUILTIN_COMPLETION");
     setSettings(withHistoryDefaults({

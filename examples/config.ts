@@ -374,14 +374,24 @@ export default defineConfig(
           },
           options: {
             "--prompt": "'NPM Scripts> '",
-            "--preview":
-              "'cat package.json | jq -r \".scripts.{}\" 2>/dev/null'",
           },
           callbackFunction: ({ selected, expectKey }) => {
             if (expectKey === "alt-enter") {
               return selected;
             }
             return selected.map((script) => `npm run ${script}`);
+          },
+          callbackPreviewFunction: async ({ item, context }) => {
+            try {
+              const pkgPath = join(context.projectRoot, "package.json");
+              const pkg = JSON.parse(
+                await Deno.readTextFile(pkgPath),
+              ) as { scripts?: Record<string, string> };
+              const script = pkg.scripts?.[item];
+              return script ? `${item}\n${script}` : item;
+            } catch {
+              return item;
+            }
           },
         },
         {

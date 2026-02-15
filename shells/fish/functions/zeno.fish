@@ -5,13 +5,13 @@ function zeno
 
     for i in (seq (count $argv))
         switch $argv[$i]
-            case '--zeno-mode=auto-snippet' '--zeno-mode=completion' '--zeno-mode=completion-callback'
+            case '--zeno-mode=auto-snippet' '--zeno-mode=completion' '--zeno-mode=completion-callback' '--zeno-mode=completion-preview'
                 set quiet 1
                 break
             case '--zeno-mode'
                 if test (math $i + 1) -le (count $argv)
                     switch $argv[(math $i + 1)]
-                        case auto-snippet completion completion-callback
+                        case auto-snippet completion completion-callback completion-preview
                             set quiet 1
                             break
                     end

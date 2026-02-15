@@ -31,6 +31,13 @@ export type CompletionCallbackFunction = (params: {
   | ReadonlyArray<string>
   | Promise<ReadonlyArray<string>>;
 
+export type CompletionCallbackPreviewFunction = (params: {
+  item: string;
+  context: ConfigContext;
+  lbuffer: string;
+  rbuffer: string;
+}) => string | Promise<string>;
+
 type ShellCallbackSpec = Readonly<{
   callback?: string;
   callbackZero?: boolean;
@@ -51,6 +58,7 @@ type CompletionSourceBase =
     patterns: readonly RegExp[];
     excludePatterns?: readonly RegExp[];
     options: FzfOptions;
+    callbackPreviewFunction?: CompletionCallbackPreviewFunction;
   }>
   & CompletionCallbackSpec;
 
@@ -103,3 +111,14 @@ export const hasCallbackFunction = (
   }> =>
   typeof (source as Partial<FunctionCallbackSpec>).callbackFunction ===
     "function";
+
+export const hasCallbackPreviewFunction = (
+  source: CompletionSource | ResolvedCompletionSource,
+): source is
+  & (CompletionSource | ResolvedCompletionSource)
+  & Readonly<{
+    callbackPreviewFunction: CompletionCallbackPreviewFunction;
+  }> =>
+  typeof (source as Partial<{
+    callbackPreviewFunction?: CompletionCallbackPreviewFunction;
+  }>).callbackPreviewFunction === "function";

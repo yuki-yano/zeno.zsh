@@ -47,9 +47,14 @@ export const parseArgs = (args: readonly string[]) => {
   const mode = parsedArgs["zeno-mode"] ?? "";
   const rawInput = (parsedArgs.input ?? {}) as Record<string, unknown>;
   const rawCompletionCallback = rawInput.completionCallback;
+  const rawCompletionPreview = rawInput.completionPreview;
   const completionCallbackObject = rawCompletionCallback &&
       typeof rawCompletionCallback === "object"
     ? rawCompletionCallback as Record<string, unknown>
+    : undefined;
+  const completionPreviewObject = rawCompletionPreview &&
+      typeof rawCompletionPreview === "object"
+    ? rawCompletionPreview as Record<string, unknown>
     : undefined;
 
   // Validate and convert input fields
@@ -77,6 +82,16 @@ export const parseArgs = (args: readonly string[]) => {
           : undefined,
         expectKey: typeof completionCallbackObject.expectKey === "string"
           ? completionCallbackObject.expectKey
+          : undefined,
+      }
+      : undefined,
+    completionPreview: completionPreviewObject
+      ? {
+        sourceId: typeof completionPreviewObject.sourceId === "string"
+          ? completionPreviewObject.sourceId
+          : undefined,
+        item: typeof completionPreviewObject.item === "string"
+          ? completionPreviewObject.item
           : undefined,
       }
       : undefined,
