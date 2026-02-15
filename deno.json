@@ -1,7 +1,7 @@
 {
   "lock": false,
   "name": "@yuki-yano/zeno",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "license": "MIT",
   "exports": "./src/mod.ts",
   "publish": {
