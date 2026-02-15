@@ -2,7 +2,7 @@
 
 args=("$@")
 deno_flags=(
-  --unstable-byonm
+  --node-modules-dir=auto
   --no-check
   --allow-env
   --allow-read

@@ -1,5 +1,5 @@
 function zeno
-    set -l deno_flags --unstable-byonm --no-check \
+    set -l deno_flags --node-modules-dir=auto --no-check \
         --allow-env --allow-read --allow-run --allow-write --allow-ffi --allow-net
     set -l quiet 0
 

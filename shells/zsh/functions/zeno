@@ -6,7 +6,7 @@ local -i quiet=0
 
 args=("$@")
 deno_flags=(
-  --unstable-byonm
+  --node-modules-dir=auto
   --no-check
   --allow-env
   --allow-read

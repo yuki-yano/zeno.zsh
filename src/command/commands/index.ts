@@ -411,7 +411,7 @@ const createCallbackPreviewCommand = (
   // for environments where zsh is unavailable.
   const denoFallbackCommand = [
     "deno run",
-    "--unstable-byonm",
+    "--node-modules-dir=auto",
     "--no-check",
     "--allow-env",
     "--allow-read",
