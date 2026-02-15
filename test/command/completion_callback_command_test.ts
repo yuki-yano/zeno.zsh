@@ -1,15 +1,8 @@
 import { afterEach, assertEquals, beforeEach, describe, it } from "../deps.ts";
-import { Helper, withHistoryDefaults } from "../helpers.ts";
+import { createBufferWriter, Helper, withHistoryDefaults } from "../helpers.ts";
 import { completionCallbackCommand } from "../../src/command/commands/index.ts";
 import { getCompletionSourceCache } from "../../src/completion/source/cache.ts";
 import { clearCache, setSettings } from "../../src/settings.ts";
-
-const createWriter = (buffer: string[]) => ({
-  write({ text }: { format: string; text: string }): Promise<void> {
-    buffer.push(text);
-    return Promise.resolve();
-  },
-});
 
 const writeSelectedFile = async (
   values: readonly string[],
@@ -70,7 +63,7 @@ describe("completionCallbackCommand", () => {
             expectKey: "alt-enter",
           },
         },
-        writer: createWriter(output),
+        writer: createBufferWriter(output),
       });
 
       assertEquals(output[0], "success");
@@ -113,7 +106,7 @@ describe("completionCallbackCommand", () => {
             selectedFile,
           },
         },
-        writer: createWriter(output),
+        writer: createBufferWriter(output),
       });
 
       assertEquals(output[0], "failure");
@@ -145,7 +138,7 @@ describe("completionCallbackCommand", () => {
             selectedFile,
           },
         },
-        writer: createWriter(output),
+        writer: createBufferWriter(output),
       });
 
       assertEquals(output[0], "failure");
@@ -158,7 +151,7 @@ describe("completionCallbackCommand", () => {
     const output: string[] = [];
     await completionCallbackCommand.execute({
       input: {},
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output[0], "failure");
@@ -182,7 +175,7 @@ describe("completionCallbackCommand", () => {
           selectedFile: "/tmp/not-found-file",
         },
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output[0], "failure");
@@ -209,7 +202,7 @@ describe("completionCallbackCommand", () => {
             selectedFile,
           },
         },
-        writer: createWriter(output),
+        writer: createBufferWriter(output),
       });
 
       assertEquals(output[0], "success");
@@ -243,7 +236,7 @@ describe("completionCallbackCommand", () => {
             selectedFile,
           },
         },
-        writer: createWriter(output),
+        writer: createBufferWriter(output),
       });
 
       assertEquals(output[0], "failure");
@@ -275,7 +268,7 @@ describe("completionCallbackCommand", () => {
             selectedFile,
           },
         },
-        writer: createWriter(output),
+        writer: createBufferWriter(output),
       });
 
       assertEquals(output[0], "success");
@@ -307,7 +300,7 @@ describe("completionCallbackCommand", () => {
             selectedFile,
           },
         },
-        writer: createWriter(output),
+        writer: createBufferWriter(output),
       });
 
       assertEquals(output[0], "failure");
@@ -338,7 +331,7 @@ describe("completionCallbackCommand", () => {
             selectedFile,
           },
         },
-        writer: createWriter(output),
+        writer: createBufferWriter(output),
       });
 
       assertEquals(output[0], "success");

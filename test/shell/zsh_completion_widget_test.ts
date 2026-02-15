@@ -134,6 +134,30 @@ describe("zsh completion widget callback behavior", () => {
     assertEquals(finalLbuffer, "npm run dev");
   });
 
+  it("keeps expect-key handling when callbackPreview command is embedded in --preview", async () => {
+    if (!await hasZsh()) {
+      return;
+    }
+
+    const finalLbuffer = await runZshCompletionScenario({
+      initialLbuffer: "npm run ",
+      fzfTokens: ["alt-enter", "dev"],
+      completionResponseLines: [
+        "success",
+        "printf '%s\\n' dev",
+        "--expect=\"alt-enter\" --print0 --preview=\"zeno-history-client --zeno-mode=completion-preview --input.completionPreview.sourceId='u0001' --input.completionPreview.item={} --input.lbuffer='npm run ' --input.rbuffer='' 2>/dev/null\"",
+        "function",
+        "u0001",
+      ],
+      callbackResponseLines: [
+        "success",
+        "printf '%s\\0' 'dev'",
+      ],
+    });
+
+    assertEquals(finalLbuffer, "npm run dev");
+  });
+
   it("keeps shell callback behavior with collapsed response fields", async () => {
     if (!await hasZsh()) {
       return;

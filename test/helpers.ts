@@ -80,3 +80,10 @@ export const withHistoryDefaults = (
   completions: value.completions,
   history: createTestHistorySettings(),
 });
+
+export const createBufferWriter = (buffer: string[]) => ({
+  write({ text }: { format: string; text: string }): Promise<void> {
+    buffer.push(text);
+    return Promise.resolve();
+  },
+});

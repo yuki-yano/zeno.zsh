@@ -1,15 +1,17 @@
 import { afterEach, assertEquals, beforeEach, describe, it } from "../deps.ts";
-import { Helper, withHistoryDefaults } from "../helpers.ts";
+import { createBufferWriter, Helper, withHistoryDefaults } from "../helpers.ts";
 import { completionCommand } from "../../src/command/commands/index.ts";
 import { getCompletionSourceCache } from "../../src/completion/source/cache.ts";
 import { clearCache, setSettings } from "../../src/settings.ts";
 
-const createWriter = (buffer: string[]) => ({
-  write({ text }: { format: string; text: string }): Promise<void> {
-    buffer.push(text);
-    return Promise.resolve();
-  },
-});
+const encodeUtf8Base64 = (value: string): string => {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
+};
 
 describe("completionCommand with sourceFunction", () => {
   const helper = new Helper();
@@ -49,7 +51,7 @@ describe("completionCommand with sourceFunction", () => {
         snippet: undefined,
         dir: undefined,
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output[0], "success");
@@ -83,7 +85,7 @@ describe("completionCommand with sourceFunction", () => {
         snippet: undefined,
         dir: undefined,
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output[0], "success");
@@ -111,7 +113,7 @@ describe("completionCommand with sourceFunction", () => {
         snippet: undefined,
         dir: undefined,
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output[0], "success");
@@ -139,7 +141,7 @@ describe("completionCommand with sourceFunction", () => {
         snippet: undefined,
         dir: undefined,
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output[0], "success");
@@ -166,7 +168,7 @@ describe("completionCommand with sourceFunction", () => {
         snippet: undefined,
         dir: undefined,
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output[0], "success");
@@ -195,7 +197,7 @@ describe("completionCommand with sourceFunction", () => {
         snippet: undefined,
         dir: undefined,
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output[0], "failure");
@@ -221,7 +223,7 @@ describe("completionCommand with sourceFunction", () => {
         snippet: undefined,
         dir: undefined,
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output[0], "success");
@@ -250,7 +252,7 @@ describe("completionCommand with sourceFunction", () => {
         snippet: undefined,
         dir: undefined,
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output[0], "success");
@@ -279,13 +281,107 @@ describe("completionCommand with sourceFunction", () => {
         snippet: undefined,
         dir: undefined,
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output[0], "success");
     assertEquals(output[1], "printf '%s\\n' value");
     assertEquals(output[5], "function");
     assertEquals(output[6], "u0001");
+  });
+
+  it("embeds completion-preview command when previewFunction is configured", async () => {
+    setSettings(withHistoryDefaults({
+      snippets: [],
+      completions: [{
+        name: "preview-function",
+        patterns: ["^pv"],
+        sourceCommand: "printf '%s\\n' value",
+        previewFunction: ({ item }) => item,
+      }],
+    }));
+
+    const output: string[] = [];
+    await completionCommand.execute({
+      input: {
+        lbuffer: "pv ",
+        rbuffer: "tail",
+        snippet: undefined,
+        dir: undefined,
+      },
+      writer: createBufferWriter(output),
+    });
+
+    assertEquals(output[0], "success");
+    assertEquals(
+      output[2].includes(
+        '--preview="(zeno-history-client --zeno-mode=completion-preview',
+      ),
+      true,
+    );
+    assertEquals(
+      output[2].includes("--input.completionPreview.sourceId='u0001'"),
+      true,
+    );
+    assertEquals(
+      output[2].includes("--input.completionPreview.item={}"),
+      true,
+    );
+    assertEquals(
+      output[2].includes(
+        `--input.completionPreview.lbufferB64='${encodeUtf8Base64("pv ")}'`,
+      ),
+      true,
+    );
+    assertEquals(
+      output[2].includes(
+        `--input.completionPreview.rbufferB64='${encodeUtf8Base64("tail")}'`,
+      ),
+      true,
+    );
+    assertEquals(output[2].includes('\\"\\${ZENO_ROOT}/src/cli.ts\\"'), true);
+    assertEquals(output[5], "none");
+    assertEquals(output[6], "u0001");
+  });
+
+  it("keeps preview options single-line for multiline lbuffer/rbuffer", async () => {
+    setSettings(withHistoryDefaults({
+      snippets: [],
+      completions: [{
+        name: "preview-function-multiline",
+        patterns: [".*"],
+        sourceCommand: "printf '%s\\n' value",
+        previewFunction: ({ item }) => item,
+      }],
+    }));
+
+    const output: string[] = [];
+    await completionCommand.execute({
+      input: {
+        lbuffer: 'echo "a`\n$\\',
+        rbuffer: "x\ny",
+        snippet: undefined,
+        dir: undefined,
+      },
+      writer: createBufferWriter(output),
+    });
+
+    assertEquals(output[0], "success");
+    assertEquals(output[2].includes("\n"), false);
+    assertEquals(
+      output[2].includes(
+        `--input.completionPreview.lbufferB64='${
+          encodeUtf8Base64('echo "a`\n$\\')
+        }'`,
+      ),
+      true,
+    );
+    assertEquals(
+      output[2].includes(
+        `--input.completionPreview.rbufferB64='${encodeUtf8Base64("x\ny")}'`,
+      ),
+      true,
+    );
   });
 
   it("assigns builtin sourceId with b-prefix", async () => {
@@ -303,7 +399,7 @@ describe("completionCommand with sourceFunction", () => {
         snippet: undefined,
         dir: undefined,
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output[0], "success");

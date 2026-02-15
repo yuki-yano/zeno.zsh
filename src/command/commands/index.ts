@@ -19,11 +19,13 @@ import {
 import type { WriteFunction } from "../../app-helpers.ts";
 import { getConfigContext, getSettings } from "../../config/index.ts";
 import {
+  getPreviewFunction,
   hasCallbackFunction,
   isFunctionCompletionSource,
   type ResolvedCompletionFunctionSource,
   type ResolvedCompletionSource,
 } from "../../type/fzf.ts";
+import type { Input } from "../../type/shell.ts";
 import { createHistoryLogCommand } from "../../history/log-command.ts";
 import { createHistoryQueryCommand } from "../../history/query-command.ts";
 import { createHistoryDeleteCommand } from "../../history/delete-command.ts";
@@ -38,11 +40,18 @@ const SOURCE_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
 
 type CallbackKind = "none" | "shell" | "function";
 
-const logCompletionCallbackError = (...args: unknown[]): void => {
-  if (Deno.env.get("ZENO_DEBUG_COMPLETION_CALLBACK")) {
+const createDebugLogger = (envVar: string) => (...args: unknown[]): void => {
+  if (Deno.env.get(envVar)) {
     console.error(...args);
   }
 };
+
+const logCompletionCallbackError = createDebugLogger(
+  "ZENO_DEBUG_COMPLETION_CALLBACK",
+);
+const logCompletionPreviewError = createDebugLogger(
+  "ZENO_DEBUG_COMPLETION_PREVIEW",
+);
 
 // Command implementations
 export const pidCommand = createCommand(
@@ -147,7 +156,7 @@ export const completionCommand = createCommand(
     }
 
     if (isFunctionCompletionSource(source)) {
-      await handleFunctionCompletion(writer.write.bind(writer), source);
+      await handleFunctionCompletion(writer.write.bind(writer), source, input);
       return;
     }
 
@@ -155,6 +164,7 @@ export const completionCommand = createCommand(
       writer.write.bind(writer),
       source,
       source.sourceCommand,
+      input,
     );
   },
 );
@@ -235,9 +245,66 @@ export const completionCallbackCommand = createCommand(
   },
 );
 
+export const completionPreviewCommand = createCommand(
+  "completion-preview",
+  async ({ input, writer }) => {
+    const sourceId = input.completionPreview?.sourceId;
+    const item = input.completionPreview?.item;
+    const lbuffer = decodeCompletionPreviewBuffer(
+      input.completionPreview?.lbufferB64,
+      input.lbuffer ?? "",
+    );
+    const rbuffer = decodeCompletionPreviewBuffer(
+      input.completionPreview?.rbufferB64,
+      input.rbuffer ?? "",
+    );
+
+    if (
+      typeof sourceId !== "string" ||
+      !SOURCE_ID_PATTERN.test(sourceId) ||
+      typeof item !== "string"
+    ) {
+      return;
+    }
+
+    const sources = await getCompletionSources();
+    const source = sources.find((candidate) => candidate.id === sourceId);
+    const previewFunction = source ? getPreviewFunction(source) : undefined;
+    if (!source || !previewFunction) {
+      return;
+    }
+
+    try {
+      const context = await getConfigContext();
+      const previewResult = await previewFunction({
+        item,
+        context,
+        lbuffer,
+        rbuffer,
+      });
+
+      if (typeof previewResult !== "string") {
+        throw new Error(
+          "Completion callback preview function must return a string",
+        );
+      }
+
+      if (previewResult.length > 0) {
+        await writer.write({ format: "%s", text: previewResult });
+      }
+    } catch (error) {
+      logCompletionPreviewError(
+        "completion-preview execution failed:",
+        error,
+      );
+    }
+  },
+);
+
 const handleFunctionCompletion = async (
   writeFn: WriteFunction,
   source: ResolvedCompletionFunctionSource,
+  input: Input,
 ): Promise<void> => {
   try {
     const context = await getConfigContext();
@@ -254,7 +321,7 @@ const handleFunctionCompletion = async (
     const separatorIsNull = Boolean(options["--read0"]);
     const command = await createCandidatesCommand(candidates, separatorIsNull);
 
-    await writeCompletionResult(writeFn, source, command);
+    await writeCompletionResult(writeFn, source, command, input);
   } catch (_error) {
     await writeResult(writeFn, "failure");
   }
@@ -278,18 +345,126 @@ const writeCompletionResult = async (
   writeFn: WriteFunction,
   source: ResolvedCompletionSource,
   sourceCommand: string,
+  input: Input,
 ): Promise<void> => {
+  const options = resolveCompletionOptions(source, input);
+
   await writeResult(
     writeFn,
     "success",
     sourceCommand,
-    fzfOptionsToString(source.options),
+    fzfOptionsToString(options),
     source.callback ?? "",
     source.callbackZero ? "zero" : "",
     resolveCallbackKind(source),
     source.id,
   );
 };
+
+const resolveCompletionOptions = (
+  source: ResolvedCompletionSource,
+  input: Input,
+) => {
+  if (!getPreviewFunction(source)) {
+    return source.options;
+  }
+
+  // previewFunction is compiled into a dynamic --preview command.
+  // fzfOptionsToString wraps preview values in double quotes, so escape the
+  // generated command for safe embedding in that context.
+  return {
+    ...source.options,
+    "--preview": escapeForDoubleQuotedOption(
+      createCallbackPreviewCommand(
+        source.id,
+        input.lbuffer ?? "",
+        input.rbuffer ?? "",
+      ),
+    ),
+  };
+};
+
+const createCallbackPreviewCommand = (
+  sourceId: string,
+  lbuffer: string,
+  rbuffer: string,
+): string => {
+  const lbufferB64 = encodeUtf8Base64(lbuffer);
+  const rbufferB64 = encodeUtf8Base64(rbuffer);
+  const commonArgs = [
+    "--zeno-mode=completion-preview",
+    `--input.completionPreview.sourceId=${quoteForSingleShellArg(sourceId)}`,
+    "--input.completionPreview.item={}",
+    `--input.completionPreview.lbufferB64=${
+      quoteForSingleShellArg(lbufferB64)
+    }`,
+    `--input.completionPreview.rbufferB64=${
+      quoteForSingleShellArg(rbufferB64)
+    }`,
+  ];
+
+  const historyClientCommand = [
+    "zeno-history-client",
+    ...commonArgs,
+  ].join(" ");
+
+  // Keep zeno-history-client as a fast path, then fallback to direct deno run
+  // for environments where zsh is unavailable.
+  const denoFallbackCommand = [
+    "deno run",
+    "--node-modules-dir=auto",
+    "--no-check",
+    "--allow-env",
+    "--allow-read",
+    "--allow-run",
+    "--allow-write",
+    "--allow-ffi",
+    "--allow-net",
+    "--quiet",
+    '"${ZENO_ROOT}/src/cli.ts"',
+    ...commonArgs,
+  ].join(" ");
+
+  return `(${historyClientCommand} || ${denoFallbackCommand}) 2>/dev/null`;
+};
+
+const encodeUtf8Base64 = (value: string): string => {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
+};
+
+const decodeUtf8Base64 = (value: string): string | undefined => {
+  try {
+    const binary = atob(value);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  } catch {
+    return undefined;
+  }
+};
+
+const decodeCompletionPreviewBuffer = (
+  encoded: string | undefined,
+  fallback: string,
+): string => {
+  if (typeof encoded !== "string") {
+    return fallback;
+  }
+  return decodeUtf8Base64(encoded) ?? fallback;
+};
+
+const escapeForDoubleQuotedOption = (value: string): string =>
+  value
+    .replace(/\\/g, "\\\\")
+    .replace(/\$/g, "\\$")
+    .replace(/`/g, "\\`")
+    .replace(/"/g, '\\"')
+    .replace(/\r/g, "\\r")
+    .replace(/\n/g, "\\n");
 
 const readNullSeparatedSelectedFile = async (
   filePath: string,
@@ -377,6 +552,7 @@ export const createCommandRegistry = () => {
   registry.register(nextPlaceholderCommand);
   registry.register(completionCommand);
   registry.register(completionCallbackCommand);
+  registry.register(completionPreviewCommand);
   registry.register(
     createHistoryLogCommand({
       getHistoryModule,

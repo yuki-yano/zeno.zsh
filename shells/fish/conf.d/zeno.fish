@@ -58,7 +58,7 @@ end
 
 # Cache Deno dependencies unless disabled
 if set -q ZENO_ROOT; and not set -q ZENO_DISABLE_EXECUTE_CACHE_COMMAND
-    command deno cache --unstable-byonm --no-lock --no-check -- "$ZENO_ROOT/src/cli.ts"
+    command deno cache --node-modules-dir=auto --no-lock --no-check -- "$ZENO_ROOT/src/cli.ts"
 end
 
 # Socket support

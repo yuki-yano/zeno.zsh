@@ -1,6 +1,7 @@
 import type { HistoryScope } from "../history/types.ts";
 import type {
   CompletionCallbackFunction,
+  CompletionPreviewFunction,
   CompletionSourceFunction,
   FzfOptions,
 } from "./fzf.ts";
@@ -45,6 +46,7 @@ type UserCompletionSourceBase = Readonly<{
   excludePatterns?: readonly string[];
   preview?: string;
   options?: FzfOptions;
+  previewFunction?: CompletionPreviewFunction;
 }>;
 
 type ShellCallbackSpec = Readonly<{

@@ -360,6 +360,9 @@ For post-filtering selected values, TypeScript configs can use
 - `callback`/`callbackZero` and `callbackFunction` are mutually exclusive
 - `callbackFunction` receives `{ selected, context, lbuffer, rbuffer, expectKey }`
 - `callbackFunction` must return `ReadonlyArray<string>` (or `Promise` of it)
+- `previewFunction` receives `{ item, context, lbuffer, rbuffer }`
+- `previewFunction` must return preview text as `string` (or `Promise` of it)
+- `previewFunction` and static preview options (`preview` / `options["--preview"]`) are mutually exclusive
 
 ### Example (TypeScript)
 
@@ -448,6 +451,18 @@ export default defineConfig(({ projectRoot, currentDirectory }) => ({
           return selected.map((script) => `${script} -- --watch`);
         }
         return selected;
+      },
+      previewFunction: async ({ item, context }) => {
+        try {
+          const pkgPath = join(context.projectRoot, "package.json");
+          const pkg = JSON.parse(
+            await Deno.readTextFile(pkgPath),
+          ) as { scripts?: Record<string, string> };
+          const script = pkg.scripts?.[item];
+          return script ? `${item}\n${script}` : item;
+        } catch {
+          return item;
+        }
       },
     },
   ],
