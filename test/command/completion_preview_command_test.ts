@@ -1,5 +1,5 @@
 import { afterEach, assertEquals, beforeEach, describe, it } from "../deps.ts";
-import { Helper, withHistoryDefaults } from "../helpers.ts";
+import { createBufferWriter, Helper, withHistoryDefaults } from "../helpers.ts";
 import { completionPreviewCommand } from "../../src/command/commands/index.ts";
 import { getCompletionSourceCache } from "../../src/completion/source/cache.ts";
 import { clearCache, setSettings } from "../../src/settings.ts";
@@ -12,13 +12,6 @@ const encodeUtf8Base64 = (value: string): string => {
   }
   return btoa(binary);
 };
-
-const createWriter = (buffer: string[]) => ({
-  write({ text }: { format: string; text: string }): Promise<void> {
-    buffer.push(text);
-    return Promise.resolve();
-  },
-});
 
 describe("completionPreviewCommand", () => {
   const helper = new Helper();
@@ -66,7 +59,7 @@ describe("completionPreviewCommand", () => {
           item: "alpha beta",
         },
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output.join(""), "preview:alpha beta:cbp :tail");
@@ -97,7 +90,7 @@ describe("completionPreviewCommand", () => {
           item: "value",
         },
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output.join(""), "async:value");
@@ -131,7 +124,7 @@ describe("completionPreviewCommand", () => {
           rbufferB64: encodeUtf8Base64(rbuffer),
         },
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(calls.length, 1);
@@ -157,7 +150,7 @@ describe("completionPreviewCommand", () => {
           item: "value",
         },
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output, []);
@@ -182,7 +175,7 @@ describe("completionPreviewCommand", () => {
           item: "value",
         },
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output, []);
@@ -207,7 +200,7 @@ describe("completionPreviewCommand", () => {
           item: "value",
         },
       },
-      writer: createWriter(output),
+      writer: createBufferWriter(output),
     });
 
     assertEquals(output, []);
