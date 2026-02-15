@@ -44,7 +44,7 @@ export const insertSnippet = async (
     return {
       status: "success",
       buffer: `${lbuffer}${preparedSnippet}${rbuffer} `,
-      cursor: (lbuffer.length + cursor),
+      cursor: lbuffer.length + cursor,
     } as const;
   }
 
