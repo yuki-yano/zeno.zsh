@@ -381,7 +381,7 @@ export default defineConfig(
             }
             return selected.map((script) => `npm run ${script}`);
           },
-          callbackPreviewFunction: async ({ item, context }) => {
+          previewFunction: async ({ item, context }) => {
             try {
               const pkgPath = join(context.projectRoot, "package.json");
               const pkg = JSON.parse(

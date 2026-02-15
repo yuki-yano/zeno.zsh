@@ -31,7 +31,7 @@ export type CompletionCallbackFunction = (params: {
   | ReadonlyArray<string>
   | Promise<ReadonlyArray<string>>;
 
-export type CompletionCallbackPreviewFunction = (params: {
+export type CompletionPreviewFunction = (params: {
   item: string;
   context: ConfigContext;
   lbuffer: string;
@@ -58,7 +58,7 @@ type CompletionSourceBase =
     patterns: readonly RegExp[];
     excludePatterns?: readonly RegExp[];
     options: FzfOptions;
-    callbackPreviewFunction?: CompletionCallbackPreviewFunction;
+    previewFunction?: CompletionPreviewFunction;
   }>
   & CompletionCallbackSpec;
 
@@ -112,13 +112,22 @@ export const hasCallbackFunction = (
   typeof (source as Partial<FunctionCallbackSpec>).callbackFunction ===
     "function";
 
-export const hasCallbackPreviewFunction = (
+export const getPreviewFunction = (
+  source: CompletionSource | ResolvedCompletionSource,
+): CompletionPreviewFunction | undefined => {
+  const previewSource = source as Partial<{
+    previewFunction?: CompletionPreviewFunction;
+  }>;
+  if (typeof previewSource.previewFunction === "function") {
+    return previewSource.previewFunction;
+  }
+  return undefined;
+};
+
+export const hasPreviewFunction = (
   source: CompletionSource | ResolvedCompletionSource,
 ): source is
   & (CompletionSource | ResolvedCompletionSource)
   & Readonly<{
-    callbackPreviewFunction: CompletionCallbackPreviewFunction;
-  }> =>
-  typeof (source as Partial<{
-    callbackPreviewFunction?: CompletionCallbackPreviewFunction;
-  }>).callbackPreviewFunction === "function";
+    previewFunction: CompletionPreviewFunction;
+  }> => typeof getPreviewFunction(source) === "function";

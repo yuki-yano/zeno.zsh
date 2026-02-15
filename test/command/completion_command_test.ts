@@ -290,14 +290,14 @@ describe("completionCommand with sourceFunction", () => {
     assertEquals(output[6], "u0001");
   });
 
-  it("embeds completion-preview command when callbackPreviewFunction is configured", async () => {
+  it("embeds completion-preview command when previewFunction is configured", async () => {
     setSettings(withHistoryDefaults({
       snippets: [],
       completions: [{
         name: "preview-function",
         patterns: ["^pv"],
         sourceCommand: "printf '%s\\n' value",
-        callbackPreviewFunction: ({ item }) => item,
+        previewFunction: ({ item }) => item,
       }],
     }));
 
@@ -351,7 +351,7 @@ describe("completionCommand with sourceFunction", () => {
         name: "preview-function-multiline",
         patterns: [".*"],
         sourceCommand: "printf '%s\\n' value",
-        callbackPreviewFunction: ({ item }) => item,
+        previewFunction: ({ item }) => item,
       }],
     }));
 

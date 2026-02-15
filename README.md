@@ -360,9 +360,9 @@ For post-filtering selected values, TypeScript configs can use
 - `callback`/`callbackZero` and `callbackFunction` are mutually exclusive
 - `callbackFunction` receives `{ selected, context, lbuffer, rbuffer, expectKey }`
 - `callbackFunction` must return `ReadonlyArray<string>` (or `Promise` of it)
-- `callbackPreviewFunction` receives `{ item, context, lbuffer, rbuffer }`
-- `callbackPreviewFunction` must return preview text as `string` (or `Promise` of it)
-- If `callbackPreviewFunction` is set, it overrides `options["--preview"]`
+- `previewFunction` receives `{ item, context, lbuffer, rbuffer }`
+- `previewFunction` must return preview text as `string` (or `Promise` of it)
+- `previewFunction` and static preview options (`preview` / `options["--preview"]`) are mutually exclusive
 
 ### Example (TypeScript)
 
@@ -452,7 +452,7 @@ export default defineConfig(({ projectRoot, currentDirectory }) => ({
         }
         return selected;
       },
-      callbackPreviewFunction: async ({ item, context }) => {
+      previewFunction: async ({ item, context }) => {
         try {
           const pkgPath = join(context.projectRoot, "package.json");
           const pkg = JSON.parse(

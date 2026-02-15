@@ -38,7 +38,7 @@ export type {
 
 export type {
   CompletionCallbackFunction,
-  CompletionCallbackPreviewFunction,
+  CompletionPreviewFunction,
   CompletionSourceFunction,
 } from "./type/fzf.ts";
 

@@ -19,8 +19,8 @@ import {
 import type { WriteFunction } from "../../app-helpers.ts";
 import { getConfigContext, getSettings } from "../../config/index.ts";
 import {
+  getPreviewFunction,
   hasCallbackFunction,
-  hasCallbackPreviewFunction,
   isFunctionCompletionSource,
   type ResolvedCompletionFunctionSource,
   type ResolvedCompletionSource,
@@ -269,13 +269,14 @@ export const completionPreviewCommand = createCommand(
 
     const sources = await getCompletionSources();
     const source = sources.find((candidate) => candidate.id === sourceId);
-    if (!source || !hasCallbackPreviewFunction(source)) {
+    const previewFunction = source ? getPreviewFunction(source) : undefined;
+    if (!source || !previewFunction) {
       return;
     }
 
     try {
       const context = await getConfigContext();
-      const previewResult = await source.callbackPreviewFunction({
+      const previewResult = await previewFunction({
         item,
         context,
         lbuffer,
@@ -364,11 +365,11 @@ const resolveCompletionOptions = (
   source: ResolvedCompletionSource,
   input: Input,
 ) => {
-  if (!hasCallbackPreviewFunction(source)) {
+  if (!getPreviewFunction(source)) {
     return source.options;
   }
 
-  // callbackPreviewFunction has precedence over a static --preview.
+  // previewFunction is compiled into a dynamic --preview command.
   // fzfOptionsToString wraps preview values in double quotes, so escape the
   // generated command for safe embedding in that context.
   return {

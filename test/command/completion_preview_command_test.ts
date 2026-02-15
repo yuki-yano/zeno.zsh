@@ -29,7 +29,7 @@ describe("completionPreviewCommand", () => {
     helper.restoreAll();
   });
 
-  it("executes callbackPreviewFunction and writes returned preview text", async () => {
+  it("executes previewFunction and writes returned preview text", async () => {
     const calls: Array<{
       item: string;
       lbuffer: string;
@@ -42,7 +42,7 @@ describe("completionPreviewCommand", () => {
         name: "preview",
         patterns: ["^cbp"],
         sourceCommand: "printf ''",
-        callbackPreviewFunction: ({ item, lbuffer, rbuffer }) => {
+        previewFunction: ({ item, lbuffer, rbuffer }) => {
           calls.push({ item, lbuffer, rbuffer });
           return `preview:${item}:${lbuffer}:${rbuffer}`;
         },
@@ -71,14 +71,14 @@ describe("completionPreviewCommand", () => {
     });
   });
 
-  it("supports async callbackPreviewFunction", async () => {
+  it("supports async previewFunction", async () => {
     setSettings(withHistoryDefaults({
       snippets: [],
       completions: [{
         name: "preview",
         patterns: ["^async"],
         sourceCommand: "printf ''",
-        callbackPreviewFunction: ({ item }) => Promise.resolve(`async:${item}`),
+        previewFunction: ({ item }) => Promise.resolve(`async:${item}`),
       }],
     }));
 
@@ -105,7 +105,7 @@ describe("completionPreviewCommand", () => {
         name: "preview",
         patterns: ["^b64"],
         sourceCommand: "printf ''",
-        callbackPreviewFunction: ({ lbuffer, rbuffer }) => {
+        previewFunction: ({ lbuffer, rbuffer }) => {
           calls.push({ lbuffer, rbuffer });
           return `${lbuffer}|${rbuffer}`;
         },
@@ -132,7 +132,7 @@ describe("completionPreviewCommand", () => {
     assertEquals(output.join(""), `${lbuffer}|${rbuffer}`);
   });
 
-  it("does nothing when source has no callbackPreviewFunction", async () => {
+  it("does nothing when source has no previewFunction", async () => {
     setSettings(withHistoryDefaults({
       snippets: [],
       completions: [{
@@ -163,7 +163,7 @@ describe("completionPreviewCommand", () => {
         name: "preview",
         patterns: ["^invalid"],
         sourceCommand: "printf ''",
-        callbackPreviewFunction: ({ item }) => item,
+        previewFunction: ({ item }) => item,
       }],
     }));
 
@@ -181,14 +181,14 @@ describe("completionPreviewCommand", () => {
     assertEquals(output, []);
   });
 
-  it("does nothing when callbackPreviewFunction returns non-string", async () => {
+  it("does nothing when previewFunction returns non-string", async () => {
     setSettings(withHistoryDefaults({
       snippets: [],
       completions: [{
         name: "invalid-preview",
         patterns: ["^invalid-preview"],
         sourceCommand: "printf ''",
-        callbackPreviewFunction: () => 1 as unknown as string,
+        previewFunction: () => 1 as unknown as string,
       }],
     }));
 
