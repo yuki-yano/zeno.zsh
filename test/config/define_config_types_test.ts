@@ -30,9 +30,12 @@ describe("defineConfig type definitions", () => {
   });
 
   it("preserves async config return type", () => {
-    const config = defineConfig(async (_context: ConfigContext) => ({
-      snippets: [] as const,
-    }));
+    const config = defineConfig(async (_context: ConfigContext) => {
+      await Promise.resolve();
+      return {
+        snippets: [] as const,
+      };
+    });
 
     const assign: (
       _context: ConfigContext,
