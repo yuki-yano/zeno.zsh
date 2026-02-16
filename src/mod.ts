@@ -45,7 +45,9 @@ export type {
 export type {
   ConfigContext,
   ConfigFunction,
+  ConfigHistoryInput,
   ConfigModule,
+  ConfigSettingsInput,
 } from "./type/config.ts";
 
 export {
@@ -103,7 +105,7 @@ export const CONFIG_FUNCTION_MARK = Symbol.for(
  * });
  * ```
  */
-export const defineConfig = (configFn: ConfigFunction): ConfigFunction => {
+export const defineConfig = <T extends ConfigFunction>(configFn: T): T => {
   if (
     Object.getOwnPropertyDescriptor(configFn, CONFIG_FUNCTION_MARK) == null
   ) {
