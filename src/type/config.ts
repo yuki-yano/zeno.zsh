@@ -1,14 +1,39 @@
 import type { ConfigContext } from "./context.ts";
-import type { Settings } from "./settings.ts";
+import type {
+  HistoryKeymapSettings,
+  HistorySettings,
+  Snippet,
+  UserCompletionSource,
+} from "./settings.ts";
 
 export type { ConfigContext } from "./context.ts";
 
 /**
- * Configuration function that returns Settings based on context
+ * Partial history configuration accepted from TypeScript config files.
+ */
+export type ConfigHistoryInput = Readonly<{
+  defaultScope?: HistorySettings["defaultScope"];
+  redact?: HistorySettings["redact"];
+  keymap?: Readonly<Partial<HistoryKeymapSettings>>;
+  fzfCommand?: HistorySettings["fzfCommand"];
+  fzfOptions?: HistorySettings["fzfOptions"];
+}>;
+
+/**
+ * Partial settings accepted from TypeScript config files.
+ */
+export type ConfigSettingsInput = Readonly<{
+  snippets?: readonly Snippet[];
+  completions?: readonly UserCompletionSource[];
+  history?: ConfigHistoryInput;
+}>;
+
+/**
+ * Configuration function that returns partial settings based on context.
  */
 export type ConfigFunction = (
   context: ConfigContext,
-) => Partial<Settings> | Promise<Partial<Settings>>;
+) => ConfigSettingsInput | Promise<ConfigSettingsInput>;
 
 /**
  * Configuration module that exports a config function
@@ -16,5 +41,3 @@ export type ConfigFunction = (
 export type ConfigModule = {
   default: ConfigFunction;
 };
-
-// Re-export Settings for convenience
