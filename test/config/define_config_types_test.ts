@@ -28,4 +28,15 @@ describe("defineConfig type definitions", () => {
       config;
     void assign;
   });
+
+  it("preserves async config return type", () => {
+    const config = defineConfig(async (_context: ConfigContext) => ({
+      snippets: [] as const,
+    }));
+
+    const assign: (
+      _context: ConfigContext,
+    ) => Promise<{ snippets: readonly [] }> = config;
+    void assign;
+  });
 });
