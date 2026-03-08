@@ -7,11 +7,43 @@ export ZENO_PID=
 export ZENO_SOCK_DIR
 export ZENO_SOCK
 
+function zeno-read-client-response() {
+  emulate -L zsh
+
+  local fd="$1"
+  local timeout_seconds="${ZENO_CLIENT_TIMEOUT_SECONDS:-0.3}"
+  local response="" chunk=""
+  local -i read_status
+
+  while true; do
+    chunk=""
+    sysread -i "$fd" -s 4096 -t "$timeout_seconds" chunk
+    read_status=$?
+
+    case "$read_status" in
+      0)
+        response+="$chunk"
+        ;;
+      5)
+        print -rn -- "$response"
+        return 0
+        ;;
+      4)
+        return 124
+        ;;
+      *)
+        return 1
+        ;;
+    esac
+  done
+}
+
 function zeno-client() {
   local REPLY
   local -i isok fd
   local -a args
   zmodload zsh/net/socket
+  zmodload zsh/system
   zsocket ${ZENO_SOCK} >/dev/null 2>&1
   isok=$?
   (( isok == 0 )) || return 1
@@ -21,10 +53,26 @@ function zeno-client() {
   args=( "${(@)args//$'\n'/\\n}" ) # escape new-line
   args=( "${(@)args//\"/\\\"}" )   # escape quote
   args=( "\"${(@)^args}\"" )       # quote
-  printf '{"args":[%s]}' "${(j:,:)args}" >&$fd
+  printf '{"args":[%s]}' "${(j:,:)args}" >&$fd || {
+    exec {fd}>&-
+    return 1
+  }
   # receive result
-  cat <&$fd
+  zeno-read-client-response "$fd" || {
+    local -i client_status=$?
+    exec {fd}>&-
+    return "$client_status"
+  }
   exec {fd}>&-
+}
+
+function zeno-reset-socket-state() {
+  if [[ -n $ZENO_PID ]]; then
+    kill "$ZENO_PID" >/dev/null 2>&1
+  fi
+
+  ZENO_PID=
+  rm -f "$ZENO_SOCK"
 }
 
 function zeno-start-server() {

@@ -3,9 +3,16 @@
 if [[ -z $ZENO_DISABLE_SOCK ]]; then
   (( $+functions[zeno-client] )) || zeno-enable-sock
   if [[ -S $ZENO_SOCK ]]; then
-    zeno-client "$@"
-    return
+    if zeno-client "$@"; then
+      return 0
+    fi
+    zeno-reset-socket-state
   fi
-  zeno-start-server
+
+  if zeno-start-server && [[ -S $ZENO_SOCK ]] && zeno-client "$@"; then
+    return 0
+  fi
+
+  zeno-reset-socket-state
 fi
 zeno "$@"

@@ -3,6 +3,12 @@ import { path } from "../deps.ts";
 const TEST_DIR = path.dirname(path.fromFileUrl(import.meta.url));
 const REPO_ROOT = path.resolve(TEST_DIR, "..", "..");
 
+export const ZSH_FUNCTIONS_DIR = path.join(
+  REPO_ROOT,
+  "shells",
+  "zsh",
+  "functions",
+);
 export const ZSH_WIDGETS_DIR = path.join(REPO_ROOT, "shells", "zsh", "widgets");
 
 export const toHeredoc = (lines: readonly string[]): string =>

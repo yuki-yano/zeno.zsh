@@ -180,6 +180,10 @@ you access to the full `ConfigContext` for dynamic setups.
 # if disable it
 # export ZENO_DISABLE_SOCK=1
 
+# timeout for socket client reads in seconds (fractional values are allowed)
+# default: 0.3
+# export ZENO_CLIENT_TIMEOUT_SECONDS=0.3
+
 # if disable builtin completion
 # export ZENO_DISABLE_BUILTIN_COMPLETION=1
 
