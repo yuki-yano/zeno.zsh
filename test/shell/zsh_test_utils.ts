@@ -12,7 +12,10 @@ export const ZSH_FUNCTIONS_DIR = path.join(
 );
 export const ZSH_WIDGETS_DIR = path.join(REPO_ROOT, "shells", "zsh", "widgets");
 export const ZSH_ENTRYPOINT = path.join(REPO_ROOT, "zeno.zsh");
-export const ZSH_BOOTSTRAP_ENTRYPOINT = path.join(REPO_ROOT, "zeno-bootstrap.zsh");
+export const ZSH_BOOTSTRAP_ENTRYPOINT = path.join(
+  REPO_ROOT,
+  "zeno-bootstrap.zsh",
+);
 
 export const toHeredoc = (lines: readonly string[]): string =>
   lines.length === 0 ? "" : `${lines.join("\n")}\n`;
