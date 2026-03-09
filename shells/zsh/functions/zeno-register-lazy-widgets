@@ -1,0 +1,10 @@
+#autoload
+
+function zeno-register-lazy-widgets() {
+  emulate -L zsh
+
+  local widget_name
+  for widget_name in "$@"; do
+    zeno-register-lazy-widget "$widget_name" || return $?
+  done
+}

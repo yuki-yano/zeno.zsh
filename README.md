@@ -43,6 +43,32 @@ $ git clone https://github.com/yuki-yano/zeno.zsh.git
 $ echo "source /path/to/dir/zeno.zsh" >> ~/.zshrc
 ```
 
+`source /path/to/dir/zeno.zsh` remains the default installation method and
+still performs the full initialization eagerly, so existing users can update
+without changing their setup.
+
+### Lazy-load for Zsh
+
+If you want lazy-load, source `zeno-bootstrap.zsh` and use the upstream lazy key
+API:
+
+```zsh
+source /path/to/dir/zeno-bootstrap.zsh
+zeno-bind-default-keys --lazy
+zsh-defer zeno-preload
+```
+
+For a custom bind:
+
+```zsh
+source /path/to/dir/zeno-bootstrap.zsh
+zeno-register-lazy-widget zeno-completion
+bindkey '^i' zeno-completion
+```
+
+Details for state variables, public APIs, and fallback behavior are in
+[Lazy-load APIs for Zsh](#lazy-load-apis-for-zsh).
+
 ## Fish Shell Support (Experimental)
 
 Fish support is experimental. A quick overview is included here; full
@@ -203,6 +229,14 @@ export ZENO_GIT_CAT="cat"
 export ZENO_GIT_TREE="tree"
 # git folder preview with color
 # export ZENO_GIT_TREE="eza --tree"
+
+# upstream default key set
+# zeno-bind-default-keys
+
+# upstream lazy key set
+# source /path/to/dir/zeno-bootstrap.zsh
+# zeno-bind-default-keys --lazy
+# zsh-defer zeno-preload
 
 if [[ -n $ZENO_LOADED ]]; then
   bindkey ' '  zeno-auto-snippet
@@ -490,6 +524,52 @@ history:
     toggleScope: ctrl-r       # Cycle through scopes within the widget
     togglePreview: ?          # Toggle the preview window
 ```
+
+## Lazy-load APIs for Zsh
+
+Public state:
+
+- `ZENO_BOOTSTRAPPED=1`: bootstrap is complete and zeno functions / widgets are available
+- `ZENO_LOADED=1`: heavy init is complete and socket / history / preprompt are ready
+
+Bootstrap (`source zeno-bootstrap.zsh`):
+
+- sets `ZENO_ROOT`
+- appends `bin` / `fpath`
+- autoloads functions and widgets
+- registers ZLE widgets with their original names
+- sets `ZENO_BOOTSTRAPPED=1`
+
+Heavy init (`zeno-init` / `zeno-ensure-loaded`):
+
+- optional `deno cache`
+- socket setup (`zeno-enable-sock`)
+- history hooks (`zeno-history-hooks`)
+- preprompt hooks (`zeno-preprompt-hooks`)
+- sets `ZENO_LOADED=1`
+
+Public APIs:
+
+- `zeno-init`
+- `zeno-ensure-loaded`
+- `zeno-preload`
+- `zeno-register-lazy-widget <widget>`
+- `zeno-register-lazy-widgets <widget>...`
+- `zeno-bind-default-keys`
+- `zeno-bind-default-keys --lazy`
+
+Builtin lazy fallback behavior:
+
+- `zeno-completion` -> `ZENO_COMPLETION_FALLBACK`, otherwise `fzf-completion` or `expand-or-complete`
+- `zeno-auto-snippet` -> `ZENO_AUTO_SNIPPET_FALLBACK`, otherwise `self-insert`
+- `zeno-auto-snippet-and-accept-line` -> `accept-line`
+- `zeno-history-selection` -> `history-incremental-search-backward`
+- `zeno-smart-history-selection` -> `zeno-history-selection`, otherwise `history-incremental-search-backward`
+- `zeno-insert-space` -> literal space insertion
+
+This keeps widget names unchanged, so eager and lazy setups can both use
+`bindkey '^i' zeno-completion` and similar bindings without user-defined wrapper
+widgets.
 
 ## Fish usage
 

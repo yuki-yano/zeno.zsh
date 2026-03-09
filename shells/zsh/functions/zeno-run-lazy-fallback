@@ -1,0 +1,47 @@
+#autoload
+
+function zeno-run-lazy-fallback() {
+  emulate -L zsh
+
+  local widget_name="$1"
+  local fallback_widget
+
+  case "$widget_name" in
+    zeno-completion)
+      fallback_widget=${ZENO_COMPLETION_FALLBACK:-${${functions[fzf-completion]+fzf-completion}:-expand-or-complete}}
+      zle "$fallback_widget"
+      ;;
+    zeno-auto-snippet)
+      fallback_widget=${ZENO_AUTO_SNIPPET_FALLBACK:-self-insert}
+      zle "$fallback_widget"
+      ;;
+    zeno-auto-snippet-and-accept-line)
+      zle accept-line
+      ;;
+    zeno-history-selection)
+      zle history-incremental-search-backward
+      ;;
+    zeno-smart-history-selection)
+      if (( $+functions[zeno-history-selection] )); then
+        zeno-history-selection
+      else
+        zle history-incremental-search-backward
+      fi
+      ;;
+    zeno-insert-space)
+      LBUFFER+=" "
+      if [[ -n ${RBUFFER+x} ]]; then
+        BUFFER="${LBUFFER}${RBUFFER}"
+      fi
+      if (( $+CURSOR )); then
+        CURSOR=${#LBUFFER}
+      fi
+      ;;
+    zeno-insert-snippet|zeno-preprompt|zeno-preprompt-snippet|zeno-ghq-cd)
+      zle redisplay 2>/dev/null || true
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}

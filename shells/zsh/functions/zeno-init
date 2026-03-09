@@ -1,0 +1,38 @@
+#autoload
+
+function zeno-init() {
+  emulate -L zsh
+
+  if [[ ${ZENO_LOADED-} == 1 ]]; then
+    return 0
+  fi
+
+  if [[ -z ${ZENO_ROOT-} ]]; then
+    print -u2 -- "zeno-init: ZENO_ROOT is not set; source zeno-bootstrap.zsh first"
+    return 1
+  fi
+
+  if [[ -z ${ZENO_DISABLE_EXECUTE_CACHE_COMMAND-} ]]; then
+    command deno cache --node-modules-dir=auto --no-lock --no-check -- "${ZENO_ROOT}/src/cli.ts"
+  fi
+
+  if [[ -z ${ZENO_DISABLE_SOCK-} ]]; then
+    local deno_version
+    printf -v deno_version '%d%02d%02d' ${(s:.:)$(deno -V)[2]}
+    if (( deno_version >= 11600 )); then
+      zeno-enable-sock
+    else
+      export ZENO_DISABLE_SOCK=1
+    fi
+  fi
+
+  if (( $+functions[zeno-history-hooks] )); then
+    zeno-history-hooks
+  fi
+
+  if (( $+functions[zeno-preprompt-hooks] )); then
+    zeno-preprompt-hooks
+  fi
+
+  export ZENO_LOADED=1
+}
