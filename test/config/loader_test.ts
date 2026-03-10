@@ -49,6 +49,24 @@ Deno.test("getXdgConfigBaseDirs adds ~/.config when XDG_CONFIG_HOME is unset", (
   ]);
 });
 
+Deno.test(
+  "getXdgConfigBaseDirs treats whitespace-only XDG_CONFIG_HOME as unset",
+  () => {
+    const result = getXdgConfigBaseDirs({
+      xdgConfigHome: "   ",
+      xdgConfigDirs: ["/etc/xdg"],
+      fallbackConfigDirs: ["/Library/Preferences"],
+      homeDirectory: " /tmp/test-home ",
+    });
+
+    assertEquals(result, [
+      "/tmp/test-home/.config",
+      "/etc/xdg",
+      "/Library/Preferences",
+    ]);
+  },
+);
+
 Deno.test("getXdgConfigBaseDirs deduplicates overlapping config dirs", () => {
   const result = getXdgConfigBaseDirs({
     xdgConfigHome: "/tmp/test-home/.config",

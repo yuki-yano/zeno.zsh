@@ -135,9 +135,11 @@ describe("zsh initialization entrypoints", () => {
         "typeset -ga REGISTERED_WIDGETS",
         ...createSetupLines(),
         ...createPrintHelpers(),
+        'zeno-test-print-kv "ZERO_BEFORE" "$0"',
         `fpath=(${shellQuote(stubDir)} $fpath)`,
         "export ZENO_DISABLE_EXECUTE_CACHE_COMMAND=1",
         `source ${shellQuote(ZSH_ENTRYPOINT)}`,
+        'zeno-test-print-kv "ZERO_AFTER" "$0"',
         'zeno-test-print-kv "ZENO_ROOT" "${ZENO_ROOT-}"',
         'zeno-test-print-kv "ZENO_BOOTSTRAPPED" "${ZENO_BOOTSTRAPPED-}"',
         'zeno-test-print-kv "ZENO_ENABLE" "${ZENO_ENABLE-}"',
@@ -153,6 +155,7 @@ describe("zsh initialization entrypoints", () => {
       ].join("\n"));
 
       assertEquals(parsed.ZENO_ROOT, REPO_ROOT);
+      assertEquals(parsed.ZERO_AFTER, parsed.ZERO_BEFORE);
       assertEquals(parsed.ZENO_BOOTSTRAPPED, "1");
       assertEquals(parsed.ZENO_ENABLE, "1");
       assertEquals(parsed.ZENO_LOADED, "1");
@@ -260,7 +263,9 @@ describe("zsh initialization entrypoints", () => {
       return;
     }
 
-    const invalidRoot = await Deno.makeTempDir({ prefix: "zeno-invalid-root-" });
+    const invalidRoot = await Deno.makeTempDir({
+      prefix: "zeno-invalid-root-",
+    });
 
     try {
       const result = await runZshScriptRaw([
@@ -284,7 +289,9 @@ describe("zsh initialization entrypoints", () => {
         true,
       );
     } finally {
-      await Deno.remove(invalidRoot, { recursive: true }).catch(() => undefined);
+      await Deno.remove(invalidRoot, { recursive: true }).catch(() =>
+        undefined
+      );
     }
   });
 
@@ -328,6 +335,79 @@ describe("zsh initialization entrypoints", () => {
       assertEquals(parsed.HISTORY_HOOK_CALLS, "1");
       assertEquals(parsed.PREPROMPT_HOOK_CALLS, "1");
       assertEquals(parsed.WRAPPER_CALLS, "1");
+    } finally {
+      await Deno.remove(stubDir, { recursive: true }).catch(() => undefined);
+    }
+  });
+
+  it("zeno-init does not mark Zeno as loaded when a heavy init step fails", async () => {
+    if (!await hasZsh()) {
+      return;
+    }
+
+    const stubDir = await createStubAutoloadDir();
+
+    try {
+      const parsed = await runZshScript([
+        "emulate -L zsh",
+        "unsetopt err_return err_exit",
+        "typeset -ga REGISTERED_WIDGETS",
+        ...createSetupLines(),
+        ...createPrintHelpers(),
+        `fpath=(${shellQuote(stubDir)} $fpath)`,
+        "export ZENO_DISABLE_EXECUTE_CACHE_COMMAND=1",
+        "export ZENO_DISABLE_SOCK=1",
+        `source ${shellQuote(ZSH_BOOTSTRAP_ENTRYPOINT)}`,
+        "function zeno-history-hooks() {",
+        "  return 7",
+        "}",
+        "zeno-init >/dev/null 2>&1",
+        'zeno-test-print-kv "STATUS" "$?"',
+        'zeno-test-print-kv "LOADED" "${ZENO_LOADED-}"',
+        "",
+      ].join("\n"));
+
+      assertEquals(parsed.STATUS, "7");
+      assertEquals(parsed.LOADED, "");
+    } finally {
+      await Deno.remove(stubDir, { recursive: true }).catch(() => undefined);
+    }
+  });
+
+  it("zeno-init accepts pre-release Deno versions when enabling the socket", async () => {
+    if (!await hasZsh()) {
+      return;
+    }
+
+    const stubDir = await createStubAutoloadDir();
+
+    try {
+      const parsed = await runZshScript([
+        "emulate -L zsh",
+        "unsetopt err_return err_exit",
+        "typeset -ga REGISTERED_WIDGETS",
+        ...createSetupLines(),
+        ...createPrintHelpers(),
+        `fpath=(${shellQuote(stubDir)} $fpath)`,
+        "export ZENO_DISABLE_EXECUTE_CACHE_COMMAND=1",
+        `source ${shellQuote(ZSH_BOOTSTRAP_ENTRYPOINT)}`,
+        "function deno() {",
+        '  if [[ "$1" == "-V" ]]; then',
+        "    print -- 'deno 1.16.0-alpha'",
+        "    return 0",
+        "  fi",
+        "  return 1",
+        "}",
+        "zeno-init >/dev/null 2>&1",
+        'zeno-test-print-kv "STATUS" "$?"',
+        'zeno-test-print-kv "LOADED" "${ZENO_LOADED-}"',
+        'zeno-test-print-kv "SOCK_CALLS" "${ZENO_TEST_SOCK_CALLS:-0}"',
+        "",
+      ].join("\n"));
+
+      assertEquals(parsed.STATUS, "0");
+      assertEquals(parsed.LOADED, "1");
+      assertEquals(parsed.SOCK_CALLS, "1");
     } finally {
       await Deno.remove(stubDir, { recursive: true }).catch(() => undefined);
     }

@@ -163,6 +163,70 @@ describe("zsh lazy public api", () => {
     assertEquals(parsed.SPACE_CURSOR, "1");
   });
 
+  it("lazy completion fallback ignores plain functions that are not registered widgets", async () => {
+    if (!await hasZsh()) {
+      return;
+    }
+
+    const parsed = await runZshScript([
+      "emulate -L zsh",
+      "unsetopt err_return err_exit",
+      ...createSetupLines(),
+      ...createPrintHelpers(),
+      "typeset -gi ZENO_TEST_FZF_COMPLETION_CALLS=0",
+      "typeset -gi ZENO_TEST_EXPAND_OR_COMPLETE_CALLS=0",
+      `source ${shellQuote(ZSH_BOOTSTRAP_ENTRYPOINT)}`,
+      "function fzf-completion() {",
+      "  ZENO_TEST_FZF_COMPLETION_CALLS=$(( ZENO_TEST_FZF_COMPLETION_CALLS + 1 ))",
+      "}",
+      "function expand-or-complete() {",
+      "  ZENO_TEST_EXPAND_OR_COMPLETE_CALLS=$(( ZENO_TEST_EXPAND_OR_COMPLETE_CALLS + 1 ))",
+      "}",
+      "zeno-run-lazy-fallback zeno-completion",
+      'zeno-test-print-kv "FZF_COMPLETION_CALLS" "${ZENO_TEST_FZF_COMPLETION_CALLS}"',
+      'zeno-test-print-kv "EXPAND_OR_COMPLETE_CALLS" "${ZENO_TEST_EXPAND_OR_COMPLETE_CALLS}"',
+      'zeno-test-print-kv "LAST_ZLE_CALL" "${ZENO_TEST_ZLE_LOG[-1]-}"',
+      "",
+    ].join("\n"));
+
+    assertEquals(parsed.FZF_COMPLETION_CALLS, "0");
+    assertEquals(parsed.EXPAND_OR_COMPLETE_CALLS, "1");
+    assertEquals(parsed.LAST_ZLE_CALL, "expand-or-complete");
+  });
+
+  it("smart history fallback invokes the history widget through zle", async () => {
+    if (!await hasZsh()) {
+      return;
+    }
+
+    const parsed = await runZshScript([
+      "emulate -L zsh",
+      "unsetopt err_return err_exit",
+      ...createSetupLines(),
+      ...createPrintHelpers(),
+      "typeset -gi ZENO_TEST_WIDGET_CALLS=0",
+      "typeset -gi ZENO_TEST_DIRECT_CALLS=0",
+      `source ${shellQuote(ZSH_BOOTSTRAP_ENTRYPOINT)}`,
+      "function zeno-history-selection() {",
+      "  if [[ ${WIDGET-} == zeno-history-selection ]]; then",
+      "    ZENO_TEST_WIDGET_CALLS=$(( ZENO_TEST_WIDGET_CALLS + 1 ))",
+      "  else",
+      "    ZENO_TEST_DIRECT_CALLS=$(( ZENO_TEST_DIRECT_CALLS + 1 ))",
+      "  fi",
+      "}",
+      "zle -N zeno-history-selection",
+      "zeno-run-lazy-fallback zeno-smart-history-selection",
+      'zeno-test-print-kv "WIDGET_CALLS" "${ZENO_TEST_WIDGET_CALLS}"',
+      'zeno-test-print-kv "DIRECT_CALLS" "${ZENO_TEST_DIRECT_CALLS}"',
+      'zeno-test-print-kv "LAST_ZLE_CALL" "${ZENO_TEST_ZLE_LOG[-1]-}"',
+      "",
+    ].join("\n"));
+
+    assertEquals(parsed.WIDGET_CALLS, "1");
+    assertEquals(parsed.DIRECT_CALLS, "0");
+    assertEquals(parsed.LAST_ZLE_CALL, "zeno-history-selection");
+  });
+
   it("zeno-bind-default-keys supports lazy mode without user-defined wrappers", async () => {
     if (!await hasZsh()) {
       return;
@@ -198,6 +262,30 @@ describe("zsh lazy public api", () => {
     assertEquals(parsed.BIND_SPACE, "  zeno-auto-snippet");
     assertEquals(parsed.BIND_TAB, "^i zeno-completion");
     assertEquals(parsed.BIND_HISTORY, "^r zeno-history-selection");
+  });
+
+  it("zeno-bind-default-keys returns early when lazy widget registration fails", async () => {
+    if (!await hasZsh()) {
+      return;
+    }
+
+    const parsed = await runZshScript([
+      "emulate -L zsh",
+      "unsetopt err_return err_exit",
+      ...createSetupLines(),
+      ...createPrintHelpers(),
+      `source ${shellQuote(ZSH_BOOTSTRAP_ENTRYPOINT)}`,
+      "function zeno-register-lazy-widgets() {",
+      "  return 23",
+      "}",
+      "zeno-bind-default-keys --lazy >/dev/null 2>&1",
+      'zeno-test-print-kv "STATUS" "$?"',
+      'zeno-test-print-kv "BIND_COUNT" "${#ZENO_TEST_BINDKEY_LOG[@]}"',
+      "",
+    ].join("\n"));
+
+    assertEquals(parsed.STATUS, "23");
+    assertEquals(parsed.BIND_COUNT, "0");
   });
 
   it("zeno-preload is a public preload alias for ensure-loaded", async () => {
@@ -252,5 +340,36 @@ describe("zsh lazy public api", () => {
     assertEquals(parsed.ENSURE_CALLS, "1");
     assertEquals(parsed.LOADED, "1");
     assertEquals(parsed.BIND_TAB, "^i zeno-completion");
+  });
+
+  it("zeno-bind-default-keys returns early when eager widget registration fails", async () => {
+    if (!await hasZsh()) {
+      return;
+    }
+
+    const parsed = await runZshScript([
+      "emulate -L zsh",
+      "unsetopt err_return err_exit",
+      ...createSetupLines(),
+      ...createPrintHelpers(),
+      `source ${shellQuote(ZSH_BOOTSTRAP_ENTRYPOINT)}`,
+      "function zeno-ensure-loaded() {",
+      "  return 0",
+      "}",
+      "function zle() {",
+      '  if [[ "$1" == "-N" ]]; then',
+      "    return 17",
+      "  fi",
+      '  ZENO_TEST_ZLE_LOG+=("$1")',
+      "  return 0",
+      "}",
+      "zeno-bind-default-keys >/dev/null 2>&1",
+      'zeno-test-print-kv "STATUS" "$?"',
+      'zeno-test-print-kv "BIND_COUNT" "${#ZENO_TEST_BINDKEY_LOG[@]}"',
+      "",
+    ].join("\n"));
+
+    assertEquals(parsed.STATUS, "17");
+    assertEquals(parsed.BIND_COUNT, "0");
   });
 });

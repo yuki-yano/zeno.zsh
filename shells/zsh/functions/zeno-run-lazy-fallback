@@ -8,7 +8,7 @@ function zeno-run-lazy-fallback() {
 
   case "$widget_name" in
     zeno-completion)
-      fallback_widget=${ZENO_COMPLETION_FALLBACK:-${${functions[fzf-completion]+fzf-completion}:-expand-or-complete}}
+      fallback_widget=${ZENO_COMPLETION_FALLBACK:-${${widgets[fzf-completion]+fzf-completion}:-expand-or-complete}}
       zle "$fallback_widget"
       ;;
     zeno-auto-snippet)
@@ -22,8 +22,8 @@ function zeno-run-lazy-fallback() {
       zle history-incremental-search-backward
       ;;
     zeno-smart-history-selection)
-      if (( $+functions[zeno-history-selection] )); then
-        zeno-history-selection
+      if (( $+widgets[zeno-history-selection] || $+functions[zeno-history-selection] )); then
+        zle zeno-history-selection
       else
         zle history-incremental-search-backward
       fi

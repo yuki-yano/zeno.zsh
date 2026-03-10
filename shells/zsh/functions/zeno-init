@@ -13,25 +13,35 @@ function zeno-init() {
   fi
 
   if [[ -z ${ZENO_DISABLE_EXECUTE_CACHE_COMMAND-} ]]; then
-    command deno cache --node-modules-dir=auto --no-lock --no-check -- "${ZENO_ROOT}/src/cli.ts"
+    command deno cache --node-modules-dir=auto --no-lock --no-check -- "${ZENO_ROOT}/src/cli.ts" ||
+      return $?
   fi
 
   if [[ -z ${ZENO_DISABLE_SOCK-} ]]; then
-    local deno_version
-    printf -v deno_version '%d%02d%02d' ${(s:.:)$(deno -V)[2]}
+    local raw_deno_version deno_version
+    local -a v_parts
+    raw_deno_version=$(deno -V 2>/dev/null)
+    v_parts=(${(s:.:)${${(z)raw_deno_version}[2]-0.0.0}})
+    v_parts[1]=${v_parts[1]//[^0-9]/}
+    v_parts[2]=${v_parts[2]//[^0-9]/}
+    v_parts[3]=${${v_parts[3]-0}%%[^0-9]*}
+    printf -v deno_version '%d%02d%02d' \
+      ${v_parts[1]:-0} \
+      ${v_parts[2]:-0} \
+      ${v_parts[3]:-0}
     if (( deno_version >= 11600 )); then
-      zeno-enable-sock
+      zeno-enable-sock || return $?
     else
       export ZENO_DISABLE_SOCK=1
     fi
   fi
 
   if (( $+functions[zeno-history-hooks] )); then
-    zeno-history-hooks
+    zeno-history-hooks || return $?
   fi
 
   if (( $+functions[zeno-preprompt-hooks] )); then
-    zeno-preprompt-hooks
+    zeno-preprompt-hooks || return $?
   fi
 
   export ZENO_LOADED=1

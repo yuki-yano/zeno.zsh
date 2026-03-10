@@ -138,4 +138,59 @@ describe("zsh completion widget basic behavior", () => {
     assertEquals(result.buffer, "echo [fallback]");
     assertEquals(result.lastZleCall, "test-completion-fallback");
   });
+
+  it("falls back to expand-or-complete when fzf-completion is only a function", async () => {
+    if (!await hasZsh()) {
+      return;
+    }
+
+    const tempDir = await Deno.makeTempDir({
+      prefix: "zeno-zsh-completion-basic-fallback-",
+    });
+
+    try {
+      const script = [
+        "emulate -L zsh",
+        "LAST_ZLE_CALL=''",
+        "function zle() {",
+        '  if [[ "$1" == "-N" ]]; then',
+        "    return 0",
+        "  fi",
+        '  LAST_ZLE_CALL="$1"',
+        "}",
+        "function fzf-completion() { return 0 }",
+        "function expand-or-complete() { return 0 }",
+        "function zeno-call-client-and-fallback() {",
+        "  print failure",
+        "}",
+        `fpath=(${shellQuote(ZSH_WIDGETS_DIR)} $fpath)`,
+        "autoload -Uz zeno-completion",
+        "unset ZENO_COMPLETION_FALLBACK",
+        "LBUFFER='echo '",
+        "BUFFER='echo '",
+        "RBUFFER=''",
+        "zeno-completion",
+        'print -r -- "$LAST_ZLE_CALL"',
+        "",
+      ].join("\n");
+
+      const result = await new Deno.Command("zsh", {
+        args: ["-lc", script],
+        stdin: "null",
+        stdout: "piped",
+        stderr: "piped",
+      }).output();
+
+      if (!result.success) {
+        const stderr = new TextDecoder().decode(result.stderr).trimEnd();
+        throw new Error(`zsh completion scenario failed: ${stderr}`);
+      }
+
+      const stdout = new TextDecoder().decode(result.stdout).trimEnd();
+      const lines = stdout.split("\n");
+      assertEquals(lines[lines.length - 1], "expand-or-complete");
+    } finally {
+      await Deno.remove(tempDir, { recursive: true }).catch(() => undefined);
+    }
+  });
 });

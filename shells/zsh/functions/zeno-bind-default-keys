@@ -29,12 +29,12 @@ function zeno-bind-default-keys() {
   )
 
   if (( lazy )); then
-    zeno-register-lazy-widgets "${(@)lazy_widgets}"
+    zeno-register-lazy-widgets "${(@)lazy_widgets}" || return $?
   else
     zeno-ensure-loaded || return $?
     local widget_name
     for widget_name in "${(@)lazy_widgets}"; do
-      zle -N -- "$widget_name"
+      zle -N -- "$widget_name" || return $?
     done
   fi
 

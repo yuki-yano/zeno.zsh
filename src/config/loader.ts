@@ -56,11 +56,14 @@ export const getXdgConfigBaseDirs = (params?: {
 }): readonly string[] => {
   const dirs: string[] = [];
   const seen = new Set<string>();
-  const xdgConfigHome = params?.xdgConfigHome ?? Deno.env.get("XDG_CONFIG_HOME");
-  const homeDirectory = params?.homeDirectory ?? Deno.env.get("HOME");
+  const xdgConfigHome =
+    (params?.xdgConfigHome ?? Deno.env.get("XDG_CONFIG_HOME"))?.trim() ||
+    undefined;
+  const homeDirectory =
+    (params?.homeDirectory ?? Deno.env.get("HOME"))?.trim() || undefined;
   const fallbackConfigHome = xdgConfigHome
     ? undefined
-    : homeDirectory?.trim()
+    : homeDirectory
     ? path.join(homeDirectory.trim(), ".config")
     : undefined;
 
