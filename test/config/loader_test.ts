@@ -81,3 +81,21 @@ Deno.test("getXdgConfigBaseDirs deduplicates overlapping config dirs", () => {
     "/Library/Preferences",
   ]);
 });
+
+Deno.test(
+  "getXdgConfigBaseDirs deduplicates paths that differ only by trailing separators",
+  () => {
+    const result = getXdgConfigBaseDirs({
+      xdgConfigHome: "/tmp/test-home/.config/",
+      xdgConfigDirs: ["/etc/xdg/", "/etc/xdg"],
+      fallbackConfigDirs: ["/Library/Preferences/", "/Library/Preferences"],
+      homeDirectory: "/tmp/test-home",
+    });
+
+    assertEquals(result, [
+      "/tmp/test-home/.config",
+      "/etc/xdg",
+      "/Library/Preferences",
+    ]);
+  },
+);

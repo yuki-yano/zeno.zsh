@@ -40,7 +40,20 @@ const appendUniqueDir = (
   seen: Set<string>,
   dir: string | undefined,
 ): void => {
-  const normalized = dir?.trim();
+  const trimmed = dir?.trim();
+  if (!trimmed) {
+    return;
+  }
+
+  let normalized = path.normalize(trimmed);
+  const { root } = path.parse(normalized);
+  while (
+    normalized.length > root.length &&
+    /[\\/]/.test(normalized[normalized.length - 1] ?? "")
+  ) {
+    normalized = normalized.slice(0, -1);
+  }
+
   if (!normalized || seen.has(normalized)) {
     return;
   }
