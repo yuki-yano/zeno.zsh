@@ -26,6 +26,16 @@ const runZshScript = async (
   return parseNullSeparatedPairs(result.stdout);
 };
 
+const runZshScriptRaw = async (
+  script: string,
+): Promise<Deno.CommandOutput> =>
+  await new Deno.Command("zsh", {
+    args: ["-dfc", script],
+    stdin: "null",
+    stdout: "piped",
+    stderr: "piped",
+  }).output();
+
 const createStubAutoloadDir = async (): Promise<string> => {
   const dir = await Deno.makeTempDir({ prefix: "zeno-zsh-init-stubs-" });
   const stubs = [
@@ -201,6 +211,80 @@ describe("zsh initialization entrypoints", () => {
       assertEquals(parsed.AFTER_PREPROMPT_HOOK_CALLS, "1");
     } finally {
       await Deno.remove(stubDir, { recursive: true }).catch(() => undefined);
+    }
+  });
+
+  it("source zeno-bootstrap.zsh from a wrapper keeps ZENO_ROOT anchored to the bootstrap file", async () => {
+    if (!await hasZsh()) {
+      return;
+    }
+
+    const stubDir = await createStubAutoloadDir();
+    const wrapperPath = await Deno.makeTempFile({
+      prefix: "zeno-bootstrap-wrapper-",
+      suffix: ".zsh",
+    });
+
+    try {
+      await Deno.writeTextFile(
+        wrapperPath,
+        `source ${shellQuote(ZSH_BOOTSTRAP_ENTRYPOINT)}\n`,
+      );
+
+      const parsed = await runZshScript([
+        "emulate -L zsh",
+        "unsetopt err_return err_exit",
+        "typeset -ga REGISTERED_WIDGETS",
+        ...createSetupLines(),
+        ...createPrintHelpers(),
+        `fpath=(${shellQuote(stubDir)} $fpath)`,
+        "export ZENO_DISABLE_EXECUTE_CACHE_COMMAND=1",
+        `source ${shellQuote(wrapperPath)}`,
+        'zeno-test-print-kv "ZENO_ROOT" "${ZENO_ROOT-}"',
+        'zeno-test-print-kv "HAS_FUNCTIONS_FPATH" "$(( ${fpath[(I)$ZENO_ROOT/shells/zsh/functions]} > 0 ? 1 : 0 ))"',
+        'zeno-test-print-kv "HAS_WIDGETS_FPATH" "$(( ${fpath[(I)$ZENO_ROOT/shells/zsh/widgets]} > 0 ? 1 : 0 ))"',
+        "",
+      ].join("\n"));
+
+      assertEquals(parsed.ZENO_ROOT, REPO_ROOT);
+      assertEquals(parsed.HAS_FUNCTIONS_FPATH, "1");
+      assertEquals(parsed.HAS_WIDGETS_FPATH, "1");
+    } finally {
+      await Deno.remove(wrapperPath).catch(() => undefined);
+      await Deno.remove(stubDir, { recursive: true }).catch(() => undefined);
+    }
+  });
+
+  it("source zeno-bootstrap.zsh fails fast when ZENO_ROOT does not contain zsh assets", async () => {
+    if (!await hasZsh()) {
+      return;
+    }
+
+    const invalidRoot = await Deno.makeTempDir({ prefix: "zeno-invalid-root-" });
+
+    try {
+      const result = await runZshScriptRaw([
+        "emulate -L zsh",
+        "unsetopt err_return err_exit",
+        "unset ZENO_ENABLE ZENO_LOADED ZENO_BOOTSTRAPPED ZENO_FZF_COMMAND ZENO_DISABLE_SOCK",
+        `export ZENO_ROOT=${shellQuote(invalidRoot)}`,
+        `source ${shellQuote(ZSH_BOOTSTRAP_ENTRYPOINT)}`,
+        "",
+      ].join("\n"));
+
+      const stderr = new TextDecoder().decode(result.stderr);
+
+      assertEquals(result.success, false);
+      assertEquals(
+        stderr.includes("zeno-bootstrap.zsh: missing required directory:"),
+        true,
+      );
+      assertEquals(
+        stderr.includes(`${invalidRoot}/shells/zsh/functions`),
+        true,
+      );
+    } finally {
+      await Deno.remove(invalidRoot, { recursive: true }).catch(() => undefined);
     }
   });
 

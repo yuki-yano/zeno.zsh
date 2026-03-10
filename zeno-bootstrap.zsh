@@ -5,11 +5,23 @@ fi
 () {
   emulate -L zsh
 
-  local zeno_source=${${(%):-%N}:A}
-  local -a widget_dirs autoload_dirs
+  local zeno_source=${${(%):-%x}:A}
+  local -a required_dirs widget_dirs autoload_dirs
   local dir f
 
   export ZENO_ROOT=${ZENO_ROOT:-${zeno_source:h}}
+
+  required_dirs=(
+    "${ZENO_ROOT}/shells/zsh/functions"
+    "${ZENO_ROOT}/shells/zsh/widgets"
+  )
+
+  for dir in "${(@)required_dirs}"; do
+    if [[ ! -d "$dir" ]]; then
+      print -u2 -- "zeno-bootstrap.zsh: missing required directory: $dir"
+      return 1
+    fi
+  done
 
   if (( ${path[(I)${ZENO_ROOT}/bin]} == 0 )); then
     path+=("${ZENO_ROOT}/bin")
