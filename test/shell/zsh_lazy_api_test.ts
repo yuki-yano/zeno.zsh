@@ -264,6 +264,39 @@ describe("zsh lazy public api", () => {
     assertEquals(parsed.BIND_HISTORY, "^r zeno-history-selection");
   });
 
+  it("zeno-bind-default-keys keeps lightweight widgets usable without heavy init in lazy mode", async () => {
+    if (!await hasZsh()) {
+      return;
+    }
+
+    const parsed = await runZshScript([
+      "emulate -L zsh",
+      "unsetopt err_return err_exit",
+      ...createSetupLines(),
+      ...createPrintHelpers(),
+      "typeset -gi ZENO_TEST_ENSURE_CALLS=0",
+      `source ${shellQuote(ZSH_BOOTSTRAP_ENTRYPOINT)}`,
+      "function zeno-ensure-loaded() {",
+      "  ZENO_TEST_ENSURE_CALLS=$(( ZENO_TEST_ENSURE_CALLS + 1 ))",
+      "  return 0",
+      "}",
+      "BUFFER=''",
+      "LBUFFER=''",
+      "RBUFFER=''",
+      "zeno-bind-default-keys --lazy",
+      "zle zeno-insert-space",
+      "zle zeno-toggle-auto-snippet",
+      'zeno-test-print-kv "ENSURE_CALLS" "${ZENO_TEST_ENSURE_CALLS}"',
+      'zeno-test-print-kv "LBUFFER" "${LBUFFER-}"',
+      'zeno-test-print-kv "ZENO_ENABLE" "${ZENO_ENABLE-}"',
+      "",
+    ].join("\n"));
+
+    assertEquals(parsed.ENSURE_CALLS, "0");
+    assertEquals(parsed.LBUFFER, " ");
+    assertEquals(parsed.ZENO_ENABLE, "0");
+  });
+
   it("zeno-bind-default-keys returns early when lazy widget registration fails", async () => {
     if (!await hasZsh()) {
       return;
