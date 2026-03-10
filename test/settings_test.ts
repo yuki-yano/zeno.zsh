@@ -112,6 +112,22 @@ describe("settings", () => {
 
       assertEquals(configFile, expectedPath);
     });
+
+    it("returns path in ~/.config/zeno when $XDG_CONFIG_HOME is unset", async () => {
+      const tempDir = context.getTempDir();
+
+      Deno.env.delete("ZENO_HOME");
+      Deno.env.delete("XDG_CONFIG_HOME");
+      Deno.env.set("XDG_CONFIG_DIRS", "");
+      Deno.env.set("HOME", tempDir);
+
+      const configFile = await findConfigFile();
+
+      assertEquals(
+        configFile,
+        path.join(tempDir, ".config", "zeno", "config.yml"),
+      );
+    });
   });
 
   describe("loadConfigFile()", () => {
@@ -247,6 +263,37 @@ snippets:
         settings,
         withHistoryDefaults({
           snippets: expectedSnippets,
+          completions: [],
+        }),
+      );
+    });
+
+    it("returns Settings from ~/.config/zeno/config.yml when $XDG_CONFIG_HOME is unset", async () => {
+      const tempDir = context.getTempDir();
+
+      Deno.env.delete("ZENO_HOME");
+      Deno.env.delete("XDG_CONFIG_HOME");
+      Deno.env.set("XDG_CONFIG_DIRS", "");
+      Deno.env.set("HOME", tempDir);
+
+      const configDir = path.join(tempDir, ".config", "zeno");
+      const configFile = path.join(configDir, "config.yml");
+      Deno.mkdirSync(configDir, { recursive: true });
+      Deno.writeTextFileSync(
+        configFile,
+        `
+snippets:
+  - keyword: home
+    snippet: from-home-config
+`,
+      );
+
+      const settings = await getSettings();
+
+      assertEquals(
+        settings,
+        withHistoryDefaults({
+          snippets: [{ keyword: "home", snippet: "from-home-config" }],
           completions: [],
         }),
       );

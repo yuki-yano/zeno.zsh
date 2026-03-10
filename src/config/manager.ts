@@ -19,8 +19,10 @@ import {
   DEFAULT_CONFIG_FILENAME,
   findTypeScriptFilesInDir,
   findYamlFilesInDir,
+  getXdgConfigBaseDirs,
   getDefaultSettings,
   loadConfigFiles,
+  parseXdgConfigDirs,
 } from "./loader.ts";
 import { getEnv } from "./env.ts";
 
@@ -488,7 +490,15 @@ export const createConfigManager = (opts?: {
     const cwd = cwdProvider();
     const zenoEnv = envProvider();
     const envSignatureZeno = createZenoEnvSignature(zenoEnv);
-    const xdgDirs = xdgConfigDirsProvider();
+    const xdgDirs = getXdgConfigBaseDirs({
+      xdgConfigHome: Deno.env.get("XDG_CONFIG_HOME"),
+      xdgConfigDirs: [
+        ...parseXdgConfigDirs(Deno.env.get("XDG_CONFIG_DIRS") ?? ""),
+        ...xdgConfigDirsProvider(),
+      ],
+      fallbackConfigDirs: [],
+      homeDirectory: Deno.env.get("HOME"),
+    });
     const projectRoot = await detectProjectRoot(cwd);
     const discovered = await discovery({
       cwd,

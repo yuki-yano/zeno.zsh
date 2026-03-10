@@ -28,6 +28,10 @@ describe("config manager - multi YAML loading", () => {
 
   beforeEach(() => {
     clearCache();
+    const tempDir = context.getTempDir();
+    Deno.env.set("HOME", tempDir);
+    Deno.env.set("XDG_CONFIG_HOME", path.join(tempDir, "xdg-config-home"));
+    Deno.env.set("XDG_CONFIG_DIRS", "");
   });
 
   afterEach(() => {
@@ -211,6 +215,54 @@ history:
     assertEquals(settings.history.defaultScope, "directory");
     assertEquals(settings.history.keymap.toggleScope, "alt-r");
     assertEquals(settings.history.redact, ["password"]);
+  });
+
+  it("merges YAML files under ~/.config/zeno when $XDG_CONFIG_HOME is unset", async () => {
+    const tempDir = context.getTempDir();
+
+    Deno.env.set("HOME", tempDir);
+    Deno.env.delete("XDG_CONFIG_HOME");
+
+    const appDir = path.join(tempDir, ".config", "zeno");
+    Deno.mkdirSync(appDir, { recursive: true });
+
+    Deno.writeTextFileSync(
+      path.join(appDir, "01.yml"),
+      `
+snippets:
+  - keyword: home-a
+    snippet: from-home-a
+`,
+    );
+    Deno.writeTextFileSync(
+      path.join(appDir, "02.yaml"),
+      `
+completions:
+  - name: home-b
+    patterns: ["^hb "]
+    sourceCommand: echo hb
+    callback: echo hb {}
+`,
+    );
+
+    const manager = createConfigManager({
+      envProvider: () => ({
+        DEFAULT_FZF_OPTIONS: "",
+        SOCK: undefined,
+        GIT_CAT: "cat",
+        GIT_TREE: "tree",
+        DISABLE_BUILTIN_COMPLETION: false,
+        DISABLE_AUTOMATIC_WORKSPACE_LOOKUP: false,
+        LOCAL_CONFIG_PATH: undefined,
+        HOME: undefined,
+      }),
+      xdgConfigDirsProvider: () => [],
+    });
+
+    const settings = await manager.getSettings();
+    assertEquals(settings.snippets.map((s) => s.keyword), ["home-a"]);
+    assertEquals(settings.completions.map((c) => c.name), ["home-b"]);
+    assertEquals(settings.history, defaultHistory);
   });
 
   it("falls back to $ZENO_HOME/config.yml when no YAML groups exist", async () => {
