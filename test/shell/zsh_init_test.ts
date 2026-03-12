@@ -26,6 +26,24 @@ const runZshScript = async (
   return parseNullSeparatedPairs(result.stdout);
 };
 
+const runInteractiveZshScript = async (
+  script: string,
+): Promise<Record<string, string>> => {
+  const result = await new Deno.Command("zsh", {
+    args: ["-dfic", script],
+    stdin: "null",
+    stdout: "piped",
+    stderr: "piped",
+  }).output();
+
+  if (!result.success) {
+    const stderr = new TextDecoder().decode(result.stderr).trimEnd();
+    throw new Error(`zsh init scenario failed: ${stderr}`);
+  }
+
+  return parseNullSeparatedPairs(result.stdout);
+};
+
 const runZshScriptRaw = async (
   script: string,
 ): Promise<Deno.CommandOutput> =>
@@ -484,6 +502,70 @@ describe("zsh initialization entrypoints", () => {
       assertEquals(parsed.PREPROMPT_HOOK_CALLS, "1");
       assertEquals(parsed.SOCK_INITIALIZED, "1");
       assertEquals(parsed.HISTORY_INITIALIZED, "1");
+      assertEquals(parsed.PREPROMPT_INITIALIZED, "1");
+    } finally {
+      await Deno.remove(stubDir, { recursive: true }).catch(() => undefined);
+    }
+  });
+
+  it("zeno-preprompt-hooks appends to an existing line-init dispatcher without rewrapping it", async () => {
+    if (!await hasZsh()) {
+      return;
+    }
+
+    const stubDir = await Deno.makeTempDir({
+      prefix: "zeno-zsh-preprompt-stubs-",
+    });
+
+    try {
+      await Deno.writeTextFile(
+        path.join(stubDir, "add-zle-hook-widget"),
+        [
+          "#autoload",
+          "typeset -gi ZENO_TEST_ADD_ZLE_HOOK_WIDGET_CALLS=${ZENO_TEST_ADD_ZLE_HOOK_WIDGET_CALLS:-0}",
+          "ZENO_TEST_ADD_ZLE_HOOK_WIDGET_CALLS=$(( ZENO_TEST_ADD_ZLE_HOOK_WIDGET_CALLS + 1 ))",
+          "",
+        ].join("\n"),
+      );
+
+      const parsed = await runInteractiveZshScript([
+        "emulate -L zsh",
+        "unsetopt err_return err_exit",
+        ...createPrintHelpers(),
+        `fpath=(${shellQuote(stubDir)} $fpath)`,
+        "unset ZENO_PREPROMPT_HOOK_INITIALIZED ZENO_TEST_ADD_ZLE_HOOK_WIDGET_CALLS",
+        "typeset -ga ZSH_AUTOSUGGEST_IGNORE_WIDGETS",
+        "ZSH_AUTOSUGGEST_IGNORE_WIDGETS=(self-insert)",
+        "function azhw:zle-line-init() { :; }",
+        "zle -N zle-line-init azhw:zle-line-init",
+        "zstyle zle-line-init widgets user:_zsh_highlight_widget_orig-s000-r904-zle-line-init dot_prompt_zle_line_init",
+        "typeset -i line_init_count=0",
+        `source ${shellQuote(ZSH_BOOTSTRAP_ENTRYPOINT)}`,
+        "zeno-preprompt-hooks",
+        "zeno-preprompt-hooks",
+        "for zeno_test_widget in ${ZSH_AUTOSUGGEST_IGNORE_WIDGETS[@]}; do",
+        '  [[ "$zeno_test_widget" == "zle-line-init" ]] && (( line_init_count++ ))',
+        "done",
+        "zstyle -a zle-line-init widgets zeno_test_line_init_widgets",
+        'zeno-test-print-kv "CALLS" "${ZENO_TEST_ADD_ZLE_HOOK_WIDGET_CALLS:-0}"',
+        'zeno-test-print-kv "HAS_LINE_INIT" "$(( ${ZSH_AUTOSUGGEST_IGNORE_WIDGETS[(I)zle-line-init]} > 0 ? 1 : 0 ))"',
+        'zeno-test-print-kv "LINE_INIT_COUNT" "$line_init_count"',
+        'zeno-test-print-kv "HOOK_COUNT" "${#zeno_test_line_init_widgets}"',
+        'zeno-test-print-kv "FIRST_HOOK" "${zeno_test_line_init_widgets[1]-}"',
+        'zeno-test-print-kv "SECOND_HOOK" "${zeno_test_line_init_widgets[2]-}"',
+        'zeno-test-print-kv "PREPROMPT_INITIALIZED" "${ZENO_PREPROMPT_HOOK_INITIALIZED-}"',
+        "",
+      ].join("\n"));
+
+      assertEquals(parsed.CALLS, "0");
+      assertEquals(parsed.HAS_LINE_INIT, "1");
+      assertEquals(parsed.LINE_INIT_COUNT, "1");
+      assertEquals(parsed.HOOK_COUNT, "2");
+      assertEquals(parsed.FIRST_HOOK.endsWith("dot_prompt_zle_line_init"), true);
+      assertEquals(
+        parsed.SECOND_HOOK.endsWith("zeno-preprompt-line-init"),
+        true,
+      );
       assertEquals(parsed.PREPROMPT_INITIALIZED, "1");
     } finally {
       await Deno.remove(stubDir, { recursive: true }).catch(() => undefined);

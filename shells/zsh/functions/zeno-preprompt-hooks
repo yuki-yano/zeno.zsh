@@ -10,6 +10,14 @@ function zeno-preprompt-hooks() {
   fi
   typeset -g ZENO_PREPROMPT_HOOK_INITIALIZED=1
 
+  # zle-line-init is installed after autosuggestions/highlighters have already
+  # wrapped widgets in many setups. Keep autosuggestions away from that special
+  # widget to avoid recursive wrapper chains.
+  typeset -ga ZSH_AUTOSUGGEST_IGNORE_WIDGETS
+  if (( ${ZSH_AUTOSUGGEST_IGNORE_WIDGETS[(I)zle-line-init]} == 0 )); then
+    ZSH_AUTOSUGGEST_IGNORE_WIDGETS+=(zle-line-init)
+  fi
+
   function zeno-preprompt-line-init() {
     emulate -L zsh
 
@@ -29,5 +37,30 @@ function zeno-preprompt-hooks() {
     fi
   }
 
-  add-zle-hook-widget line-init zeno-preprompt-line-init
+  local -a line_init_widgets
+  if zstyle -a zle-line-init widgets line_init_widgets 2>/dev/null; then
+    line_init_widgets=(
+      ${line_init_widgets:#(<->:|)user:_zsh_highlight_widget_orig-*-zle-line-init}
+    )
+    line_init_widgets=(
+      ${line_init_widgets:#(<->:|)user:_zsh_autosuggest_*-zle-line-init}
+    )
+    if [[ -z ${(M)line_init_widgets[@]:#(<->:|)zeno-preprompt-line-init} ]]; then
+      local hook_entry
+      local -i max_index=0
+      for hook_entry in "${line_init_widgets[@]}"; do
+        if [[ $hook_entry == <->:* ]]; then
+          local -i hook_index=${hook_entry%%:*}
+          (( hook_index > max_index )) && max_index=$hook_index
+        fi
+      done
+      line_init_widgets+=("$(( max_index + 1 )):zeno-preprompt-line-init")
+    fi
+    zstyle zle-line-init widgets "${line_init_widgets[@]}"
+    if (( ! ${+widgets[zeno-preprompt-line-init]} )); then
+      zle -N -- zeno-preprompt-line-init
+    fi
+  else
+    add-zle-hook-widget line-init zeno-preprompt-line-init
+  fi
 }
