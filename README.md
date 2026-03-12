@@ -1,5 +1,7 @@
 # ![logo](https://user-images.githubusercontent.com/5423775/172536289-50471330-59ca-49ad-96e5-cd87eb5c3adb.png)
 
+[English](README.md) | [日本語](README.ja.md)
+
 Zsh/Fish fuzzy completion and utility plugin with [Deno](https://deno.land/).
 
 ## Features
@@ -190,7 +192,7 @@ you access to the full `ConfigContext` for dynamic setups.
 ### Completion and abbrev snippet
 
 ```zsh
-# if defined load the configuration file from there
+# if defined load configuration files from there
 # export ZENO_HOME=~/.config/zeno
 
 # if disable deno cache command when plugin loaded
@@ -315,13 +317,19 @@ The configuration files are discovered and merged in the following order.
 
 ### Example (YAML)
 
+You can keep everything in a single file, or split it into multiple YAML files
+such as `10-snippets.yml` and `20-completions.yml`. YAML files are loaded
+non-recursively and merged in alphabetical order within each config directory.
+
 ```sh
-$ touch ~/.config/zeno/config.yml
+$ touch ~/.config/zeno/10-snippets.yml
+$ touch ~/.config/zeno/20-completions.yml
 ```
 
-and
+For example:
 
 ```yaml
+# ~/.config/zeno/10-snippets.yml
 snippets:
   # snippet and keyword abbrev
   - name: git status
@@ -349,7 +357,10 @@ snippets:
     context:
       lbuffer: '^git\s+checkout\s+'
     evaluate: true # eval snippet
+```
 
+```yaml
+# ~/.config/zeno/20-completions.yml
 completions:
   # simple sourceCommand, no callback
   - name: kill signal
@@ -509,7 +520,8 @@ export default defineConfig(({ projectRoot, currentDirectory }) => ({
 
 ### Smart History Selection settings (Experimental)
 
-Configure the `zeno-smart-history-selection` and the `zeno history …` CLI—via a `history` block in your `zeno.config.yml`:
+Configure the `zeno-smart-history-selection` widget and the `zeno history …`
+CLI via a `history` block in any loaded YAML or TypeScript config file:
 
 ```yaml
 history:
