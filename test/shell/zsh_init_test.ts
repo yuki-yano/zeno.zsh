@@ -561,7 +561,10 @@ describe("zsh initialization entrypoints", () => {
       assertEquals(parsed.HAS_LINE_INIT, "1");
       assertEquals(parsed.LINE_INIT_COUNT, "1");
       assertEquals(parsed.HOOK_COUNT, "2");
-      assertEquals(parsed.FIRST_HOOK.endsWith("dot_prompt_zle_line_init"), true);
+      assertEquals(
+        parsed.FIRST_HOOK.endsWith("dot_prompt_zle_line_init"),
+        true,
+      );
       assertEquals(
         parsed.SECOND_HOOK.endsWith("zeno-preprompt-line-init"),
         true,
