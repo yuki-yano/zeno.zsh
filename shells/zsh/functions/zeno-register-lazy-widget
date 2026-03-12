@@ -1,0 +1,20 @@
+#autoload
+
+function zeno-register-lazy-widget() {
+  emulate -L zsh
+
+  local widget_name="$1"
+  if [[ -z $widget_name ]]; then
+    print -u2 -- "zeno-register-lazy-widget: widget name is required"
+    return 1
+  fi
+
+  if [[ ${ZENO_BOOTSTRAPPED-} != 1 ]]; then
+    print -u2 -- "zeno-register-lazy-widget: source zeno-bootstrap.zsh first"
+    return 1
+  fi
+
+  typeset -gA ZENO_LAZY_WIDGETS
+  ZENO_LAZY_WIDGETS[$widget_name]=1
+  zle -N -- "$widget_name" zeno-lazy-widget-dispatch
+}

@@ -140,6 +140,9 @@ function zeno-set-pid() {
 }
 
 autoload -Uz add-zsh-hook
+add-zsh-hook -d precmd zeno-set-pid 2>/dev/null
+add-zsh-hook -d chpwd zeno-onchpwd 2>/dev/null
+add-zsh-hook -d zshexit zeno-stop-server 2>/dev/null
 add-zsh-hook precmd zeno-set-pid
 add-zsh-hook chpwd zeno-onchpwd
 add-zsh-hook zshexit zeno-stop-server

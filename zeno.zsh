@@ -1,52 +1,5 @@
-if ! whence -p deno> /dev/null; then
-  return
+source "${${(%):-%N}:A:h}/zeno-bootstrap.zsh"
+
+if (( $+functions[zeno-init] )); then
+  zeno-init
 fi
-
-export ZENO_ROOT=${ZENO_ROOT:-${0:a:h}}
-
-path+=${ZENO_ROOT}/bin
-
-() {
-  local widget_dirs=(
-    "${ZENO_ROOT}/shells/zsh/widgets"
-  )
-  local autoload_dirs=(
-    "${ZENO_ROOT}/shells/zsh/functions"
-    "${(@)widget_dirs}"
-  )
-  local f
-
-  fpath+=("${(@)autoload_dirs}")
-  for f in "${(@)^autoload_dirs}"/*(N-.); autoload -Uz -- "${f:t}"
-  for f in "${(@)^widget_dirs}"/*(N-.); zle -N -- "${f:t}"
-}
-
-if [[ -z $ZENO_ENABLE_FZF_TMUX ]]; then
-  export ZENO_FZF_COMMAND="fzf"
-else
-  export ZENO_FZF_COMMAND="fzf-tmux"
-fi
-
-if [[ -z $ZENO_DISABLE_EXECUTE_CACHE_COMMAND ]]; then
-  command deno cache --node-modules-dir=auto --no-lock --no-check -- "${ZENO_ROOT}/src/cli.ts"
-fi
-
-if [[ -z $ZENO_DISABLE_SOCK ]]; then
-  printf -v DENO_VERSION '%d%02d%02d' ${(s:.:)$(deno -V)[2]}
-  if (( DENO_VERSION >= 11600 )); then
-    zeno-enable-sock
-  else
-    export ZENO_DISABLE_SOCK=1
-  fi
-fi
-
-if (( $+functions[zeno-history-hooks] )); then
-  zeno-history-hooks
-fi
-
-if (( $+functions[zeno-preprompt-hooks] )); then
-  zeno-preprompt-hooks
-fi
-
-export ZENO_ENABLE=1
-export ZENO_LOADED=1

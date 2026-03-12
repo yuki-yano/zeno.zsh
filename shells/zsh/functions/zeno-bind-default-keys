@@ -1,0 +1,51 @@
+#autoload
+
+function zeno-bind-default-keys() {
+  emulate -L zsh
+
+  local lazy=0 arg
+  local -a lazy_widgets
+
+  for arg in "$@"; do
+    case "$arg" in
+      --lazy)
+        lazy=1
+        ;;
+      *)
+        print -u2 -- "zeno-bind-default-keys: unsupported option: $arg"
+        return 1
+        ;;
+    esac
+  done
+
+  lazy_widgets=(
+    zeno-auto-snippet
+    zeno-auto-snippet-and-accept-line
+    zeno-completion
+    zeno-insert-snippet
+    zeno-preprompt
+    zeno-preprompt-snippet
+    zeno-history-selection
+  )
+
+  if (( lazy )); then
+    zeno-register-lazy-widgets "${(@)lazy_widgets}" || return $?
+  else
+    zeno-ensure-loaded || return $?
+    local widget_name
+    for widget_name in "${(@)lazy_widgets}"; do
+      zle -N -- "$widget_name" || return $?
+    done
+  fi
+
+  bindkey ' '  zeno-auto-snippet
+  bindkey '^m' zeno-auto-snippet-and-accept-line
+  bindkey '^i' zeno-completion
+  bindkey '^xx' zeno-insert-snippet
+  bindkey '^x '  zeno-insert-space
+  bindkey '^x^m' accept-line
+  bindkey '^x^z' zeno-toggle-auto-snippet
+  bindkey '^xp' zeno-preprompt
+  bindkey '^xs' zeno-preprompt-snippet
+  bindkey '^r' zeno-history-selection
+}

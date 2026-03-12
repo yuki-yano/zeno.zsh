@@ -35,6 +35,68 @@ export const parseXdgConfigDirs = (raw: string): readonly string[] => {
     .filter((dir) => dir.length > 0);
 };
 
+const appendUniqueDir = (
+  target: string[],
+  seen: Set<string>,
+  dir: string | undefined,
+): void => {
+  const trimmed = dir?.trim();
+  if (!trimmed) {
+    return;
+  }
+
+  let normalized = path.normalize(trimmed);
+  const { root } = path.parse(normalized);
+  while (
+    normalized.length > root.length &&
+    /[\\/]/.test(normalized[normalized.length - 1] ?? "")
+  ) {
+    normalized = normalized.slice(0, -1);
+  }
+
+  if (!normalized || seen.has(normalized)) {
+    return;
+  }
+  seen.add(normalized);
+  target.push(normalized);
+};
+
+export const getXdgConfigBaseDirs = (params?: {
+  xdgConfigHome?: string | undefined;
+  xdgConfigDirs?: readonly string[];
+  fallbackConfigDirs?: readonly string[];
+  homeDirectory?: string | undefined;
+}): readonly string[] => {
+  const dirs: string[] = [];
+  const seen = new Set<string>();
+  const xdgConfigHome =
+    (params?.xdgConfigHome ?? Deno.env.get("XDG_CONFIG_HOME"))?.trim() ||
+    undefined;
+  const homeDirectory =
+    (params?.homeDirectory ?? Deno.env.get("HOME"))?.trim() || undefined;
+  const fallbackConfigHome = xdgConfigHome
+    ? undefined
+    : homeDirectory
+    ? path.join(homeDirectory.trim(), ".config")
+    : undefined;
+
+  appendUniqueDir(dirs, seen, xdgConfigHome);
+  appendUniqueDir(dirs, seen, fallbackConfigHome);
+
+  const xdgConfigDirs = params?.xdgConfigDirs ??
+    parseXdgConfigDirs(Deno.env.get("XDG_CONFIG_DIRS") ?? "");
+  for (const dir of xdgConfigDirs) {
+    appendUniqueDir(dirs, seen, dir);
+  }
+
+  const fallbackConfigDirs = params?.fallbackConfigDirs ?? xdg.configDirs();
+  for (const dir of fallbackConfigDirs) {
+    appendUniqueDir(dirs, seen, dir);
+  }
+
+  return dirs;
+};
+
 export const getDefaultSettings = (): Settings => ({
   snippets: [],
   completions: [],
@@ -102,43 +164,17 @@ export const findConfigFilePath = async (): Promise<string> => {
     return path.join(env.HOME, DEFAULT_CONFIG_FILENAME);
   }
 
-  const configCandidates: string[] = [];
-
-  const xdgConfigHome = Deno.env.get("XDG_CONFIG_HOME");
-  if (xdgConfigHome) {
-    configCandidates.push(
-      path.join(xdgConfigHome, DEFAULT_APP_DIR, DEFAULT_CONFIG_FILENAME),
-    );
-  }
-
-  const envConfigDirs = parseXdgConfigDirs(
-    Deno.env.get("XDG_CONFIG_DIRS") ?? "",
+  const configCandidates = getXdgConfigBaseDirs().map((baseDir) =>
+    path.join(baseDir, DEFAULT_APP_DIR, DEFAULT_CONFIG_FILENAME)
   );
 
-  configCandidates.push(
-    ...envConfigDirs.map((baseDir) =>
-      path.join(baseDir, DEFAULT_APP_DIR, DEFAULT_CONFIG_FILENAME)
-    ),
-  );
-
-  configCandidates.push(
-    ...xdg.configDirs().map((baseDir) =>
-      path.join(baseDir, DEFAULT_APP_DIR, DEFAULT_CONFIG_FILENAME)
-    ),
-  );
-
-  const seen = new Set<string>();
   for (const candidate of configCandidates) {
-    if (seen.has(candidate)) {
-      continue;
-    }
-    seen.add(candidate);
     if (await exists(candidate)) {
       return candidate;
     }
   }
 
-  const [firstCandidate] = seen;
+  const [firstCandidate] = configCandidates;
   if (firstCandidate) {
     return firstCandidate;
   }

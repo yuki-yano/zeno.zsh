@@ -3,6 +3,7 @@ import { path } from "../deps.ts";
 const TEST_DIR = path.dirname(path.fromFileUrl(import.meta.url));
 const REPO_ROOT = path.resolve(TEST_DIR, "..", "..");
 
+export { REPO_ROOT };
 export const ZSH_FUNCTIONS_DIR = path.join(
   REPO_ROOT,
   "shells",
@@ -10,6 +11,11 @@ export const ZSH_FUNCTIONS_DIR = path.join(
   "functions",
 );
 export const ZSH_WIDGETS_DIR = path.join(REPO_ROOT, "shells", "zsh", "widgets");
+export const ZSH_ENTRYPOINT = path.join(REPO_ROOT, "zeno.zsh");
+export const ZSH_BOOTSTRAP_ENTRYPOINT = path.join(
+  REPO_ROOT,
+  "zeno-bootstrap.zsh",
+);
 
 export const toHeredoc = (lines: readonly string[]): string =>
   lines.length === 0 ? "" : `${lines.join("\n")}\n`;

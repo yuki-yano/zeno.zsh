@@ -31,6 +31,10 @@ describe("config manager - TypeScript configs", () => {
 
   beforeEach(() => {
     clearCache();
+    const tempDir = helper.getTempDir();
+    Deno.env.set("HOME", tempDir);
+    Deno.env.set("XDG_CONFIG_HOME", path.join(tempDir, "xdg-config-home"));
+    Deno.env.set("XDG_CONFIG_DIRS", "");
   });
 
   afterEach(() => {

@@ -1,0 +1,22 @@
+#autoload
+
+function zeno-lazy-widget-dispatch() {
+  emulate -L zsh
+
+  local widget_name="${WIDGET-}"
+  if [[ -z $widget_name ]]; then
+    return 1
+  fi
+
+  if ! zeno-ensure-loaded; then
+    zeno-run-lazy-fallback "$widget_name"
+    return $?
+  fi
+
+  if (( $+functions[$widget_name] )); then
+    "$widget_name"
+    return $?
+  fi
+
+  return 1
+}

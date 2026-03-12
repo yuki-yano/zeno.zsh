@@ -14,7 +14,7 @@ out=( "${(f)$(zeno-call-client-and-fallback --zeno-mode=completion \
   )}" )
 
 if [[ $out[1] != success ]]; then
-  zle ${ZENO_COMPLETION_FALLBACK:-${${functions[fzf-completion]+fzf-completion}:-expand-or-complete}}
+  zle ${ZENO_COMPLETION_FALLBACK:-${${widgets[fzf-completion]+fzf-completion}:-expand-or-complete}}
   return
 fi
 

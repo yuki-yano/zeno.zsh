@@ -1,0 +1,7 @@
+#autoload
+
+function zeno-preload() {
+  emulate -L zsh
+
+  zeno-ensure-loaded "$@"
+}

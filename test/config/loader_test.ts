@@ -1,5 +1,8 @@
 import { assertEquals, path } from "../deps.ts";
-import { parseXdgConfigDirs } from "../../src/config/loader.ts";
+import {
+  getXdgConfigBaseDirs,
+  parseXdgConfigDirs,
+} from "../../src/config/loader.ts";
 
 const detectDelimiter = (): string => {
   const maybePath = path as unknown as {
@@ -30,3 +33,69 @@ Deno.test("parseXdgConfigDirs splits and trims entries", () => {
 Deno.test("parseXdgConfigDirs returns empty array for empty input", () => {
   assertEquals(parseXdgConfigDirs(""), []);
 });
+
+Deno.test("getXdgConfigBaseDirs adds ~/.config when XDG_CONFIG_HOME is unset", () => {
+  const result = getXdgConfigBaseDirs({
+    xdgConfigHome: "",
+    xdgConfigDirs: ["/etc/xdg"],
+    fallbackConfigDirs: ["/Library/Preferences"],
+    homeDirectory: "/tmp/test-home",
+  });
+
+  assertEquals(result, [
+    "/tmp/test-home/.config",
+    "/etc/xdg",
+    "/Library/Preferences",
+  ]);
+});
+
+Deno.test(
+  "getXdgConfigBaseDirs treats whitespace-only XDG_CONFIG_HOME as unset",
+  () => {
+    const result = getXdgConfigBaseDirs({
+      xdgConfigHome: "   ",
+      xdgConfigDirs: ["/etc/xdg"],
+      fallbackConfigDirs: ["/Library/Preferences"],
+      homeDirectory: " /tmp/test-home ",
+    });
+
+    assertEquals(result, [
+      "/tmp/test-home/.config",
+      "/etc/xdg",
+      "/Library/Preferences",
+    ]);
+  },
+);
+
+Deno.test("getXdgConfigBaseDirs deduplicates overlapping config dirs", () => {
+  const result = getXdgConfigBaseDirs({
+    xdgConfigHome: "/tmp/test-home/.config",
+    xdgConfigDirs: ["/etc/xdg", "/tmp/test-home/.config"],
+    fallbackConfigDirs: ["/etc/xdg", "/Library/Preferences"],
+    homeDirectory: "/tmp/test-home",
+  });
+
+  assertEquals(result, [
+    "/tmp/test-home/.config",
+    "/etc/xdg",
+    "/Library/Preferences",
+  ]);
+});
+
+Deno.test(
+  "getXdgConfigBaseDirs deduplicates paths that differ only by trailing separators",
+  () => {
+    const result = getXdgConfigBaseDirs({
+      xdgConfigHome: "/tmp/test-home/.config/",
+      xdgConfigDirs: ["/etc/xdg/", "/etc/xdg"],
+      fallbackConfigDirs: ["/Library/Preferences/", "/Library/Preferences"],
+      homeDirectory: "/tmp/test-home",
+    });
+
+    assertEquals(result, [
+      "/tmp/test-home/.config",
+      "/etc/xdg",
+      "/Library/Preferences",
+    ]);
+  },
+);
