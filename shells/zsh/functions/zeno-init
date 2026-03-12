@@ -4,7 +4,26 @@ function zeno-init() {
   emulate -L zsh
 
   if [[ ${ZENO_LOADED-} == 1 ]]; then
-    return 0
+    local -i is_ready=1
+
+    if [[ -z ${ZENO_DISABLE_SOCK-} ]] &&
+      [[ ${ZENO_SOCK_HOOK_INITIALIZED-} != 1 ]]; then
+      is_ready=0
+    fi
+
+    if (( $+functions[zeno-history-hooks] )) &&
+      [[ ${ZENO_HISTORY_HOOK_INITIALIZED-} != 1 ]]; then
+      is_ready=0
+    fi
+
+    if (( $+functions[zeno-preprompt-hooks] )) &&
+      [[ ${ZENO_PREPROMPT_HOOK_INITIALIZED-} != 1 ]]; then
+      is_ready=0
+    fi
+
+    if (( is_ready )); then
+      return 0
+    fi
   fi
 
   if [[ -z ${ZENO_ROOT-} ]]; then

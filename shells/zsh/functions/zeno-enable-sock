@@ -147,5 +147,7 @@ add-zsh-hook precmd zeno-set-pid
 add-zsh-hook chpwd zeno-onchpwd
 add-zsh-hook zshexit zeno-stop-server
 
+typeset -g ZENO_SOCK_HOOK_INITIALIZED=1
+
 unfunction zeno-enable-sock
 autoload -Uz zeno-enable-sock

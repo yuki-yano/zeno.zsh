@@ -3,9 +3,5 @@
 function zeno-ensure-loaded() {
   emulate -L zsh
 
-  if [[ ${ZENO_LOADED-} == 1 ]]; then
-    return 0
-  fi
-
   zeno-init "$@"
 }

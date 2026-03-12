@@ -46,6 +46,7 @@ const createStubAutoloadDir = async (): Promise<string> => {
         "typeset -gi ZENO_TEST_SOCK_CALLS=${ZENO_TEST_SOCK_CALLS:-0}",
         "ZENO_TEST_SOCK_CALLS=$(( ZENO_TEST_SOCK_CALLS + 1 ))",
         "typeset -g ZENO_TEST_SOCK_ENABLED=1",
+        "typeset -g ZENO_SOCK_HOOK_INITIALIZED=1",
         "",
       ].join("\n"),
     },
@@ -56,6 +57,7 @@ const createStubAutoloadDir = async (): Promise<string> => {
         "typeset -gi ZENO_TEST_HISTORY_HOOK_CALLS=${ZENO_TEST_HISTORY_HOOK_CALLS:-0}",
         "ZENO_TEST_HISTORY_HOOK_CALLS=$(( ZENO_TEST_HISTORY_HOOK_CALLS + 1 ))",
         "typeset -g ZENO_TEST_HISTORY_HOOK_ENABLED=1",
+        "typeset -g ZENO_HISTORY_HOOK_INITIALIZED=1",
         "",
       ].join("\n"),
     },
@@ -66,6 +68,7 @@ const createStubAutoloadDir = async (): Promise<string> => {
         "typeset -gi ZENO_TEST_PREPROMPT_HOOK_CALLS=${ZENO_TEST_PREPROMPT_HOOK_CALLS:-0}",
         "ZENO_TEST_PREPROMPT_HOOK_CALLS=$(( ZENO_TEST_PREPROMPT_HOOK_CALLS + 1 ))",
         "typeset -g ZENO_TEST_PREPROMPT_HOOK_ENABLED=1",
+        "typeset -g ZENO_PREPROMPT_HOOK_INITIALIZED=1",
         "",
       ].join("\n"),
     },
@@ -100,6 +103,7 @@ const createPrintHelpers = (): string[] => [
 
 const createSetupLines = (): string[] => [
   "unset ZENO_ROOT ZENO_ENABLE ZENO_LOADED ZENO_FZF_COMMAND ZENO_DISABLE_SOCK",
+  "unset ZENO_HISTORY_HOOK_INITIALIZED ZENO_PREPROMPT_HOOK_INITIALIZED ZENO_SOCK_HOOK_INITIALIZED",
   "unset ZENO_TEST_SOCK_CALLS ZENO_TEST_HISTORY_HOOK_CALLS ZENO_TEST_PREPROMPT_HOOK_CALLS",
   "function zle() {",
   '  if [[ "$1" == "-N" ]]; then',
@@ -441,6 +445,46 @@ describe("zsh initialization entrypoints", () => {
       assertEquals(parsed.SOCK_CALLS, "1");
       assertEquals(parsed.HISTORY_HOOK_CALLS, "1");
       assertEquals(parsed.PREPROMPT_HOOK_CALLS, "1");
+    } finally {
+      await Deno.remove(stubDir, { recursive: true }).catch(() => undefined);
+    }
+  });
+
+  it("zeno-ensure-loaded reinitializes shell-local hooks when ZENO_LOADED is inherited", async () => {
+    if (!await hasZsh()) {
+      return;
+    }
+
+    const stubDir = await createStubAutoloadDir();
+
+    try {
+      const parsed = await runZshScript([
+        "emulate -L zsh",
+        "unsetopt err_return err_exit",
+        ...createSetupLines(),
+        ...createPrintHelpers(),
+        `fpath=(${shellQuote(stubDir)} $fpath)`,
+        "export ZENO_DISABLE_EXECUTE_CACHE_COMMAND=1",
+        `source ${shellQuote(ZSH_BOOTSTRAP_ENTRYPOINT)}`,
+        "export ZENO_LOADED=1",
+        "zeno-ensure-loaded",
+        'zeno-test-print-kv "LOADED" "${ZENO_LOADED-}"',
+        'zeno-test-print-kv "SOCK_CALLS" "${ZENO_TEST_SOCK_CALLS:-0}"',
+        'zeno-test-print-kv "HISTORY_HOOK_CALLS" "${ZENO_TEST_HISTORY_HOOK_CALLS:-0}"',
+        'zeno-test-print-kv "PREPROMPT_HOOK_CALLS" "${ZENO_TEST_PREPROMPT_HOOK_CALLS:-0}"',
+        'zeno-test-print-kv "SOCK_INITIALIZED" "${ZENO_SOCK_HOOK_INITIALIZED-}"',
+        'zeno-test-print-kv "HISTORY_INITIALIZED" "${ZENO_HISTORY_HOOK_INITIALIZED-}"',
+        'zeno-test-print-kv "PREPROMPT_INITIALIZED" "${ZENO_PREPROMPT_HOOK_INITIALIZED-}"',
+        "",
+      ].join("\n"));
+
+      assertEquals(parsed.LOADED, "1");
+      assertEquals(parsed.SOCK_CALLS, "1");
+      assertEquals(parsed.HISTORY_HOOK_CALLS, "1");
+      assertEquals(parsed.PREPROMPT_HOOK_CALLS, "1");
+      assertEquals(parsed.SOCK_INITIALIZED, "1");
+      assertEquals(parsed.HISTORY_INITIALIZED, "1");
+      assertEquals(parsed.PREPROMPT_INITIALIZED, "1");
     } finally {
       await Deno.remove(stubDir, { recursive: true }).catch(() => undefined);
     }

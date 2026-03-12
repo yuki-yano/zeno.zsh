@@ -161,4 +161,6 @@ function zeno-history-hooks() {
   add-zsh-hook -d precmd zeno-history-precmd 2>/dev/null
   add-zsh-hook preexec zeno-history-preexec
   add-zsh-hook precmd zeno-history-precmd
+
+  typeset -g ZENO_HISTORY_HOOK_INITIALIZED=1
 }
