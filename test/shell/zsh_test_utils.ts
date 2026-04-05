@@ -10,6 +10,12 @@ export const ZSH_FUNCTIONS_DIR = path.join(
   "zsh",
   "functions",
 );
+export const ZSH_COMPLETIONS_DIR = path.join(
+  REPO_ROOT,
+  "shells",
+  "zsh",
+  "completions",
+);
 export const ZSH_WIDGETS_DIR = path.join(REPO_ROOT, "shells", "zsh", "widgets");
 export const ZSH_ENTRYPOINT = path.join(REPO_ROOT, "zeno.zsh");
 export const ZSH_BOOTSTRAP_ENTRYPOINT = path.join(

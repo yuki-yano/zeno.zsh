@@ -38,6 +38,14 @@ zinit ice lucid depth"1" blockf
 zinit light yuki-yano/zeno.zsh
 ```
 
+### sheldon
+
+```toml
+[plugins.zeno]
+github = "yuki-yano/zeno.zsh"
+use = ["zeno-plugin.zsh"]
+```
+
 ### git clone
 
 ```sh
@@ -77,6 +85,11 @@ Fish support is experimental. A quick overview is included here; full
 installation and configuration details are available later in the document.
 
 ## Usage
+
+### CLI
+
+- `zeno history ...`
+- `zeno server {start|stop|restart|status|run}`
 
 ### Abbrev snippet
 
@@ -548,6 +561,7 @@ Bootstrap (`source zeno-bootstrap.zsh`):
 
 - sets `ZENO_ROOT`
 - appends `bin` / `fpath`
+- exposes bundled `_zeno` CLI completion
 - autoloads functions and widgets
 - registers ZLE widgets with their original names
 - sets `ZENO_BOOTSTRAPPED=1`

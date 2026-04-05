@@ -5,6 +5,7 @@ import type { CommandContext } from "./types.ts";
 import type { Input } from "../type/shell.ts";
 import type { ArgParserArguments, ArgParserOptions } from "../deps.ts";
 import { resolveHistoryPositional } from "./history-payload.ts";
+import { resolveServerPositional } from "./server-payload.ts";
 
 type ParsedArgs = ArgParserArguments & {
   "zeno-mode": string;
@@ -107,6 +108,14 @@ export const parseArgs = (args: readonly string[]) => {
 
   if (!resolvedMode) {
     const resolved = resolveHistoryPositional(parsedArgs);
+    if (resolved) {
+      resolvedMode = resolved.mode;
+      (input as Record<string, unknown>)[resolved.inputKey] = resolved.payload;
+    }
+  }
+
+  if (!resolvedMode) {
+    const resolved = resolveServerPositional(parsedArgs);
     if (resolved) {
       resolvedMode = resolved.mode;
       (input as Record<string, unknown>)[resolved.inputKey] = resolved.payload;

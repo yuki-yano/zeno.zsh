@@ -2,9 +2,9 @@ import { write } from "./text-writer.ts";
 import { getErrorMessage } from "./utils/error.ts";
 import { createCommandRegistry } from "./command/commands/index.ts";
 import { createCommandExecutor, parseArgs } from "./command/executor.ts";
-import { createSocketServer } from "./socket/server.ts";
 import type { CommandRegistry } from "./command/registry.ts";
 import type { ConnectionConfig } from "./socket/connection-manager.ts";
+import { runCommandSocketServer } from "./server/runtime.ts";
 
 /**
  * Configuration options for creating an app instance
@@ -67,23 +67,14 @@ export const createApp = (config: AppConfig = {}) => {
      * @throws Will throw if socket creation fails
      */
     async execServer(socketPath: string): Promise<void> {
-      const server = createSocketServer({
+      await runCommandSocketServer({
         socketPath,
-        handler: async ({ args, writer }) => {
-          const { mode, input } = parseArgs(args);
-          await executeCommand({ mode, input, writer });
-        },
-        onError: async (error, writer) => {
-          await writer.write({ format: "%s\n", text: "failure" });
-          await writer.write({ format: "%s\n", text: getErrorMessage(error) });
-        },
+        executeCommand,
         connectionConfig: config.connectionConfig ?? {
           maxConnections: 50,
           connectionTimeout: 30000, // 30 seconds
         },
       });
-
-      await server.start();
     },
 
     /**

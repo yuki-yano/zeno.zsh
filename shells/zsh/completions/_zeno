@@ -1,0 +1,218 @@
+#compdef zeno zeno-history-client zeno-server
+
+local curcontext="$curcontext" state line
+typeset -A opt_args
+
+local -a zeno_modes top_level_commands history_subcommands server_subcommands
+local -a history_scopes history_export_formats
+local -a history_query_formats history_deleted_filters history_dedupe_strategies
+local -a history_common_filter_args
+
+zeno_modes=(
+  'pid:print current zeno process id'
+  'chdir:change current directory'
+  'snippet-list:list configured snippets'
+  'auto-snippet:expand abbrev snippet'
+  'insert-snippet:insert snippet'
+  'preprompt:prepare prompt prefix'
+  'preprompt-snippet:prepare prompt prefix from snippet'
+  'next-placeholder:jump to next placeholder'
+  'completion:run completion source'
+  'completion-callback:run completion callback'
+  'completion-preview:render completion preview'
+  'history-log:append history record'
+  'history-query:query history records'
+  'history-delete:delete history record'
+  'history-export:export history records'
+  'history-import:import history records'
+  'history-fzf-config:print history picker fzf config'
+  'server-run:run socket server in foreground'
+  'server-start:start socket server in background'
+  'server-stop:stop socket server'
+  'server-restart:restart socket server'
+  'server-status:show socket server status'
+)
+
+top_level_commands=(
+  'history:history management'
+  'server:socket server management'
+)
+
+history_subcommands=(
+  'log:append history record'
+  'query:query history records'
+  'delete:delete history record'
+  'export:export history records'
+  'import:import history records'
+  'fzf-config:print history picker fzf config'
+)
+
+server_subcommands=(
+  'run:run socket server in foreground'
+  'start:start socket server in background'
+  'stop:stop socket server'
+  'restart:restart socket server'
+  'status:show socket server status'
+)
+
+history_scopes=(
+  'global:global history'
+  'repository:repository history'
+  'directory:directory history'
+  'session:session history'
+  'all:query all scopes'
+)
+
+history_export_formats=(
+  'ndjson:ndjson export'
+  'zsh:zsh history format'
+  'bash:bash history format'
+  'fish:fish history format'
+  'atuin-json:atuin json export'
+)
+
+history_query_formats=(
+  'lines:formatted lines'
+  'json:json output'
+)
+
+history_deleted_filters=(
+  'exclude:hide deleted records'
+  'include:include deleted records'
+  'only:show only deleted records'
+)
+
+history_dedupe_strategies=(
+  'off:disable dedupe'
+  'strict:dedupe by strict match'
+  'loose:dedupe by loose match'
+)
+
+history_common_filter_args=(
+  '--scope=[history scope]:scope:('"${(j: :)history_scopes}"')'
+  '--cwd=[current working directory]:directory:_files -/'
+  '--directory=[filter by directory]:directory:_files -/'
+  '--session=[session id]:session id: '
+  '--term=[search term]:term: '
+  '--after=[ISO8601 lower bound]:timestamp: '
+  '--before=[ISO8601 upper bound]:timestamp: '
+  '--exit=[filter by exit code]:exit code: '
+  '--limit=[maximum number of records]:limit: '
+  '--deleted=[deleted record handling]:deleted filter:('"${(j: :)history_deleted_filters}"')'
+  '--repo-root=[repository root]:directory:_files -/'
+  '--repoRoot=[repository root]:directory:_files -/'
+)
+
+_arguments -C -s -S \
+  '--zeno-mode=[command mode]:mode:->mode' \
+  '--input.lbuffer=[left buffer]:text: ' \
+  '--input.rbuffer=[right buffer]:text: ' \
+  '--input.snippet=[snippet name]:snippet: ' \
+  '--input.template=[preprompt template]:template: ' \
+  '--input.dir=[directory path]:directory:_files -/' \
+  '--input.completionCallback.sourceId=[completion source id]:source id: ' \
+  '--input.completionCallback.selectedFile=[selected item file]:file:_files' \
+  '--input.completionCallback.expectKey=[fzf expect key]:key: ' \
+  '--input.completionPreview.sourceId=[preview source id]:source id: ' \
+  '--input.completionPreview.item=[selected item]:item: ' \
+  '--input.completionPreview.lbufferB64=[base64 encoded left buffer]:base64: ' \
+  '--input.completionPreview.rbufferB64=[base64 encoded right buffer]:base64: ' \
+  '1:command:->command' \
+  '2:subcommand:->subcommand' \
+  '*::arg:->args' && return 0
+
+case $state in
+  mode)
+    _describe -t zeno-modes 'zeno mode' zeno_modes
+    return 0
+    ;;
+  command)
+    _describe -t zeno-commands 'zeno command' top_level_commands
+    return 0
+    ;;
+  subcommand)
+    case ${line[1]-} in
+      history)
+        _describe -t history-subcommands 'history subcommand' history_subcommands
+        return 0
+        ;;
+      server)
+        _describe -t server-subcommands 'server subcommand' server_subcommands
+        return 0
+        ;;
+    esac
+    ;;
+  args)
+    case ${line[1]-} in
+      history)
+        case ${line[2]-} in
+          log)
+            _arguments -s -S \
+              '--cmd=[command text]:command: ' \
+              '--command=[command text]:command: ' \
+              '--exit=[exit code]:exit code: ' \
+              '--pwd=[working directory]:directory:_files -/' \
+              '--session=[session id]:session id: ' \
+              '--host=[hostname]:hostname: ' \
+              '--user=[username]:username: ' \
+              '--shell=[shell name]:shell:(zsh bash fish)' \
+              '--ts=[ISO8601 timestamp]:timestamp: ' \
+              '--duration-ms=[command duration in milliseconds]:milliseconds: ' \
+              '--durationMs=[command duration in milliseconds]:milliseconds: ' \
+              '--id=[record id]:record id: ' \
+              '--repo-root=[repository root]:directory:_files -/' \
+              '--repoRoot=[repository root]:directory:_files -/' \
+              '--meta=[json metadata]:json: ' \
+              '--startedAt=[ISO8601 start time]:timestamp: ' \
+              '--finishedAt=[ISO8601 end time]:timestamp: ' \
+              '*--redact=[literal value to redact]:value: '
+            return 0
+            ;;
+          query)
+            _arguments -s -S \
+              "${history_common_filter_args[@]}" \
+              '--id=[record id]:record id: ' \
+              '--format=[output format]:format:('"${(j: :)history_query_formats}"')' \
+              '--toggle-scope[return next scope name]'
+            return 0
+            ;;
+          delete)
+            _arguments -s -S \
+              '--id=[record id]:record id: ' \
+              '--hard[also remove the entry from HISTFILE]'
+            return 0
+            ;;
+          export)
+            _arguments -s -S \
+              '--format=[export format]:format:('"${(j: :)history_export_formats}"')' \
+              '--out=[output file path]:file:_files' \
+              "${history_common_filter_args[@]}" \
+              '*--redact=[literal value to redact]:value: '
+            return 0
+            ;;
+          import)
+            _arguments -s -S \
+              '--format=[import format]:format:('"${(j: :)history_export_formats}"')' \
+              '--in=[input file path]:file:_files' \
+              '--dedupe=[dedupe strategy]:strategy:('"${(j: :)history_dedupe_strategies}"')' \
+              '--dry-run[validate input without writing records]' \
+              '*--redact=[literal value to redact]:value: '
+            return 0
+            ;;
+          fzf-config)
+            return 0
+            ;;
+        esac
+        ;;
+      server)
+        case ${line[2]-} in
+          run|start|stop|restart|status)
+            return 0
+            ;;
+        esac
+        ;;
+    esac
+    ;;
+esac
+
+return 1

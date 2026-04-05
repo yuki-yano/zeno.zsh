@@ -6,13 +6,14 @@ fi
   emulate -L zsh
 
   local zeno_source=${${(%):-%x}:A}
-  local -a required_dirs widget_dirs autoload_dirs
+  local -a required_dirs widget_dirs autoload_dirs completion_defs
   local dir f
 
   export ZENO_ROOT=${ZENO_ROOT:-${zeno_source:h}}
 
   required_dirs=(
     "${ZENO_ROOT}/shells/zsh/functions"
+    "${ZENO_ROOT}/shells/zsh/completions"
     "${ZENO_ROOT}/shells/zsh/widgets"
   )
 
@@ -31,6 +32,7 @@ fi
     "${ZENO_ROOT}/shells/zsh/widgets"
   )
   autoload_dirs=(
+    "${ZENO_ROOT}/shells/zsh/completions"
     "${ZENO_ROOT}/shells/zsh/functions"
     "${(@)widget_dirs}"
   )
@@ -47,6 +49,12 @@ fi
   for f in "${(@)^widget_dirs}"/*(N-.); do
     zle -N -- "${f:t}"
   done
+
+  if (( $+functions[compdef] )); then
+    completion_defs=(_zeno)
+    autoload -Uz -- "${(@)completion_defs}"
+    compdef _zeno zeno zeno-history-client zeno-server
+  fi
 
   if [[ -z ${ZENO_ENABLE_FZF_TMUX-} ]]; then
     export ZENO_FZF_COMMAND="fzf"

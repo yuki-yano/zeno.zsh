@@ -225,6 +225,49 @@ Deno.test("parseArgs", async (t) => {
     assertExists(historyFzfConfig);
     assertEquals(historyFzfConfig, {});
   });
+
+  await t.step("parses server start positional command", () => {
+    const result = parseArgs([
+      "server",
+      "start",
+    ]);
+
+    assertEquals(result.mode, "server-start");
+    const serverStart = (result.input as Record<string, unknown>).serverStart as
+      | Record<string, unknown>
+      | undefined;
+    assertExists(serverStart);
+    assertEquals(serverStart, {});
+  });
+
+  await t.step("parses server run positional command", () => {
+    const result = parseArgs([
+      "server",
+      "run",
+    ]);
+
+    assertEquals(result.mode, "server-run");
+    const serverRun = (result.input as Record<string, unknown>).serverRun as
+      | Record<string, unknown>
+      | undefined;
+    assertExists(serverRun);
+    assertEquals(serverRun, {});
+  });
+
+  await t.step("parses server status positional command", () => {
+    const result = parseArgs([
+      "server",
+      "status",
+    ]);
+
+    assertEquals(result.mode, "server-status");
+    const serverStatus = (result.input as Record<string, unknown>)
+      .serverStatus as
+        | Record<string, unknown>
+        | undefined;
+    assertExists(serverStatus);
+    assertEquals(serverStatus, {});
+  });
 });
 
 Deno.test("createCommandExecutor", async (t) => {

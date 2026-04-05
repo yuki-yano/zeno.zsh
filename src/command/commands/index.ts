@@ -34,6 +34,16 @@ import { createHistoryImportCommand } from "../../history/import-command.ts";
 import { createHistoryFzfConfigCommand } from "../../history/fzf-config-command.ts";
 import { getHistoryModule } from "../../history/runtime.ts";
 import { ulid } from "../../deps.ts";
+import { getEnv } from "../../config/env.ts";
+import {
+  createServerRestartCommand,
+  createServerRunCommand,
+  createServerStartCommand,
+  createServerStatusCommand,
+  createServerStopCommand,
+} from "../../server/command.ts";
+import { createCommandExecutor } from "../executor.ts";
+import { runCommandSocketServer } from "../../server/runtime.ts";
 
 const MAX_INLINE_COMMAND_LENGTH = 120_000;
 const SOURCE_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
@@ -540,6 +550,7 @@ const quoteForSingleShellArg = (value: string): string => {
  */
 export const createCommandRegistry = () => {
   const registry = createRegistry();
+  const executeCommand = createCommandExecutor(registry);
 
   // Register all commands
   registry.register(pidCommand);
@@ -591,6 +602,23 @@ export const createCommandRegistry = () => {
       loadHistorySettings: async () => (await getSettings()).history,
     }),
   );
+  registry.register(createServerStartCommand());
+  registry.register(createServerStopCommand());
+  registry.register(createServerRestartCommand());
+  registry.register(createServerStatusCommand());
+  registry.register(createServerRunCommand({
+    getSocketPath: () => getEnv().SOCK,
+    runServer: async (socketPath) => {
+      await runCommandSocketServer({
+        socketPath,
+        executeCommand,
+        connectionConfig: {
+          maxConnections: 50,
+          connectionTimeout: 30000,
+        },
+      });
+    },
+  }));
 
   return registry;
 };
