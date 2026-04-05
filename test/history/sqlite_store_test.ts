@@ -37,8 +37,10 @@ describe("SQLiteStore", () => {
   });
 
   it("creates database file and inserts records", async () => {
+    const originalHome = Deno.env.get("HOME");
     const store = await createSQLiteStore({ databasePath: dbPath });
     try {
+      Deno.env.set("HOME", "/tmp");
       const record = createRecord();
 
       await store.insert(record);
@@ -46,9 +48,15 @@ describe("SQLiteStore", () => {
       const byId = await store.selectById(record.id);
       assertExists(byId);
       assertEquals(byId.command, record.command);
-      assertEquals(byId.repo_root, record.repo_root);
+      assertEquals(byId.pwd, "~/project");
+      assertEquals(byId.repo_root, "~");
     } finally {
       await store.close();
+      if (originalHome === undefined) {
+        Deno.env.delete("HOME");
+      } else {
+        Deno.env.set("HOME", originalHome);
+      }
     }
   });
 

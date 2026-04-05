@@ -1,4 +1,5 @@
 import type { RepoFinder } from "./repo-finder.ts";
+import { expandStoredPath, normalizePathForStorage } from "./path-utils.ts";
 import type { HistoryQueryRequest, QueryFilter } from "./types.ts";
 
 const normalizeLimit = (value: number): number => {
@@ -23,7 +24,7 @@ const resolveRepository = async (
     return null;
   }
   try {
-    return await repoFinder.resolve(pwd);
+    return await repoFinder.resolve(expandStoredPath(pwd) ?? pwd);
   } catch (_error) {
     return null;
   }
@@ -43,11 +44,13 @@ export const buildHistoryQueryFilter = async (
       ? await resolveRepository(repoFinder, resolveBase)
       : null;
   }
+  repoRoot = normalizePathForStorage(repoRoot);
 
   let directory = request.directory ?? null;
   if (scope === "directory" && !directory) {
     directory = request.cwd ?? null;
   }
+  directory = normalizePathForStorage(directory);
 
   const sessionId = request.sessionId ?? null;
   if (scope === "session" && !sessionId) {

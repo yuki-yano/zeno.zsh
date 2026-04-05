@@ -7,6 +7,7 @@ import {
   parseNonEmptyString,
 } from "./input-parsers.ts";
 import { buildConfigRedactPatterns } from "./redact-patterns.ts";
+import { normalizePathForStorage } from "./path-utils.ts";
 import type {
   DeletedFilter,
   HistoryModule,
@@ -81,23 +82,6 @@ const parseDeleted = (value: unknown): DeletedFilter => {
 };
 
 const SMART_HISTORY_DELIMITER = "\u00a0";
-const HOME_DIRECTORY = (() => {
-  try {
-    return typeof Deno !== "undefined" ? Deno.env.get("HOME") ?? null : null;
-  } catch {
-    return null;
-  }
-})();
-
-const getHomeDirectory = (): string | null => {
-  try {
-    return typeof Deno !== "undefined"
-      ? Deno.env.get("HOME") ?? HOME_DIRECTORY
-      : HOME_DIRECTORY;
-  } catch {
-    return HOME_DIRECTORY;
-  }
-};
 
 const sanitizeDisplayField = (value: string): string =>
   value.replaceAll("\t", "    ").replaceAll(SMART_HISTORY_DELIMITER, " ");
@@ -109,16 +93,7 @@ const formatPath = (pwd: string | null): string => {
   if (!pwd) {
     return "";
   }
-  const homeDir = getHomeDirectory();
-  if (homeDir && homeDir.length > 0) {
-    if (pwd === homeDir) {
-      return "~";
-    }
-    if (pwd.startsWith(`${homeDir}/`)) {
-      return `~/${pwd.slice(homeDir.length + 1)}`;
-    }
-  }
-  return pwd;
+  return normalizePathForStorage(pwd) ?? "";
 };
 
 const formatDurationValue = (durationMs: number | null): string => {

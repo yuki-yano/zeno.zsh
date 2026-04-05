@@ -1,5 +1,6 @@
 import { type BindParameters, Database } from "../deps.ts";
 import { path } from "../deps.ts";
+import { normalizePathForStorage } from "./path-utils.ts";
 import type { HistoryRecord, QueryFilter, QueryResult } from "./types.ts";
 
 export type SQLiteStore = {
@@ -65,12 +66,12 @@ export const createSQLiteStore = async (
         ts: record.ts,
         command: record.command,
         exit: record.exit ?? null,
-        pwd: record.pwd ?? null,
+        pwd: normalizePathForStorage(record.pwd),
         session: record.session ?? null,
         host: record.host ?? null,
         user: record.user ?? null,
         shell: record.shell ?? null,
-        repo_root: record.repo_root ?? null,
+        repo_root: normalizePathForStorage(record.repo_root),
         deleted_at: record.deleted_at ?? null,
         duration_ms: record.duration_ms ?? null,
         meta: record.meta ? JSON.stringify(record.meta) : null,

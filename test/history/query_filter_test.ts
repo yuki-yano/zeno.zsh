@@ -51,23 +51,68 @@ describe("history query filter", () => {
   });
 
   it("falls back directory scope to cwd", async () => {
-    const request: HistoryQueryRequest = {
-      scope: "directory",
-      cwd: "/work/app",
-      limit: 100,
-      deleted: "include",
-    };
-    const filter = await buildHistoryQueryFilter(
-      request,
-      createRepoFinder(() => Promise.resolve(null)),
-    );
+    const originalHome = Deno.env.get("HOME");
+    try {
+      Deno.env.set("HOME", "/Users/test");
 
-    assertStrictEquals(filter === "invalid", false);
-    if (filter === "invalid") {
-      return;
+      const request: HistoryQueryRequest = {
+        scope: "directory",
+        cwd: "/Users/test/work/app",
+        limit: 100,
+        deleted: "include",
+      };
+      const filter = await buildHistoryQueryFilter(
+        request,
+        createRepoFinder(() => Promise.resolve(null)),
+      );
+
+      assertStrictEquals(filter === "invalid", false);
+      if (filter === "invalid") {
+        return;
+      }
+      assertEquals(filter.directory, "~/work/app");
+      assertEquals(filter.deleted, "include");
+    } finally {
+      if (originalHome === undefined) {
+        Deno.env.delete("HOME");
+      } else {
+        Deno.env.set("HOME", originalHome);
+      }
     }
-    assertEquals(filter.directory, "/work/app");
-    assertEquals(filter.deleted, "include");
+  });
+
+  it("normalizes repository scope values before querying", async () => {
+    const originalHome = Deno.env.get("HOME");
+    try {
+      Deno.env.set("HOME", "/Users/test");
+
+      const request: HistoryQueryRequest = {
+        scope: "repository",
+        cwd: "~/work/app",
+        limit: 50,
+        deleted: "exclude",
+      };
+      const filter = await buildHistoryQueryFilter(
+        request,
+        createRepoFinder((path) =>
+          Promise.resolve(
+            path === "/Users/test/work/app" ? "/Users/test/work" : null,
+          )
+        ),
+      );
+
+      assertStrictEquals(filter === "invalid", false);
+      if (filter === "invalid") {
+        return;
+      }
+      assertEquals(filter.repoRoot, "~/work");
+    } finally {
+      if (originalHome === undefined) {
+        Deno.env.delete("HOME");
+      } else {
+        Deno.env.set("HOME", originalHome);
+      }
+    }
   });
 
   it("normalizes optional fields and clamps invalid limit", async () => {

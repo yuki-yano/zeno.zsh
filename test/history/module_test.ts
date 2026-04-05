@@ -71,6 +71,7 @@ const createStubHistoryIO = (
 
 describe("HistoryModule.logCommand", () => {
   it("redacts command text and resolves repository before persisting", async () => {
+    const originalHome = Deno.env.get("HOME");
     let inserted: HistoryRecord | undefined;
     const store = createStubStore({
       insert(record) {
@@ -85,36 +86,47 @@ describe("HistoryModule.logCommand", () => {
       },
     };
 
-    const redactor = createRedactor([/token-\w+/g]);
-    const module = createHistoryModule({
-      store,
-      repoFinder,
-      redactor,
-      histfileEditor: createStubHistfileEditor(),
-      historyIO: createStubHistoryIO(),
-      now: () => "2024-01-01T00:00:00.000Z",
-    });
+    try {
+      Deno.env.set("HOME", "/repos");
 
-    const input: LogCommandInput = {
-      id: "01HISTORYTESTID000000000000",
-      ts: "2024-01-01T00:00:00.000Z",
-      command: "echo token-abc123",
-      exit: 0,
-      pwd: "/repos/example/app",
-      session: "session-1",
-      host: "host",
-      user: "user",
-      shell: "zsh",
-      repo_root: null,
-      duration_ms: 120,
-      meta: { startedAtRealtime: "1700000000.000000" },
-    };
+      const redactor = createRedactor([/token-\w+/g]);
+      const module = createHistoryModule({
+        store,
+        repoFinder,
+        redactor,
+        histfileEditor: createStubHistfileEditor(),
+        historyIO: createStubHistoryIO(),
+        now: () => "2024-01-01T00:00:00.000Z",
+      });
 
-    const result = await module.logCommand(input);
-    assertStrictEquals(result.ok, true);
-    assertStrictEquals(inserted?.command, "echo ***");
-    assertStrictEquals(inserted?.repo_root, "/repos/example");
-    assertStrictEquals(inserted?.deleted_at, null);
+      const input: LogCommandInput = {
+        id: "01HISTORYTESTID000000000000",
+        ts: "2024-01-01T00:00:00.000Z",
+        command: "echo token-abc123",
+        exit: 0,
+        pwd: "/repos/example/app",
+        session: "session-1",
+        host: "host",
+        user: "user",
+        shell: "zsh",
+        repo_root: null,
+        duration_ms: 120,
+        meta: { startedAtRealtime: "1700000000.000000" },
+      };
+
+      const result = await module.logCommand(input);
+      assertStrictEquals(result.ok, true);
+      assertStrictEquals(inserted?.command, "echo ***");
+      assertStrictEquals(inserted?.pwd, "~/example/app");
+      assertStrictEquals(inserted?.repo_root, "~/example");
+      assertStrictEquals(inserted?.deleted_at, null);
+    } finally {
+      if (originalHome === undefined) {
+        Deno.env.delete("HOME");
+      } else {
+        Deno.env.set("HOME", originalHome);
+      }
+    }
   });
 
   it("returns error result when store insertion throws", async () => {
@@ -218,6 +230,7 @@ describe("HistoryModule.queryHistory", () => {
   });
 
   it("resolves repository when scope is repository", async () => {
+    const originalHome = Deno.env.get("HOME");
     let receivedFilter: unknown;
     const store = createStubStore({
       select(filter) {
@@ -248,28 +261,38 @@ describe("HistoryModule.queryHistory", () => {
       },
     };
 
-    const module = createHistoryModule({
-      store,
-      repoFinder,
-      redactor: createRedactor([]),
-      histfileEditor: createStubHistfileEditor(),
-      historyIO: createStubHistoryIO(),
-      now: () => "2024-01-01T00:00:00.000Z",
-    });
+    try {
+      Deno.env.set("HOME", "/repo");
 
-    const result = await module.queryHistory({
-      scope: "repository",
-      cwd: "/work/app",
-      limit: 30,
-      deleted: "exclude",
-    });
+      const module = createHistoryModule({
+        store,
+        repoFinder,
+        redactor: createRedactor([]),
+        histfileEditor: createStubHistfileEditor(),
+        historyIO: createStubHistoryIO(),
+        now: () => "2024-01-01T00:00:00.000Z",
+      });
 
-    assertStrictEquals(result.ok, true);
-    assertEquals(result.value.items.length, 1);
-    assertEquals(
-      (receivedFilter as { repoRoot?: string }).repoRoot,
-      "/repo/root",
-    );
+      const result = await module.queryHistory({
+        scope: "repository",
+        cwd: "/work/app",
+        limit: 30,
+        deleted: "exclude",
+      });
+
+      assertStrictEquals(result.ok, true);
+      assertEquals(result.value.items.length, 1);
+      assertEquals(
+        (receivedFilter as { repoRoot?: string }).repoRoot,
+        "~/root",
+      );
+    } finally {
+      if (originalHome === undefined) {
+        Deno.env.delete("HOME");
+      } else {
+        Deno.env.set("HOME", originalHome);
+      }
+    }
   });
 
   it("returns io error when store select throws", async () => {
@@ -484,6 +507,7 @@ describe("HistoryModule.exportHistory", () => {
 
 describe("HistoryModule.importHistory", () => {
   it("inserts redacted records when not dry-run", async () => {
+    const originalHome = Deno.env.get("HOME");
     const inserted: HistoryRecord[] = [];
     const store = createStubStore({
       selectById() {
@@ -495,59 +519,71 @@ describe("HistoryModule.importHistory", () => {
       },
     });
 
-    const historyIO = createStubHistoryIO({
-      importFile(_request) {
-        const outcome: ImportOutcome = {
-          records: [{
-            id: "01IMPORT000000000000000000",
-            ts: "2024-01-04T00:00:00.000Z",
-            command: "echo secret",
-            exit: 0,
-            pwd: null,
-            session: null,
-            host: null,
-            user: null,
-            shell: "zsh",
-            repo_root: null,
-            deleted_at: null,
-            duration_ms: null,
-            meta: null,
-          }],
-          summary: {
-            added: 1,
-            skipped: 0,
-            total: 1,
-          },
-        };
-        return Promise.resolve(outcome);
-      },
-    });
+    try {
+      Deno.env.set("HOME", "/Users/test");
 
-    const module = createHistoryModule({
-      store,
-      repoFinder: {
-        resolve() {
-          return Promise.resolve(null);
+      const historyIO = createStubHistoryIO({
+        importFile(_request) {
+          const outcome: ImportOutcome = {
+            records: [{
+              id: "01IMPORT000000000000000000",
+              ts: "2024-01-04T00:00:00.000Z",
+              command: "echo secret",
+              exit: 0,
+              pwd: "/Users/test/work",
+              session: null,
+              host: null,
+              user: null,
+              shell: "zsh",
+              repo_root: "/Users/test",
+              deleted_at: null,
+              duration_ms: null,
+              meta: null,
+            }],
+            summary: {
+              added: 1,
+              skipped: 0,
+              total: 1,
+            },
+          };
+          return Promise.resolve(outcome);
         },
-      },
-      redactor: createRedactor([/secret/]),
-      histfileEditor: createStubHistfileEditor(),
-      historyIO,
-      now: () => "2024-01-05T00:00:00.000Z",
-    });
+      });
 
-    const request: ImportRequest = {
-      format: "ndjson",
-      inputPath: "/tmp/in.ndjson",
-      dedupe: "off",
-      dryRun: false,
-    };
+      const module = createHistoryModule({
+        store,
+        repoFinder: {
+          resolve() {
+            return Promise.resolve(null);
+          },
+        },
+        redactor: createRedactor([/secret/]),
+        histfileEditor: createStubHistfileEditor(),
+        historyIO,
+        now: () => "2024-01-05T00:00:00.000Z",
+      });
 
-    const result = await module.importHistory(request);
-    assertStrictEquals(result.ok, true);
-    assertEquals(result.value.added, 1);
-    assertEquals(inserted.length, 1);
-    assertEquals(inserted[0].command, "echo ***");
+      const request: ImportRequest = {
+        format: "ndjson",
+        inputPath: "/tmp/in.ndjson",
+        dedupe: "off",
+        dryRun: false,
+      };
+
+      const result = await module.importHistory(request);
+      assertStrictEquals(result.ok, true);
+      assertEquals(result.value.added, 1);
+      assertEquals(inserted.length, 1);
+      assertEquals(inserted[0].command, "echo ***");
+      assertEquals(inserted[0].pwd, "~/work");
+      assertEquals(inserted[0].repo_root, "~");
+    } finally {
+      if (originalHome === undefined) {
+        Deno.env.delete("HOME");
+      } else {
+        Deno.env.set("HOME", originalHome);
+      }
+    }
   });
 
   it("skips insert when dry-run", async () => {

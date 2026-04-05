@@ -6,6 +6,7 @@ import {
   createUnsupportedHistoryError,
   mapHistfileErrorToHistoryError,
 } from "./error-utils.ts";
+import { expandStoredPath, normalizePathForStorage } from "./path-utils.ts";
 import { buildHistoryQueryFilter } from "./query-filter.ts";
 import type {
   DeleteRequest,
@@ -53,7 +54,7 @@ const resolveRepository = async (
     return null;
   }
   try {
-    return await repoFinder.resolve(pwd);
+    return await repoFinder.resolve(expandStoredPath(pwd) ?? pwd);
   } catch (_error) {
     return null;
   }
@@ -68,12 +69,12 @@ const createHistoryRecord = (
   ts: input.ts,
   command,
   exit: Number.isInteger(input.exit) ? input.exit : null,
-  pwd: input.pwd ?? null,
+  pwd: normalizePathForStorage(input.pwd),
   session: input.session ?? null,
   host: input.host ?? null,
   user: input.user ?? null,
   shell: input.shell ?? null,
-  repo_root: repoRoot,
+  repo_root: normalizePathForStorage(repoRoot),
   deleted_at: null,
   duration_ms: input.duration_ms ?? null,
   meta: input.meta ?? null,
@@ -302,6 +303,8 @@ export const createHistoryModule = (
       const toInsert: HistoryRecord = {
         ...record,
         command: sanitizeCommand(redactor, record.command ?? ""),
+        pwd: normalizePathForStorage(record.pwd),
+        repo_root: normalizePathForStorage(record.repo_root),
       };
 
       if (!toInsert.command || toInsert.command.length === 0) {
