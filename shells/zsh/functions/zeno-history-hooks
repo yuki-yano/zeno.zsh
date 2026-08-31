@@ -20,8 +20,14 @@ function zeno-history-hooks() {
   fi
 
   function zeno-history-preexec() {
+    local hist_ignore_space=${options[HIST_IGNORE_SPACE]-off}
     emulate -L zsh
     if [[ -n ${ZENO_HISTORY_SUPPRESS-} ]]; then
+      return
+    fi
+
+    if [[ $hist_ignore_space == on && $1 == ' '* ]]; then
+      unset ZENO_HISTORY_LAST_COMMAND ZENO_HISTORY_LAST_STARTED_AT ZENO_HISTORY_LAST_PWD
       return
     fi
 
