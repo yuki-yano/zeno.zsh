@@ -39,7 +39,9 @@ const formatServerStatusLines = (
   const statusText = state === "running"
     ? colorize("running", GREEN, colorEnabled)
     : colorize("stopped", YELLOW, colorEnabled);
-  const pidText = pid !== undefined ? String(pid) : colorize("-", DIM, colorEnabled);
+  const pidText = pid !== undefined
+    ? String(pid)
+    : colorize("-", DIM, colorEnabled);
   const socketText = socketPath ?? colorize("(unset)", DIM, colorEnabled);
 
   return [
@@ -50,8 +52,8 @@ const formatServerStatusLines = (
 };
 
 const writeServerActionResult = async (
-  writeFn: typeof writeResult extends (arg0: infer T, ...args: infer _U) => unknown
-    ? T
+  writeFn: typeof writeResult extends
+    (arg0: infer T, ...args: infer _U) => unknown ? T
     : never,
   result:
     | Awaited<ReturnType<ReturnType<typeof createServerControl>["start"]>>
@@ -73,14 +75,20 @@ const writeServerActionResult = async (
 export const createServerStartCommand = (deps: ServerControlDeps = {}) => {
   const control = createServerControl(deps);
   return createCommand("server-start", async ({ writer }) => {
-    await writeServerActionResult(writer.write.bind(writer), await control.start());
+    await writeServerActionResult(
+      writer.write.bind(writer),
+      await control.start(),
+    );
   });
 };
 
 export const createServerStopCommand = (deps: ServerControlDeps = {}) => {
   const control = createServerControl(deps);
   return createCommand("server-stop", async ({ writer }) => {
-    await writeServerActionResult(writer.write.bind(writer), await control.stop());
+    await writeServerActionResult(
+      writer.write.bind(writer),
+      await control.stop(),
+    );
   });
 };
 
@@ -94,13 +102,19 @@ export const createServerRestartCommand = (deps: ServerControlDeps = {}) => {
   });
 };
 
-export const createServerStatusCommand = (deps: ServerStatusCommandDeps = {}) => {
+export const createServerStatusCommand = (
+  deps: ServerStatusCommandDeps = {},
+) => {
   const { useColor = supportsColor, ...controlDeps } = deps;
   const control = createServerControl(controlDeps);
   return createCommand("server-status", async ({ writer }) => {
     const result = await control.status();
     if (!result.ok) {
-      await writeResult(writer.write.bind(writer), "failure", result.error.message);
+      await writeResult(
+        writer.write.bind(writer),
+        "failure",
+        result.error.message,
+      );
       return;
     }
 

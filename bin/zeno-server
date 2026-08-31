@@ -2,4 +2,4 @@
 
 exec deno run --node-modules-dir=auto --no-check \
   --allow-env --allow-read --allow-run --allow-write --allow-ffi --allow-net \
-  -- "${ZENO_ROOT:-${0:a:h:h}}/src/server.ts" "$@"
+  "${ZENO_ROOT:-${0:a:h:h}}/src/server.ts" "$@"

@@ -1,5 +1,5 @@
 import { getErrorMessage } from "../utils/error.ts";
-import { parseArgs, type createCommandExecutor } from "../command/executor.ts";
+import { type createCommandExecutor, parseArgs } from "../command/executor.ts";
 import { createSocketServer } from "../socket/server.ts";
 import type { ConnectionConfig } from "../socket/connection-manager.ts";
 

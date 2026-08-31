@@ -10,8 +10,12 @@ export type ServerStatus = {
 };
 
 export type ServerAction = {
-  action: "started" | "already-running" | "stopped" | "already-stopped" |
-    "restarted";
+  action:
+    | "started"
+    | "already-running"
+    | "stopped"
+    | "already-stopped"
+    | "restarted";
   pid?: number;
 };
 
@@ -19,15 +23,17 @@ export type ServerControlResult<T> =
   | { ok: true; value: T }
   | { ok: false; error: Error };
 
+type Awaitable<T> = T | Promise<T>;
+
 export type ServerControlDeps = {
   getSocketPath?: () => string | undefined;
-  requestPid?: (socketPath: string) => Promise<number>;
-  spawnServer?: () => Promise<void>;
-  ensureSocketDir?: (socketPath: string) => Promise<void>;
-  removeSocketFile?: (socketPath: string) => Promise<void>;
-  killProcess?: (pid: number, signal: Deno.Signal) => Promise<void>;
-  isProcessAlive?: (pid: number) => Promise<boolean>;
-  sleep?: (ms: number) => Promise<void>;
+  requestPid?: (socketPath: string) => Awaitable<number>;
+  spawnServer?: () => Awaitable<void>;
+  ensureSocketDir?: (socketPath: string) => Awaitable<void>;
+  removeSocketFile?: (socketPath: string) => Awaitable<void>;
+  killProcess?: (pid: number, signal: Deno.Signal) => Awaitable<void>;
+  isProcessAlive?: (pid: number) => Awaitable<boolean>;
+  sleep?: (ms: number) => Awaitable<void>;
   pollAttempts?: number;
   pollIntervalMs?: number;
   stopPollAttempts?: number;
@@ -63,7 +69,9 @@ const requestPidFromSocket = async (socketPath: string): Promise<number> => {
     }
 
     const text = new TextDecoder().decode(
-      chunks.length === 1 ? chunks[0] : Uint8Array.from(chunks.flatMap((c) => [...c])),
+      chunks.length === 1
+        ? chunks[0]
+        : Uint8Array.from(chunks.flatMap((c) => [...c])),
     ).trim();
     const lines = text.split("\n").filter((line) => line.length > 0);
     const pidLine = lines.length === 1
@@ -120,7 +128,7 @@ const ensureSocketDir = async (socketPath: string): Promise<void> => {
   await Deno.mkdir(path.dirname(socketPath), { recursive: true });
 };
 
-const killProcess = async (pid: number, signal: Deno.Signal): Promise<void> => {
+const killProcess = (pid: number, signal: Deno.Signal): void => {
   try {
     Deno.kill(pid, signal);
   } catch (error) {
@@ -171,7 +179,9 @@ export const createServerControl = (deps: ServerControlDeps = {}) => {
   ): ServerControlResult<string> => {
     const socketPath = getSocketPath();
     if (!socketPath) {
-      return toFailure(`env:ZENO_SOCK is empty (required for server ${operation})`);
+      return toFailure(
+        `env:ZENO_SOCK is empty (required for server ${operation})`,
+      );
     }
     return { ok: true, value: socketPath };
   };
