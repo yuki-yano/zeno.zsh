@@ -23,5 +23,5 @@ function zeno
         set -a deno_flags --quiet
     end
 
-    command deno run $deno_flags -- "$ZENO_ROOT/src/cli.ts" $argv
+    command deno run $deno_flags "$ZENO_ROOT/src/cli.ts" $argv
 end

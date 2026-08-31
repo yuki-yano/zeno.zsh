@@ -5,7 +5,7 @@ Deno.test("createServerStatusCommand", async (t) => {
   await t.step("prints formatted running status", async () => {
     const command = createServerStatusCommand({
       getSocketPath: () => "/tmp/zeno.sock",
-      requestPid: async () => 4242,
+      requestPid: () => 4242,
       useColor: () => false,
     });
 
@@ -30,7 +30,7 @@ Deno.test("createServerStatusCommand", async (t) => {
   await t.step("prints formatted stopped status", async () => {
     const command = createServerStatusCommand({
       getSocketPath: () => "/tmp/zeno.sock",
-      requestPid: async () => {
+      requestPid: () => {
         throw new Error("not running");
       },
       useColor: () => false,
@@ -57,7 +57,7 @@ Deno.test("createServerStatusCommand", async (t) => {
   await t.step("prints colorized status when colors are enabled", async () => {
     const command = createServerStatusCommand({
       getSocketPath: () => "/tmp/zeno.sock",
-      requestPid: async () => 4242,
+      requestPid: () => 4242,
       useColor: () => true,
     });
 

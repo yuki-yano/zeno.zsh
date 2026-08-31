@@ -31,6 +31,10 @@ jobs:
     - uses: denoland/setup-deno@v2
       with:
         deno-version: "${{ matrix.version }}"
+    - name: Install shell dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install --yes fish zsh
     - uses: actions/cache@v4
       with:
         path: ${{ env.DENO_DIR }}

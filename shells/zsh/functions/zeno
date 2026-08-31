@@ -36,4 +36,4 @@ for (( i = 1; i <= $#args; ++i )); do
 done
 (( quiet )) && deno_flags+=(--quiet)
 
-command deno run "${deno_flags[@]}" -- "$ZENO_ROOT/src/cli.ts" "${args[@]}"
+command deno run "${deno_flags[@]}" "$ZENO_ROOT/src/cli.ts" "${args[@]}"
