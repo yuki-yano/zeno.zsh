@@ -13,6 +13,10 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: "2.x"
+      - name: Install shell dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes fish zsh
       
       - name: Update dependencies
         run: |
