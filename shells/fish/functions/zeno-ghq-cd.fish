@@ -28,8 +28,12 @@ function zeno-ghq-cd --description "Select and change to a ghq repository direct
         return 1
     end
     
-    # Escape spaces in the path
-    set -l escaped_dir (string escape $selected_dir)
+    # Restore HOME before escaping because a quoted "~" is not expanded
+    set -l target_dir $selected_dir
+    if set -q HOME
+        set target_dir (string replace -r '^~' $HOME -- $selected_dir)
+    end
+    set -l escaped_dir (string escape -- $target_dir)
     
     # Set the command and execute
     commandline -r "cd $escaped_dir"
